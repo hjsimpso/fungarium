@@ -1,0 +1,14 @@
+citHeader("To cite fungarium in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "Using aggregated field collections data and the novel R package fungarium to investigate fungal fire association",
+  author   = personList(as.person("H.J. Simpson"), as.person("J.S. Schilling")),
+  journal  = "Mycologia",
+  year     = "2020",
+  volume   = "",
+  number   = "",
+  pages    = "",
+  url      = "",
+  textVersion = "Simpson, H.J., Schilling, J.S. 2020. Using aggregated field collections data and the novel R package fungarium to investigate fungal fire association. Mycologia."
+)
