@@ -7,49 +7,53 @@
 
 <!-- badges: end -->
 
-The goal of fungarium is to …
+An R package for enhancing the access and analysis of fungaria
+collections data.
 
-## Installation
-
-You can install the released version of fungarium from
-[CRAN](https://CRAN.R-project.org) with:
+## Installing fungarium
 
 ``` r
-install.packages("fungarium")
+install.packages("devtools") #Install 'devtools' (if not already installed)
+devtools::install_github("hjsimpso/fungarium") #Retrieve fungarium package from github repository and install
 ```
 
-## Example
+## Installing Docker
 
-This is a basic example which shows you how to solve a common problem:
+Docker software (<https://docs.docker.com/get-started/overview/>) needs
+to be installed on your system in order to utilize the `mycoportal_tab`
+function. All other functions in the fungarium package do not require
+Docker, so if you do not wish to utilize `mycoportal_tab` you do not
+need to install Docker.
+
+Instructions for installing Docker (available for Linux platforms,
+macOS, and Windows 10): <https://docs.docker.com/engine/install/>
+
+## Retrieving MyCoPortal datasets
+
+Manually interacting with the MyCoPortal web interface
+(<https://mycoportal.org/portal/collections/list.php>) can be a time
+consuming process, especially if one needs to submit a large variety of
+separate queries for various taxa, locations, dates, etc. The
+`mycoportal_tab` function provides a convenient alternative by allowing
+users to submit queries and download complete datasets from entirely
+within the R programming environment.
+
+Examples:
 
 ``` r
-library(fungarium)
-## basic example code
+# Check that Docker is installed and running on your system
+
+# Load fungarium
+library(fungarium) 
+
+# Submit queries to MyCoPortal and retrieve complete datasets
+# MyCoPortal tab-delmited file is saved in specified directory and then imported into R as a data.frame
+query1 <- mycoportal_tab("/path/to/directory", "Agaricus", taxon_type = "1", country = "United States", state="Minnesota", messages = F, rec_numb = F) 
+query1[1:10, c("scientificName", "country", "stateProvince")] # Preview dataset
+
+query2 <- mycoportal_tab("/path/to/directory", "Russulaceae", taxon_type = "2", country = "United States", state="Minnesota", messages = F, rec_numb = F) 
+query2[1:10, c("scientificName", "country", "stateProvince")] # Preview dataset
+
+query3 <- mycoportal_tab("/path/to/directory", "Polyporales", taxon_type = "4", country = "United States", state="Minnesota", messages = F, rec_numb = F) 
+query3[1:10, c("scientificName", "country", "stateProvince")] # Preview dataset
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
-
-``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
-```
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this. You could also
-use GitHub Actions to re-render `README.Rmd` every time you push. An
-example workflow can be found here:
-<https://github.com/r-lib/actions/tree/master/examples>.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
