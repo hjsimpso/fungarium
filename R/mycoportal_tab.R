@@ -73,6 +73,12 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
                     coll_date1 = NULL, coll_date2 = NULL, synonyms = TRUE, messages = TRUE,
                     rec_numb=TRUE, read_files=TRUE)
 {
+  #check for dependencies
+  if (!requireNamespace("RSelenium", quietly = TRUE)) {
+    stop("Please install the \"RSelenium\" package.",
+         call. = FALSE)
+  }
+
   #check input arguments
   if(length(c(taxon, country, state,
               county, locality, elevation_from, elevation_to,
