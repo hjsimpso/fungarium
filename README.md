@@ -33,12 +33,12 @@ macOS, and Windows 10): <https://docs.docker.com/engine/install/>
 ## Retrieving MyCoPortal datasets
 
 Manually interacting with the MyCoPortal web interface
-(<https://mycoportal.org/portal/collections/list.php>) can be a time
-consuming process, especially if one needs to submit a large variety of
-separate queries for various taxa, locations, dates, etc. The
-`mycoportal_tab` function provides a convenient alternative by allowing
-users to submit queries and download complete datasets from entirely
-within the R programming environment.
+(<https://mycoportal.org/portal/index.php>) can be a time consuming
+process, especially if one needs to submit a large variety of separate
+queries for various taxa, locations, dates, etc. The `mycoportal_tab`
+function provides a convenient alternative by allowing users to submit
+queries and download complete datasets from entirely within the R
+programming environment.
 
 Examples:
 

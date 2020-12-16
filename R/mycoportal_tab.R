@@ -2,7 +2,7 @@
 #'
 #' Enables programmatic interaction with the MyCoPortal web interface to retrieve complete
 #' datasets of sporocarp records from fungaria collections and citizen-science observations.
-#' Datasets are downloaded to a specified directory and then automatically read into R as a data.frame, if desired.
+#' Datasets are downloaded as tab-delimited files to a specified directory and then automatically read into R as a data.frame, if desired.
 #' This function was modified from the \code{mycoportal} function in the rMyCoPortal package (Krah et al. 2019).
 #' See Simpson and Schilling (2020).
 #'
