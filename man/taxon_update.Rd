@@ -54,7 +54,7 @@ error8: name has authorship listed and the best GBIF match is of a higher taxono
 Validates or updates the scientific names of fungi, and their associated taxonomic classification, based on currently accepted scientific consensus listed in the \href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
 }
 \details{
-Queries the GBIF database for each taxon, via \code\link[taxize]{get_gbifid_}
+Queries the GBIF database for each taxon, via \code{get_gbifid_}
 in the taxize package (Chamberlain and Szocs 2013; Chamberlain et al. 2020), after correcting any erroneous capitalizations of specific epithets (e.g. "Pleurotus Ostreatus").
 If a taxon name is mispelled in the input dataset, the best approximate match is selected from the GBIF match results.
 See \code{taxon_conf} and \code{taxon_matchtype} in the "Value" section for more details about approximate matches.
