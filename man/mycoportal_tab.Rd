@@ -29,7 +29,8 @@ mycoportal_tab(
   synonyms = TRUE,
   messages = TRUE,
   rec_numb = TRUE,
-  read_files = TRUE
+  read_files = TRUE,
+  encoding = "ISO-8859-1"
 )
 }
 \arguments{
@@ -80,6 +81,8 @@ mycoportal_tab(
 \item{rec_numb}{Logical. If TRUE, the number of available records is displayed and user is prompted with yes/no question about proceeding with the download. If FASLE, number of records is not displayed and download proceeds automatically.}
 
 \item{read_files}{Logical. If TRUE, files are downloaded into the specified directory AND are automatically imported into R as a data.frame. If FALSE, files are still downloaded into the specified directory, but not imported into R.}
+
+\item{encoding}{Character string specifying the desired encoding for the downloaded file. "ISO-8859-1" (the default) or "UTF-8"}
 }
 \value{
 If read_files is TRUE, a data.frame of MyCoPortal records is returned.
