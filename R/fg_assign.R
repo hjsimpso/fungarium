@@ -7,12 +7,12 @@
 #'
 #' @param tax_table  Dataframe of taxonomic classifications. Must include columns with phylum, class, order, family, genus, and species names. Missing values is allowed, but may inhibit the assignment of FUNGuild data to that row.
 #' @param url        URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.
-#' @param phylum     Character string specifying the phylum column name. Default is "new_phylum" (name given in the output of \code{\link[fungarium]{taxon_update}}).
-#' @param class      Character string specifying the class column name. Default is "new_class".
-#' @param order      Character string specifying the order column name. Default is "new_order".
-#' @param family     Character string specifying the family column name. Default is "new_family".
-#' @param genus      Character string specifying the genus column name. Default is "new_genus".
-#' @param species    Character string specifying the species column name (i.e. full canonical name, not just specific epithet). Default is "new_name".
+#' @param phylum_col     Character string specifying the phylum column name. Default is "new_phylum" (name given in the output of \code{\link[fungarium]{taxon_update}}).
+#' @param class_col      Character string specifying the class column name. Default is "new_class".
+#' @param order_col      Character string specifying the order column name. Default is "new_order".
+#' @param family_col     Character string specifying the family column name. Default is "new_family".
+#' @param genus_col      Character string specifying the genus column name. Default is "new_genus".
+#' @param species_col    Character string specifying the species column name (i.e. full canonical name, not just specific epithet). Default is "new_name".
 #'
 #' @return           Returns the input dataframe with FUNGuild assignments appended.
 #' @references
@@ -55,23 +55,23 @@ fg_assign <- function(tax_table, url = "http://www.stbates.org/funguild_db.php",
 
   #matching taxa in input dataframe with taxa in FUNGuild database.
   for(i in 1:nrow(tax_table)){#species level match
-    if(tax_table[[s_col]][i] %in% fg$taxon){
-      tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[s_col]][i],fg$taxon),4:10]
+    if(tax_table[[species_col]][i] %in% fg$taxon){
+      tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[species_col]][i],fg$taxon),4:10]
     }else{
-      if(tax_table[[g_col]][i] %in% fg$taxon){#genus level match
-        tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[g_col]][i],fg$taxon),4:10]
+      if(tax_table[[genus_col]][i] %in% fg$taxon){#genus level match
+        tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[genus_col]][i],fg$taxon),4:10]
       }else{
-        if(tax_table[[f_col]][i] %in% fg$taxon){#family level match
-          tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[f_col]][i],fg$taxon),4:10]
+        if(tax_table[[family_col]][i] %in% fg$taxon){#family level match
+          tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[family_col]][i],fg$taxon),4:10]
         }else{
-          if(tax_table[[o_col]][i] %in% fg$taxon){#order level match
-            tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[o_col]][i],fg$taxon),4:10]
+          if(tax_table[[order_col]][i] %in% fg$taxon){#order level match
+            tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[order_col]][i],fg$taxon),4:10]
           }else{
-            if(tax_table[[c_col]][i] %in% fg$taxon){#class level match
-              tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[c_col]][i],fg$taxon),4:10]
+            if(tax_table[[class_col]][i] %in% fg$taxon){#class level match
+              tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[class_col]][i],fg$taxon),4:10]
             }else{
-              if(tax_table[[p_col]][i] %in% fg$taxon){#phylum level match
-                tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[p_col]][i],fg$taxon),4:10]
+              if(tax_table[[phylum_col]][i] %in% fg$taxon){#phylum level match
+                tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[phylum_col]][i],fg$taxon),4:10]
               }
             }
           }

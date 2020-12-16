@@ -14,5 +14,10 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: dplyr, taxize
-Suggests: rvest, jsonlite, RSelenium
-
+Suggests: 
+    rvest,
+    jsonlite,
+    RSelenium,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

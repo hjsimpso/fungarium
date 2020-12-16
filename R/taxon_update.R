@@ -4,10 +4,11 @@
 #'
 #'
 #' @param data Dataframe containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
-#' @param taxon_name Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).
-#' @param authorship Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets).
+#' @param taxon_col Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).
+#' @param authorship_col Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets).
 #' @param status_feed Logical. If TRUE, progress of taxa names being queried in the GBIF database is printed on the console.
 #' @param species_only Logical. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.
+#' @param force_accepted Logical. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.
 #'
 #' @return The input dataframe with the following output fields appended:
 #' \item{new_name}{currently accepted scientific name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
@@ -20,13 +21,21 @@
 #' \item{new_family}{family classification based on the new scientific name}
 #' \item{new_genus}{genus associated with the new scientific name}
 #' \item{new_specific_epithet}{specific epithet asscociated with the new scientific name}
-#' \item{confidence}{confidence score (0-100) for match quality of the full scientific name. Ex: "Trametes versicolor (L.) Lloyd" in sporocarp dataset matched with "Trametes versicolor (L.) Lloyd" in GBIF database would give a confidence score of 100.}
-#' \item{match_type}{refers to match type of the canonical name. EXACT means a perfect match. Ex: "Trametes versicolor" in sporocarp dataset matched to "Trametes versicolor" in GBIF database. FUZZY means an imperfect match, likely due to spelling errors. Ex: "Trametes versacolor" in sporocarp dataset matched with "Trametes versicolor" in GBIF database.}
-#' \item{error}{error code for why a name could not be validated or updated. See function code for information on specific error codes.}
+#' \item{taxon_conf}{confidence score (0-100) for match quality of the full scientific name. Ex: "Trametes versicolor (L.) Lloyd" in sporocarp dataset matched with "Trametes versicolor (L.) Lloyd" in GBIF database would give a confidence score of 100.}
+#' \item{taxon_matchtype}{refers to match type of the canonical name. EXACT means a perfect match. Ex: "Trametes versicolor" in sporocarp dataset matched to "Trametes versicolor" in GBIF database. FUZZY means an imperfect match, likely due to spelling errors. Ex: "Trametes versacolor" in sporocarp dataset matched with "Trametes versicolor" in GBIF database.}
+#' \item{error}{error code for why a name could not be validated or updated.
+#' error1: name has doubtful taxonomic status (not accepted as a valid taxon and has no valid synonyms).
+#' error2: name has no authorship listed and all GBIF matches are of a higher taxonomic rank.
+#' error3: name has no authorship listed and all GBIF matches have doubtful taxonomic status.
+#' error4: name has no authorship listed and all GBIF matches have different accepted GBIF usage keys (accepted keys correspond to accepted taxa).
+#' error5: no matches returned from GBIF.
+#' error6: the synonym of the matched GBIF record has doubtful taxonomic status.
+#' error7: the synonym of the matched GBIF record is also listed as a synonym (may indicate an error within GBIF).
+#' error8: name has authorship listed and the best GBIF match is of a higher taxonomic rank.}
 #' @details Queries the GBIF database for each taxon, via \code\link[taxize]{get_gbifid_}
 #' in the taxize package (Chamberlain and Szocs 2013; Chamberlain et al. 2020), after correcting any erroneous capitalizations of specific epithets (e.g. "Pleurotus Ostreatus").
 #' If a taxon name is mispelled in the input dataset, the best approximate match is selected from the GBIF match results.
-#' See \code{confidence} and \code{match_type} in the "Value" section for more details about approximate matches.
+#' See \code{taxon_conf} and \code{taxon_matchtype} in the "Value" section for more details about approximate matches.
 #' Note that an internet connection is required to retrieve data from the GBIF database.\cr
 #' \cr
 #' If a queried taxon is matched to a GBIF record and that record has "accepted" taxonomic
@@ -59,21 +68,23 @@
 #' MP_data <- mycoportal_tab("Pleurotus")
 #' MP_data_updated <- taxon_update(MP_data)
 #'
-taxon_update <- function(data, taxon_name="scientificName", authorship="scientificNameAuthorship", status_feed=TRUE, species_only=TRUE){
-  #check that the input is formatted right. If not, stop, throw an error.
+taxon_update <- function(data, taxon_col="scientificName", authorship_col="scientificNameAuthorship", status_feed=TRUE, species_only=TRUE, force_accepted=FALSE){
+  #check that the input is formatted correctly. If not, stop and print error.
   if (!is.data.frame(data)){
     stop('Input data needs to be a data.frame.')
   }
-  #Remove all non species-level taxa if species_only is TRUE
-  if (species_only==TRUE){data <- subset(data, (data[[taxon_name]] %in% grep("(?i)[a-z]+\\s[a-z]+.*",data[[taxon_name]], value = T)))}
+  #Remove all non species-level taxa if species_only is TRUE; also removes any records with blanks in taxon name column
+  if (species_only==TRUE){data <- subset(data, (data[[taxon_col]] %in% grep("(?i)[a-z]+\\s[a-z]+.*",data[[taxon_col]], value = T)))}
   #Create new data frame with only name and authorship info
-  data_cond <- data.frame(cbind(data[[taxon_name]], data[[authorship]]))
+  data_cond <- data.frame(cbind(data[[taxon_col]], data[[authorship_col]]))
   colnames(data_cond) <- c("query_name", "query_authorship")
   #Fix erroneous capitalization of specific epithet
   data_cond$query_name <- tolower(data_cond$query_name)
   data_cond$query_name <- gsub("([a-z])(.*)", "\\U\\1\\L\\2", data_cond$query_name, perl = TRUE)
   #Create new table with list of unique species
-  data_cond$query_full_name <- paste(data_cond$query_name, data_cond$query_authorship, sep = " ")
+  for(i in 1:nrow(data_cond)){
+    data_cond$query_full_name[i] <- ifelse(data_cond$query_authorship[i]!="", paste(data_cond$query_name[i], data_cond$query_authorship[i], sep = " "), data_cond$query_name[i])
+  }
   unique_taxa <- dplyr::distinct(data_cond)
 
 #Name update using GBIF via taxize
@@ -81,16 +92,21 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
   out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 12))
   colnames(out) <- c("new_name", "new_author", "new_full_name", "kingdom",
                      "phylum", "class", "order", "family",
-                     "genus", "confidence",
-                     "match_type", "error")
+                     "genus", "taxon_conf",
+                     "taxon_matchtype", "error")
   unique_taxa <- cbind(unique_taxa,out)
   unique_taxa[is.na(unique_taxa)] <- ""
 
   for (i in 1:length(unique_taxa$query_name)){
     one_row_analysis <- FALSE
     gbif_new_key <- ""
-    gbif_out_df <- taxize::get_gbifid_(sci = unique_taxa$query_full_name[i], method = "backbone", messages=status_feed)[[unique_taxa$query_full_name[i]]]
-    if (nrow(gbif_out_df) == 0){ #No records returned from GBIF
+    if (unique_taxa$query_full_name[i]==""){
+      blank <- TRUE
+    }else{
+      blank <- FALSE
+      gbif_out_df <- taxize::get_gbifid_(sci = unique_taxa$query_full_name[i], method = "backbone", messages=status_feed)[[unique_taxa$query_full_name[i]]]
+    }
+    if (nrow(gbif_out_df) == 0 | blank==TRUE){ #No records returned from GBIF OR the query was blank (i.e. ""); blanks cause errors if submitted in get_gbif_ query
       unique_taxa$error[i] <- "error5"
     } else{ #One or more records returned from GBIF
       if (unique_taxa$query_authorship[i] != ""){#Author listed for input record
@@ -111,6 +127,7 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
         }
         if (nrow(gbif_out_rows)==1){#one match, can be FUZZY or EXACT
           one_row_analysis <- TRUE
+          gbif_out_row <- gbif_out_rows
         }
         if (nrow(gbif_out_rows)>1) {#more than one match, can be all FUZZY or all EXACT
           for (j in 1:nrow(gbif_out_rows)){#Check if all matches lead to the same valid or updated name
@@ -133,11 +150,17 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
                 gbif_out_row <- gbif_out_rows[gbif_out_rows$status== "ACCEPTED",]
               }else{#When matches are all SYNONYM status
                 gbif_new_key <- gbif_out_rows$new_key[1]
-                gbif_out_row <- gbif_out_rows[1,]#Get matchtype and confidence info from best (highest conf) SYNONYM match
+                gbif_out_row <- gbif_out_rows[1,]#Get matchtype and taxon_conf info from best (highest conf) SYNONYM match
               }
             }
-          } else {#Matches have different new keys - can't update name
-            unique_taxa$error[i] <- "error4"
+          } else {#Matches have different new keys - can't update name; unless...
+            if (force_accepted == T & "ACCEPTED" %in% gbif_out_rows$status){#pick ACCEPTED gbif match and proceed with name update regardless of how "accurate" the match really is
+              one_row_analysis <- TRUE
+              gbif_out_row <- gbif_out_rows[gbif_out_rows$status == "ACCEPTED",][1,]
+            }else{#pick_accpted option is FALSE; won't update name
+              unique_taxa$error[i] <- "error4"
+            }
+
           }
         }
       }
@@ -146,8 +169,8 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
       if (gbif_out_row$status == "ACCEPTED"){ #Don't need to go to "new Key" gbif page
         unique_taxa$new_full_name[i] <- gbif_out_row$scientificname
         unique_taxa$new_name[i] <- gbif_out_row$canonicalname
-        unique_taxa$confidence[i] <- gbif_out_row$confidence
-        unique_taxa$match_type[i] <- gbif_out_row$matchtype
+        unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
+        unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
         unique_taxa$new_author[i] <- gsub(paste(gbif_out_row$canonicalname, " ", sep = ""), "", gbif_out_row$scientificname)
         if (is.null(gbif_out_row$genus) == "FALSE"){unique_taxa$genus[i] <- gbif_out_row$genus}
         if (is.null(gbif_out_row$family) == "FALSE"){unique_taxa$family[i] <- gbif_out_row$family}
@@ -175,8 +198,8 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
         }else{#New name is ACCEPTED
           unique_taxa$new_name[i] <- key_record$canonicalName
           unique_taxa$new_full_name[i] <- key_record$scientificName
-          unique_taxa$confidence[i] <- gbif_out_row$confidence
-          unique_taxa$match_type[i] <- gbif_out_row$matchtype
+          unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
+          unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
           unique_taxa$new_author[i] <- gsub(paste(key_record$canonicalName, " ", sep = ""), "", key_record$scientificName)
           if (is.null(key_record$genus) == "FALSE"){unique_taxa$genus[i] <- key_record$genus}
           if (is.null(key_record$family) == "FALSE"){unique_taxa$family[i] <- key_record$family}
@@ -196,8 +219,8 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
   out <- data.frame(matrix(nrow=nrow(data_cond),ncol = 13))
   colnames(out) <- c("new_name", "new_author", "new_full_name", "new_kingdom",
                      "new_phylum", "new_class", "new_order", "new_family",
-                     "new_genus", "new_specific_epithet", "confidence",
-                     "match_type", "error")
+                     "new_genus", "new_specific_epithet", "taxon_conf",
+                     "taxon_matchtype", "error")
   data_cond <- cbind(data_cond,out)
   data_cond[is.na(data_cond)] <- ""
 
@@ -214,8 +237,8 @@ taxon_update <- function(data, taxon_name="scientificName", authorship="scientif
     data_cond$new_genus[i] <- new_name_row$genus
     data_cond$new_specific_epithet[i] <- gsub("\\s.*", "", gsub("^\\S*\\s|^\\S*$", "", new_name_row$new_name, perl = TRUE),
                                               perl = TRUE)
-    data_cond$confidence[i] <- new_name_row$confidence
-    data_cond$match_type[i] <- new_name_row$match_type
+    data_cond$taxon_conf[i] <- as.integer(new_name_row$taxon_conf)
+    data_cond$taxon_matchtype[i] <- new_name_row$taxon_matchtype
     data_cond$error[i] <- new_name_row$error
     data_cond$new_name[i] <- new_name_row$new_name
     data_cond$new_author[i] <- new_name_row$new_author
