@@ -6,22 +6,25 @@
 \usage{
 taxon_update(
   data,
-  taxon_name = "scientificName",
-  authorship = "scientificNameAuthorship",
+  taxon_col = "scientificName",
+  authorship_col = "scientificNameAuthorship",
   status_feed = TRUE,
-  species_only = TRUE
+  species_only = TRUE,
+  force_accepted = FALSE
 )
 }
 \arguments{
 \item{data}{Dataframe containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).}
 
-\item{taxon_name}{Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).}
+\item{taxon_col}{Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).}
 
-\item{authorship}{Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets).}
+\item{authorship_col}{Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets).}
 
-\item{status_feed}{Logical specifiying whether the progress of taxa names being queried in the GBIF database should be printed on the console.}
+\item{status_feed}{Logical. If TRUE, progress of taxa names being queried in the GBIF database is printed on the console.}
 
-\item{species_only}{Logical specifiying whether records not identified to the species-level should be removed from the dataset.}
+\item{species_only}{Logical. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.}
+
+\item{force_accepted}{Logical. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.}
 }
 \value{
 The input dataframe with the following output fields appended:
@@ -35,9 +38,17 @@ The input dataframe with the following output fields appended:
 \item{new_family}{family classification based on the new scientific name}
 \item{new_genus}{genus associated with the new scientific name}
 \item{new_specific_epithet}{specific epithet asscociated with the new scientific name}
-\item{confidence}{confidence score (0-100) for match quality of the full scientific name. Ex: "Trametes versicolor (L.) Lloyd" in sporocarp dataset matched with "Trametes versicolor (L.) Lloyd" in GBIF database would give a confidence score of 100.}
-\item{match_type}{refers to match type of the canonical name. EXACT means a perfect match. Ex: "Trametes versicolor" in sporocarp dataset matched to "Trametes versicolor" in GBIF database. FUZZY means an imperfect match, likely due to spelling errors. Ex: "Trametes versacolor" in sporocarp dataset matched with "Trametes versicolor" in GBIF database.}
-\item{error}{error code for why a name could not be validated or updated. See function code for information on specific error codes.}
+\item{taxon_conf}{confidence score (0-100) for match quality of the full scientific name. Ex: "Trametes versicolor (L.) Lloyd" in sporocarp dataset matched with "Trametes versicolor (L.) Lloyd" in GBIF database would give a confidence score of 100.}
+\item{taxon_matchtype}{refers to match type of the canonical name. EXACT means a perfect match. Ex: "Trametes versicolor" in sporocarp dataset matched to "Trametes versicolor" in GBIF database. FUZZY means an imperfect match, likely due to spelling errors. Ex: "Trametes versacolor" in sporocarp dataset matched with "Trametes versicolor" in GBIF database.}
+\item{error}{error code for why a name could not be validated or updated.
+error1: name has doubtful taxonomic status (not accepted as a valid taxon and has no valid synonyms).
+error2: name has no authorship listed and all GBIF matches are of a higher taxonomic rank.
+error3: name has no authorship listed and all GBIF matches have doubtful taxonomic status.
+error4: name has no authorship listed and all GBIF matches have different accepted GBIF usage keys (accepted keys correspond to accepted taxa).
+error5: no matches returned from GBIF.
+error6: the synonym of the matched GBIF record has doubtful taxonomic status.
+error7: the synonym of the matched GBIF record is also listed as a synonym (may indicate an error within GBIF).
+error8: name has authorship listed and the best GBIF match is of a higher taxonomic rank.}
 }
 \description{
 Validates or updates the scientific names of fungi, and their associated taxonomic classification, based on currently accepted scientific consensus listed in the \href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
@@ -46,7 +57,7 @@ Validates or updates the scientific names of fungi, and their associated taxonom
 Queries the GBIF database for each taxon, via \code\link[taxize]{get_gbifid_}
 in the taxize package (Chamberlain and Szocs 2013; Chamberlain et al. 2020), after correcting any erroneous capitalizations of specific epithets (e.g. "Pleurotus Ostreatus").
 If a taxon name is mispelled in the input dataset, the best approximate match is selected from the GBIF match results.
-See \code{confidence} and \code{match_type} in the "Value" section for more details about approximate matches.
+See \code{taxon_conf} and \code{taxon_matchtype} in the "Value" section for more details about approximate matches.
 Note that an internet connection is required to retrieve data from the GBIF database.\cr
 \cr
 If a queried taxon is matched to a GBIF record and that record has "accepted" taxonomic

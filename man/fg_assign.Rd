@@ -20,17 +20,17 @@ fg_assign(
 
 \item{url}{URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.}
 
-\item{phylum}{Character string specifying the phylum column name. Default is "new_phylum" (name given in the output of \code{\link[fungarium]{taxon_update}}).}
+\item{phylum_col}{Character string specifying the phylum column name. Default is "new_phylum" (name given in the output of \code{\link[fungarium]{taxon_update}}).}
 
-\item{class}{Character string specifying the class column name. Default is "new_class".}
+\item{class_col}{Character string specifying the class column name. Default is "new_class".}
 
-\item{order}{Character string specifying the order column name. Default is "new_order".}
+\item{order_col}{Character string specifying the order column name. Default is "new_order".}
 
-\item{family}{Character string specifying the family column name. Default is "new_family".}
+\item{family_col}{Character string specifying the family column name. Default is "new_family".}
 
-\item{genus}{Character string specifying the genus column name. Default is "new_genus".}
+\item{genus_col}{Character string specifying the genus column name. Default is "new_genus".}
 
-\item{species}{Character string specifying the species column name (i.e. full canonical name, not just specific epithet). Default is "new_name".}
+\item{species_col}{Character string specifying the species column name (i.e. full canonical name, not just specific epithet). Default is "new_name".}
 }
 \value{
 \preformatted{      Returns the input dataframe with FUNGuild assignments appended.

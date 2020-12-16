@@ -2,44 +2,69 @@
 % Please edit documentation in R/get_fips.R
 \name{get_fips}
 \alias{get_fips}
-\title{Assign fips codes}
+\title{Fix mispelled names and assign fips codes to US states and counties}
 \usage{
 get_fips(
-  df,
+  data,
   state_col = "stateProvince",
   county_col = "county",
-  counties = TRUE
+  assign_counties = TRUE
 )
 }
 \arguments{
-\item{df}{Dataframe containing a column with state names and (optionally) a column of county names.}
+\item{data}{Dataframe containing a column with state names and (optionally) a column of county names.}
 
 \item{state_col}{Character string specifying state column name. Defaults to "stateProvince" (name used by MyCoPortal).}
 
 \item{county_col}{Character string specifying county column name. Defaults to "county" (name used by MyCoPortal).}
 
-\item{counties}{Logical, if TRUE fips codes are retruned for states AND counties in the input dataframe}
+\item{assign_counties}{Logical. If TRUE, fips codes are assigned for states AND counties. If FALSE, only state fips codes are assigned.}
 }
 \value{
-Returns input dataframe with fips codes appended:
-\item{state_fips}{Two digit state fips code.}
-\item{county_fips}{Five digit county fips code.}
-\item{state_matchtype}{}
-\item{state_conf}{}
-\item{county_matchtype}{}
-\item{county_conf}{}
+Returns input dataframe with the following output fields appended:
+\item{state_name}{Character string. Matched state name.}
+\item{state_fips}{Character string. Two digit state fips code.}
+\item{state_matchtype}{Character string.
+EXACT: a state name was matched exactly to the state listed in the fungal dataset;
+PARTIAL: a state name was matched partially to the state listed in the fungal dataset;
+MISPELLED: a state name was matched approximately to the mispelled state listed in the fungal dataset;
+NONE: a state name could not be matched to the state listed in the fungal dataset.}
+\item{state_conf}{Integer. The confidence score when a mispelled state name is approximately matched (0-100).
+Names with NONE, EXACT, or PARTIAL matchtypes all get a score of 100.}
+\item{county_name}{Character string. Matched county name.}
+\item{county_fips}{Character string. Five digit county fips code.}
+\item{county_matchtype}{Character string.
+EXACT: a county name was matched exactly to the county listed in the fungal dataset;
+PARTIAL: a county name was matched partially to the county listed in the fungal dataset;
+MISPELLED: a county name was matched approximately to the mispelled county listed in the fungal dataset;
+NONE: a county name could not be matched to the county listed in the fungal dataset.}
+\item{county_conf}{Integer. Confidence score when a mispelled county name is approximately matched (0-100).
+Names with NONE, EXACT, or PARTIAL matchtypes all get a score of 100.}
 }
 \description{
-Assigns fips codes to states or counties.
+Assigns fips codes to US states or counties/county-equivalents. When a name is mispelled,
+a fips code and the correctly spelled name is assigned using approximate
+name matching algorithms.
 }
 \details{
-Fips codes are assigned based on reference data from...\cr
+Fips codes are assigned based on 2019 reference data from the
+\href{https://www.census.gov/geographies/reference-files/2019/demo/popest/2019-fips.html}{US Census Bureau}.
+County data includes counties and county-equivalents (e.g. parishes, boroughs, census areas, independent cities)
+for the District of Columbia, Puerto Rico, and all 50 US states.\cr
 \cr
 When assigning fips codes, approximate name matches are possible
 when names have variable nomenclature (e.g. "Anoka", "Anoka Co.", "Anoka County") or are simply
-mispelled (e.g "Florda"). See "Return" sections for ways to validate the quality of
-approximate matches.
+mispelled (e.g "Florda"). See "Value" section for validating the quality of
+approximate matches.\cr
+\cr
+Only current county/county-equivalent names (as of December 2020) are used for assigning fips.
+Fungal records from counties that had substaintially different names in the past or
+counties that no longer exist (e.g. Bedford City) may not have fips codes assigned.
+The only way to circumvent this issue is to include ALL historical names for every county in the
+reference dataset, which currently has not been done.
 }
 \examples{
+MP_data <- mycoportal_tab("Pleurotus") #Retrieve fungal data from MyCoPortal
+MP_data <- get_fips(MP_data) #Assign fips codes to counties listed in fungal records
 
 }
