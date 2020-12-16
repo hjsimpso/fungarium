@@ -20,15 +20,16 @@ knitr::opts_chunk$set(
 
 An R package for enhancing the access and analysis of fungaria collections data. 
 
+## Introduction
 
-## Installing fungarium
+### Installing fungarium
 
 ```{r installation, include=TRUE, eval=FALSE, echo=TRUE}
 install.packages("devtools") #Install 'devtools' (if not already installed)
 devtools::install_github("hjsimpso/fungarium") #Retrieve fungarium package from github repository and install
 ```
 
-## Installing Docker
+### Installing Docker
 
 Docker software (https://docs.docker.com/get-started/overview/) needs to be installed on your system in order to utilize the `mycoportal_tab` function. All other functions in the fungarium package do not require Docker, so if you do not wish to utilize `mycoportal_tab` you do not need to install Docker.
 

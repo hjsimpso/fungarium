@@ -10,14 +10,16 @@
 An R package for enhancing the access and analysis of fungaria
 collections data.
 
-## Installing fungarium
+## Introduction
+
+### Installing fungarium
 
 ``` r
 install.packages("devtools") #Install 'devtools' (if not already installed)
 devtools::install_github("hjsimpso/fungarium") #Retrieve fungarium package from github repository and install
 ```
 
-## Installing Docker
+### Installing Docker
 
 Docker software (<https://docs.docker.com/get-started/overview/>) needs
 to be installed on your system in order to utilize the `mycoportal_tab`
