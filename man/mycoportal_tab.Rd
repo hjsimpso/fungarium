@@ -108,7 +108,7 @@ depends on each system and the available memory, but when memory limits are reac
 during import the resulting data.frame may be truncated; however, the MyCoPortal file will still
 be stored in the specified download directory. To avoid truncation, try increasing memory
 availability prior to using \code{mycoportal_tab} or set the \code{read_file} option
-to FALSE and import the file into R manually (via \code\link\link{read.delim}) at a later time when
+to FALSE and import the file into R manually (via \code{\link{read.delim}}) at a later time when
 more memory may be available.
 }
 \examples{
