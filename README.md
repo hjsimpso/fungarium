@@ -59,3 +59,11 @@ query2[1:10, c("scientificName", "country", "stateProvince")] # Preview dataset
 query3 <- mycoportal_tab("/path/to/directory", "Polyporales", taxon_type = "4", country = "United States", state="Minnesota", messages = F, rec_numb = F) 
 query3[1:10, c("scientificName", "country", "stateProvince")] # Preview dataset
 ```
+
+## Meta
+
+  - Get citation information for fungarium in R via `citation(package =
+    'taxize')`
+  - This package is released with a [Contributor Code of
+    Conduct](https://github.com/hjsimpso/fungarium/blob/main/CODE_OF_CONDUCT.md).
+    By contributing to this project, you agree to abide by its terms.
