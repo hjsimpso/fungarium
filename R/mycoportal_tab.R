@@ -30,7 +30,6 @@
 #' @param coll_date2 Character string specifying collection data from, e.g., "19 August 2018"
 #' @param synonyms Logical. If TRUE, synonyms from MycoBank and IndexFungorum are searched
 #' @param rec_numb Logical. If TRUE, the number of available records is displayed and user is prompted with yes/no question about proceeding with the download. If FASLE, number of records is not displayed and download proceeds automatically.
-#' @param encoding Character string specifying the desired encoding for the downloaded file. "ISO-8859-1" (the default) or "UTF-8"
 #'
 #' @details
 #' Docker software must be installed and running on your system before using this function.
@@ -72,7 +71,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
                     south_lat = NULL, west_lon = NULL, east_lon = NULL, point_lat = NULL,
                     point_lon = NULL, radius = NULL, collector = NULL, collector_num = NULL,
                     coll_date1 = NULL, coll_date2 = NULL, synonyms = TRUE, messages = TRUE,
-                    rec_numb=TRUE, read_files=TRUE, encoding = "ISO-8859-1")
+                    rec_numb=TRUE, read_files=TRUE)
 {
   #check for dependencies
   if (!requireNamespace("RSelenium", quietly = TRUE)) {
@@ -136,9 +135,6 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   }
   if(length(unique(c(is.null(west_lon), is.null(east_lon), is.null(north_lat), is.null(south_lat))))>1){
     stop("Please enter values for all lat/long bounding box parameters or keep them all NULL")
-  }
-  if(!encoding %in% c("ISO-8859-1", "UTF-8")){
-    stop("Please enter a valid encoding type")
   }
 
   #check for internet connection
@@ -388,11 +384,6 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
       Sys.sleep(2)
     }
     webElem$clickElement()
-    #select UTF-8 unicode encoding
-    if(encoding=="UTF-8"){
-      webElem <- dr$findElement(using = "xpath", value = '/html/body/table/tbody/tr[2]/td/div[2]/div[2]/form/fieldset/table/tbody/tr[4]/td[2]/div/input[2]')
-      webElem$clickElement()
-    }
     #select tab file option
     webElem <- dr$findElement(using = "xpath", value = '//*[@id="innertext"]/div[2]/form/fieldset/table/tbody/tr[3]/td[2]/div/input[2]')
     webElem$clickElement()
@@ -421,8 +412,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
     system2("docker", c("rm", "-f", "sel_con"), stdout = F, stderr = F)
     on.exit()
     if(messages){message("Reading file into R...")}
-    if(encoding=="ISO-8859-1"){encoding <- "latin1"}
-    files <- read.delim(paste(download_dir,"/", tab_file, sep=""), colClasses = "character", quote="", encoding = encoding)
+    files <- read.delim(paste(download_dir,"/", tab_file, sep=""), colClasses = "character", quote="", encoding = "latin1")
     if(nrow(files)!=as.integer(recs)){warning("Data.frame truncated due to memory constraints. Full MyCoPortal file can still be found in the specified download directory.")}
     return(files)
 
