@@ -16,11 +16,6 @@
 #' @param metadata_cols  Character vector containing names of columns with trait-relevant metadata. Default names are "occurrenceRemarks", "host", "habitat", and "substrate" (names used in MyCoPortal datasets).
 #'
 #' @return           Returns a dataframe of records with trait-relevant metadata.
-#' @references
-#' \enumerate{
-#'   \item Nguyen NH, Song Z, Bates ST, Branco S, Tedersoo L, Menke J, Schilling JS, Kennedy PG. 2016. FUNGuild: An open annotation tool for parsing fungal community datasets by ecological guild. \emph{Fungal Ecology}, 20: 241-248. doi:10.1016/j.funeco.2015.06.006
-#'   \item Simpson, H.J., Schilling, J.S. 2020. Using aggregated field collections data and the novel R package “fungarium” to investigate fungal fire association. \emph{Mycologia}.
-#' }
 #' @export
 #'
 #' @examples
