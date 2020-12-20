@@ -7,12 +7,12 @@
 fg_assign(
   tax_table,
   url = "http://www.stbates.org/funguild_db.php",
-  phylum = "new_phylum",
-  class = "new_class",
-  order = "new_order",
-  family = "new_family",
-  genus = "new_genus",
-  species = "new_name"
+  phylum_col = "new_phylum",
+  class_col = "new_class",
+  order_col = "new_order",
+  family_col = "new_family",
+  genus_col = "new_genus",
+  species_col = "new_name"
 )
 }
 \arguments{
