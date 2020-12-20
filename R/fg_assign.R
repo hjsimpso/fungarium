@@ -45,7 +45,7 @@ fg_assign <- function(tax_table, url = "http://www.stbates.org/funguild_db.php",
   #download FUNGuild database, convert it to something R interpretable.
   fg <- xml2::read_html(url)
   fg <- rvest::html_text(fg)
-  fg <- jsonlite::fromJSON(gsub("funguild_db", "", fg))
+  fg <- jsonlite::fromJSON(gsub("funguild_db_2", "", fg))
 
   #add columns to tax table for fg output.
   out <- data.frame(matrix(nrow=nrow(tax_table),ncol = 7))
