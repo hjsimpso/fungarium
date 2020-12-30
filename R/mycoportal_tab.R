@@ -398,7 +398,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   }
 
   #Transfer file from selenium container to download_dir
-  tab_file <- system2("docker", c("exec", "sel_con", "ls", "/home/seluser/Downloads"), stdout = T)
+  tryCatch(tab_file <- system2("docker", c("exec", "sel_con", "ls", "/home/seluser/Downloads"), stdout = T))
   while(length(grep(".+\\.tab$",tab_file))==0){
     Sys.sleep(3)
     tab_file <- system2("docker", c("exec", "sel_con", "ls", "/home/seluser/Downloads"), stdout = T)
