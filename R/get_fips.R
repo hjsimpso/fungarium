@@ -58,7 +58,7 @@ get_fips <- function(data, state_col="stateProvince", county_col="county", assig
   }
   #states need to be processed for assigning fips to states or counties
   state_fips <- utils::read.csv(system.file("extdata", "state_fips.csv",
-                                            package = "fungarium"), colClasses = "character")#file contains all US states and territories
+                                            package = "fungarium"), colClasses = "character", encoding="latin1")#file contains all US states and territories
   state_fips$full_1 <- state_fips$full #make column for original state names before making lowercase
   state_fips$abbr <- tolower(state_fips$abbr)#make all abbreviations lowercase
   state_fips$full <- tolower(state_fips$full)#make all state names lowercase
@@ -135,7 +135,7 @@ get_fips <- function(data, state_col="stateProvince", county_col="county", assig
   }
   if(assign_counties==TRUE){
     county_fips <- utils::read.csv(system.file("extdata", "county_fips.csv",
-                                               package = "fungarium"), colClasses = "character")#file contains all US counties (or county equivalents) in all US states and territories
+                                               package = "fungarium"), colClasses = "character", encoding = "latin1")#file contains all US counties (or county equivalents) in all US states and territories
     county_fips$county_1 <- county_fips$county #make column for original county names before making lowercase
     county_fips$county <- tolower(county_fips$county)#make all county names lowercase
     county_fips$county <- gsub(" county", "", county_fips$county)
