@@ -2,7 +2,7 @@
 title: "Example: Taxonomic, geographic, and temporal analyses of fungal fire association"
 author: "Hunter J. Simpson"
 date: "January 19th 2021"
-output: rmarkdown::html_vignette
+output: github_document
 vignette: >
   %\VignetteIndexEntry{Example-Finding_fire_associated_records}
   %\VignetteEngine{knitr::rmarkdown}
