@@ -42,7 +42,7 @@ NONE: a county name could not be matched to the county listed in the fungal data
 Names with NONE, EXACT, or PARTIAL matchtypes all get a score of 100.}
 }
 \description{
-Assigns fips codes to US states or counties/county-equivalents. When a name is mispelled,
+Assigns fips codes to US states/territories or counties/county-equivalents. When a name is mispelled,
 a fips code and the correctly spelled name is assigned using approximate
 name matching algorithms.
 }
@@ -50,7 +50,7 @@ name matching algorithms.
 Fips codes are assigned based on 2019 reference data from the
 \href{https://www.census.gov/geographies/reference-files/2019/demo/popest/2019-fips.html}{US Census Bureau}.
 County data includes counties and county-equivalents (e.g. parishes, boroughs, census areas, independent cities)
-for the District of Columbia, Puerto Rico, and all 50 US states.\cr
+for the District of Columbia, US territories, and all 50 US states.\cr
 \cr
 When assigning fips codes, approximate name matches are possible
 when names have variable nomenclature (e.g. "Anoka", "Anoka Co.", "Anoka County") or are simply
