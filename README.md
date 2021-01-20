@@ -125,6 +125,13 @@ query3_updated <- taxon_update(query3) # Update taxon names before assigning Fun
 guild_data <- fg_assign(query3_updated) # Returns the input dataframe with FunGuild data appended
 ```
 
+## Example trait analysis: fungal fire association
+
+See full
+[example](https://github.com/hjsimpso/fungarium/blob/main/Example_fire_association.md)
+of how `fungarium` was used to help analyze taxonomic, geographic, and
+temporal patterns of fungal fire association.
+
 ## Meta
 
   - Get citation information for fungarium in R via `citation(package =
