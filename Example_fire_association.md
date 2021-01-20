@@ -1,0 +1,192 @@
+Example: Taxonomic, geographic, and temporal analyses of fungal fire
+association
+================
+Hunter J. Simpson
+
+## Download MyCoPortal data
+
+Data is first retrieved from the MyCoPortal
+(<https://mycoportal.org/portal/index.php>) using either
+`mycoportal_tab` or by manually downloading data using the MyCoPortal
+web interface. If downloaded manually, datasets can then be imported
+into R using `read.delim`.
+
+``` r
+#Load package
+library(fungarium) 
+
+#Download all US records for fungi in the subphylum Agaricomycotina
+agaricomycotina <- mycoportal_tab("/path/to/directory", "Agaricomycotina", 
+                                  taxon_type = "4", country = "United States") 
+
+#Download all US records for fungi in the subphylum Pezizomycotina
+pezizomycotina <- mycoportal_tab("/path/to/directory", "Pezizomycotina", 
+                                 taxon_type = "4", country = "United States") 
+
+#Combine datasets
+all_fungi <- rbind(agaricomycotina, pezizomycotina) 
+```
+
+## Update taxon names and clean up
+
+Some MyCoPortal will have outdated or invalid taxonomy; therefore, all
+taxon names need to be either updated or confirmed using currentely
+accepted taxonomic classification.
+
+After updating taxonomy, some records will now be classified outside of
+Agaricomycotina and pezizomycotina. These records need to be removed.
+The filtering step shown below would be easier if subphyla information
+was listed in the output of taxon\_update, but the GBIF utility used by
+taxon\_update only outputs primary taxonomic ranks; therefore, subphyla
+cannot be used directly for filtering.
+
+Note that taxon name updating and filtering was done prior to the
+taxonomic, geographic, and temporal analyses done by Simpson and
+Schilling (2021). This is not necessarily required for geographic and
+temporal analyses; however, you run the risk of including “bad taxa”
+(i.e. taxa that are not actually classified within your originally
+specificied taxonomic group) in your analyses. Thus it is recommended to
+update taxon names and filter before performing any downstream analyses.
+
+``` r
+#Update names and classification
+all_fungi <- taxon_update(all_fungi, species_only=T) 
+
+#Remove records not in the phyla Ascomycota and Basidiomycota
+all_fungi <- all_fungi[all_fungi$new_phylum %in% c("Ascomycota", "Basidiomycota"),] 
+
+#Remove records that are classified in classes not within Agaricomycotina and Pezizomycoyina
+all_fungi <- all_fungi[!all_fungi$new_class %in% c("Ustilaginomycetes", 
+                                                   "Pucciniomycetes",
+                                                   "Agaricostilbomycetes",
+                                                   "Atractiellomycetes",
+                                                   "Cystobasidiomycetes",
+                                                   "Microbotryomycetes",
+                                                   "Exobasidiomycetes",
+                                                   "Neolectomycetes",
+                                                   "Saccharomycetes", 
+                                                   "Wallemiomycetes", 
+                                                   ""),] 
+
+#Remove records with taxon names that could not be updated or confirmed
+all_fungi <- all_fungi[all_fungi$new_name!="",]
+```
+
+## Find fire-associated records
+
+Fire-associated records are identified using a complex regex search
+string of fire-related keywords and phrases. The positive search string
+helps find fire-relevant records, while the negative string helps remove
+records that were falsely identified as fire associated. The negative
+string is not always necessary, escpecially if the positive string has
+been thoroughly optimized.
+
+``` r
+#Specify "positive" search string
+string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+
+#Specify "negative" search string
+string2 <- "(?i)un.?burn(t|ed)"
+
+#Find fire-associated records
+fire_fungi <- find_trait(all_fungi, pos_string=string1, neg_string=string2)
+```
+
+## Calculate taxon-specific fire-associated enrichment factors
+
+To compare the extent of fire association between taxa, fire-associated
+enrichment factors are calculated by dividing the number of
+fire-associated records by the number of total records for each taxon.
+Larger enrichment values indicate stronger fire association (i.e. a
+higher proportion of fire-associated records) for that taxon, in
+comparison to taxa with smaller values.
+
+``` r
+#Count the frequency of each taxon in the total dataset
+counts1 <- plyr::count(all_fungi,vars=c("new_name", "new_author", 
+                                       "new_full_name", "new_kingdom",
+                                       "new_phylum", "new_class", "new_order",
+                                       "new_family", "new_genus",
+                                       "new_specific_epithet"))
+
+#Count the frequency of each taxon in the fire-associated records dataset
+counts2 <- plyr::count(fire_fungi,vars=c("new_full_name"))
+colnames(counts2)[2] <- "fire_freq"
+
+#Merge total frequency and fire frequency data into one dataframe
+counts <- merge(counts1, counts2, by.x="new_full_name", 
+                by.y="new_full_name", all.x=T, all.y=T)
+counts[is.na(counts$fire_freq),"fire_freq"] <- 0
+
+#Use total freq and fire freq to calculate enrichment factors
+counts$fire_ratio <- counts$fire_freq/counts$freq
+
+#(Optional) to increase confidence in calculated enrichment factors, a filtering threshold can be used to remove taxa that have not been thoroughly sampled
+counts <- counts[counts$freq>=5,]#removes taxa that have less than 5 total records
+```
+
+## Calculate county-specific fire-associated enrichment factors
+
+To compare the extent of fungal fire association between counties,
+fire-associated enrichment factors are calculated by dividing the number
+of fire-associated records by the number of total records for each
+county. Larger enrichment values indicate stronger fire association
+(i.e. a higher proportion of fire-associated records) for that county,
+in comparison to counties with smaller values.
+
+``` r
+#Fix mispelled county names and assign fips codes
+all_fungi <- get_fips(all_fungi, assign_counties=T)
+
+#Count the frequency of counties in total dataset
+counts1 <- plyr::count(all_fungi,vars=c("county_fips"))
+
+#Count the frequency of counties in fire dataset
+counts2 <- plyr::count(fire_fungi,vars=c("county_fips"))
+colnames(counts2)[2] <- "fire_freq"
+
+#Merge total frequency and fire frequency data into one dataframe
+counts <- merge(counts1, counts2, by.x="county_fips", 
+                by.y="county_fips", all.x=T, all.y=T)
+counts[is.na(counts$fire_freq),"fire_freq"] <- 0
+
+#Use total freq and fire freq to calculate enrichment factors
+counts$fire_ratio <- counts$fire_freq/counts$freq
+
+#(Optional) to increase confidence in calculated enrichment factors, a filtering threshold can be used to remove counties that have not been thoroughly sampled
+counts <- counts[counts$freq>=5,]#removes counties that have less than 5 total records
+```
+
+## Calculate year-specific fire-associated enrichment factors
+
+To examine changes in fire association over time, fire-associated
+enrichment factors are calculated by dividing the number of
+fire-associated records by the number of total records for each year.
+Larger enrichment values indicate stronger fire association (i.e. a
+higher proportion of fire-associated records) for that year, in
+comparison to years with smaller values.
+
+``` r
+#Filter out records with no year or within a certain year range
+all_fungi <- all_fungi[all_fungi$year!="",] #remove blanks
+all_fungi$year_int <- as.integer(all_fungi$year) #convert years to integers
+all_fungi <- all_fungi[all_fungi$year_int %in% c(1800:2019),]
+
+#Count the frequency of each year in total dataset
+counts1 <- plyr::count(all_fungi,vars=c("year"))
+
+#Count the frequency of each year in fire dataset
+counts2 <- plyr::count(fire_fungi,vars=c("year"))
+colnames(counts2)[2] <- "fire_freq"
+
+#Merge total frequency and fire frequency data into one dataframe
+counts <- merge(counts1, counts2, by.x="year", 
+                by.y="year", all.x=T, all.y=T)
+counts[is.na(counts$fire_freq),"fire_freq"] <- 0
+
+#Use total freq and fire freq to calculate enrichment factors
+counts$fire_ratio <- counts$fire_freq/counts$freq
+
+#(Optional) to increase confidence in calculated enrichment factors, a filtering threshold can be used to remove years that have not been thoroughly sampled
+counts <- counts[counts$freq>=5,]#removes years that have less than 5 total records; likely more useful for shorter time intervals, as most years are likely to have many records
+```
