@@ -1,6 +1,6 @@
 #' Fix mispelled names and assign fips codes to US states and counties
 #'
-#' Assigns fips codes to US states or counties/county-equivalents. When a name is mispelled,
+#' Assigns fips codes to US states/territories or counties/county-equivalents. When a name is mispelled,
 #' a fips code and the correctly spelled name is assigned using approximate
 #' name matching algorithms.
 #'
@@ -32,7 +32,7 @@
 #' @details Fips codes are assigned based on 2019 reference data from the
 #' \href{https://www.census.gov/geographies/reference-files/2019/demo/popest/2019-fips.html}{US Census Bureau}.
 #' County data includes counties and county-equivalents (e.g. parishes, boroughs, census areas, independent cities)
-#' for the District of Columbia, Puerto Rico, and all 50 US states.\cr
+#' for the District of Columbia, US territories, and all 50 US states.\cr
 #' \cr
 #' When assigning fips codes, approximate name matches are possible
 #' when names have variable nomenclature (e.g. "Anoka", "Anoka Co.", "Anoka County") or are simply
@@ -56,19 +56,24 @@ get_fips <- function(data, state_col="stateProvince", county_col="county", assig
   if (!is.data.frame(data)){
     stop('Input data needs to be a data.frame.')
   }
+  if (nrow(data)==0){
+    stop('Error: no data in input data.frame.')
+  }
   #states need to be processed for assigning fips to states or counties
   state_fips <- utils::read.csv(system.file("extdata", "state_fips.csv",
                                             package = "fungarium"), colClasses = "character", encoding="latin1")#file contains all US states and territories
   state_fips$full_1 <- state_fips$full #make column for original state names before making lowercase
   state_fips$abbr <- tolower(state_fips$abbr)#make all abbreviations lowercase
   state_fips$full <- tolower(state_fips$full)#make all state names lowercase
+
   unique_states <- data.frame(states=unique(tolower(data[[state_col]])))#make a list of unique states in fungi file then make them all lowercase
   unique_states$state_matchtype <- "NONE"
   unique_states$state_name <- ""
   unique_states$state_fips <- ""
   unique_states$state_conf <- 100
   for(i in 1:nrow(unique_states)){#assign fips to each unique state in fungi dataset
-    if (unique_states$states[i] %in% c("washington, dc", "washington, d.c.", "washington dc", "washington d.c.", "d.c.")){#Manually ID variable DC spellings to avoid incorrect ID as Washington state
+    if(unique_states$states[i]==""){#state is blank; can't assign fips
+    }else if (unique_states$states[i] %in% c("washington, dc", "washington, d.c.", "washington dc", "washington d.c.", "d.c.")){#Manually ID variable DC spellings to avoid incorrect ID as Washington state
       unique_states$state_fips[i] <- state_fips[state_fips$abbr=="dc",]$fips
       unique_states$state_name[i] <- state_fips[state_fips$abbr=="dc",]$full_1
       unique_states$state_conf[i] <- 100
@@ -80,8 +85,12 @@ get_fips <- function(data, state_col="stateProvince", county_col="county", assig
         unique_states$state_name[i] <- fips_row$full_1
         unique_states$state_matchtype[i] <- "EXACT"
       }else{#no exact match; must use approximate matching
-        if(unique_states$states[i]==""){#state is blank; can't assign fips
-        }else{#state is not blank
+        fips_row <- state_fips[state_fips$abbr == gsub(",$|\\?$|\\.$", "", unique_states$states[i])|state_fips$full == gsub(",$|\\?$|\\.$", "", unique_states$states[i]),]#find state match with comma, period, or question mark removed
+        if(nrow(fips_row)>0){#valid state name has comma, period, or question mark at end; common issue in Mycoportal data
+          unique_states$state_fips[i] <- fips_row$fips
+          unique_states$state_name[i] <- fips_row$full_1
+          unique_states$state_matchtype[i] <- "PARTIAL"
+        }else{#state doesn't have comma, period, or question mark at end
           grep_match <- state_fips[state_fips$full %in% grep(paste("\\Q",unique_states$states[i], "\\E", sep=""), state_fips$full, value=T),]#check is query name can be found in states names
           if (nrow(grep_match)>1){#more than one partial match; can't assign fips
           }else{#zero or one partial matches
