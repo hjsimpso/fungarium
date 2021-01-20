@@ -3,6 +3,11 @@ association
 ================
 Hunter J. Simpson
 
+## Introduction
+
+The following R code is based on the methods used by Simpson and
+Schilling (2021).
+
 ## Download MyCoPortal data
 
 Data is first retrieved from the MyCoPortal
@@ -29,16 +34,16 @@ all_fungi <- rbind(agaricomycotina, pezizomycotina)
 
 ## Update taxon names and clean up
 
-Some MyCoPortal will have outdated or invalid taxonomy; therefore, all
-taxon names need to be either updated or confirmed using currentely
-accepted taxonomic classification.
+Some MyCoPortal records will have outdated or invalid taxonomy;
+therefore, all taxon names need to be either updated or confirmed using
+currently accepted taxonomic classification.
 
-After updating taxonomy, some records will now be classified outside of
-Agaricomycotina and pezizomycotina. These records need to be removed.
-The filtering step shown below would be easier if subphyla information
-was listed in the output of taxon\_update, but the GBIF utility used by
-taxon\_update only outputs primary taxonomic ranks; therefore, subphyla
-cannot be used directly for filtering.
+After updating taxonomy (in the example below), some records will now be
+classified outside of Agaricomycotina and Pezizomycotina. These records
+need to be removed. The filtering step shown below would be easier if
+subphyla information was listed in the output of taxon\_update, but the
+GBIF utility used by taxon\_update only outputs primary taxonomic ranks;
+therefore, subphyla cannot be used directly for filtering.
 
 Note that taxon name updating and filtering was done prior to the
 taxonomic, geographic, and temporal analyses done by Simpson and
@@ -159,7 +164,7 @@ counts <- counts[counts$freq>=5,]#removes counties that have less than 5 total r
 
 ## Calculate year-specific fire-associated enrichment factors
 
-To examine changes in fire association over time, fire-associated
+To examine changes in fungal fire association over time, fire-associated
 enrichment factors are calculated by dividing the number of
 fire-associated records by the number of total records for each year.
 Larger enrichment values indicate stronger fire association (i.e. a
@@ -167,10 +172,10 @@ higher proportion of fire-associated records) for that year, in
 comparison to years with smaller values.
 
 ``` r
-#Filter out records with no year or within a certain year range
+#Filter out records with no year or not within a certain year range
 all_fungi <- all_fungi[all_fungi$year!="",] #remove blanks
 all_fungi$year_int <- as.integer(all_fungi$year) #convert years to integers
-all_fungi <- all_fungi[all_fungi$year_int %in% c(1800:2019),]
+all_fungi <- all_fungi[all_fungi$year_int %in% c(1800:2019),] #filter out records not in the year range of 1800 to 2019
 
 #Count the frequency of each year in total dataset
 counts1 <- plyr::count(all_fungi,vars=c("year"))
@@ -190,3 +195,9 @@ counts$fire_ratio <- counts$fire_freq/counts$freq
 #(Optional) to increase confidence in calculated enrichment factors, a filtering threshold can be used to remove years that have not been thoroughly sampled
 counts <- counts[counts$freq>=5,]#removes years that have less than 5 total records; likely more useful for shorter time intervals, as most years are likely to have many records
 ```
+
+## References
+
+Simpson, HJ, Schilling, JS. 2021. Using aggregated field collections
+data and the novel R package FUNGARIUM to investigate fungal fire
+association. Mycologia. (IN REVIEW)
