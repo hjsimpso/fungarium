@@ -59,8 +59,8 @@
 #' Jari Oksanen, Bastian Greshake Tzovaras, Philippe Marchand, Vinh Tran, Maëlle
 #' Salmon, Gaopeng Li, and Matthias Grenié. (2020) taxize: Taxonomic information
 #' from around the web. R package version 0.9.95. https://github.com/ropensci/taxize
-#' \item Simpson, H.J., Schilling, J.S. 2020. Using aggregated field collections data
-#' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}.
+#' \item Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data
+#' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
 #' }
 #' @export
 #'
@@ -74,13 +74,12 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
     stop('Input data needs to be a data.frame.')
   }
   #Remove all non species-level taxa if species_only is TRUE; also removes any records with blanks in taxon name column
-  if (species_only==TRUE){data <- subset(data, (data[[taxon_col]] %in% grep("(?i)[a-z]+\\s[a-z]+.*",data[[taxon_col]], value = T)))}
+  if (species_only==TRUE){data <- data[grep("(?i)[a-z]+\\s[a-z]+",data[[taxon_col]]),]}
   #Create new data frame with only name and authorship info
-  data_cond <- data.frame(cbind(data[[taxon_col]], data[[authorship_col]]))
-  colnames(data_cond) <- c("query_name", "query_authorship")
+  data_cond <- data.frame(query_name=data[[taxon_col]], query_authorship=data[[authorship_col]])
   #Fix erroneous capitalization of specific epithet
   data_cond$query_name <- tolower(data_cond$query_name)
-  data_cond$query_name <- gsub("([a-z])(.*)", "\\U\\1\\L\\2", data_cond$query_name, perl = TRUE)
+  data_cond$query_name <- gsub("([a-z])(.*)", "\\U\\1\\L\\2", data_cond$query_name, perl=T)
   #Create new table with list of unique species
   for(i in 1:nrow(data_cond)){
     data_cond$query_full_name[i] <- ifelse(data_cond$query_authorship[i]!="", paste(data_cond$query_name[i], data_cond$query_authorship[i], sep = " "), data_cond$query_name[i])
@@ -89,15 +88,15 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
 
 #Name update using GBIF via taxize
   #Add columns for name update output
-  out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 12))
-  colnames(out) <- c("new_name", "new_author", "new_full_name", "kingdom",
-                     "phylum", "class", "order", "family",
-                     "genus", "taxon_conf",
+  out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 13))
+  colnames(out) <- c("new_name", "new_author", "new_full_name", "new_kingdom",
+                     "new_phylum", "new_class", "new_order", "new_family",
+                     "new_genus", "new_specific_epithet", "taxon_conf",
                      "taxon_matchtype", "error")
   unique_taxa <- cbind(unique_taxa,out)
   unique_taxa[is.na(unique_taxa)] <- ""
 
-  for (i in 1:length(unique_taxa$query_name)){
+  for (i in 1:nrow(unique_taxa)){
     one_row_analysis <- FALSE
     gbif_new_key <- ""
     if (unique_taxa$query_full_name[i]==""){
@@ -172,12 +171,12 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
         unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
         unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
         unique_taxa$new_author[i] <- gsub(paste(gbif_out_row$canonicalname, " ", sep = ""), "", gbif_out_row$scientificname)
-        if (is.null(gbif_out_row$genus) == "FALSE"){unique_taxa$genus[i] <- gbif_out_row$genus}
-        if (is.null(gbif_out_row$family) == "FALSE"){unique_taxa$family[i] <- gbif_out_row$family}
-        if (is.null(gbif_out_row$order) == "FALSE"){unique_taxa$order[i] <- gbif_out_row$order}
-        if (is.null(gbif_out_row$class) == "FALSE"){unique_taxa$class[i] <- gbif_out_row$class}
-        if (is.null(gbif_out_row$phylum) == "FALSE"){unique_taxa$phylum[i] <- gbif_out_row$phylum}
-        unique_taxa$kingdom[i] <- gbif_out_row$kingdom
+        if (is.null(gbif_out_row$genus) == "FALSE"){unique_taxa$new_genus[i] <- gbif_out_row$genus}
+        if (is.null(gbif_out_row$family) == "FALSE"){unique_taxa$new_family[i] <- gbif_out_row$family}
+        if (is.null(gbif_out_row$order) == "FALSE"){unique_taxa$new_order[i] <- gbif_out_row$order}
+        if (is.null(gbif_out_row$class) == "FALSE"){unique_taxa$new_class[i] <- gbif_out_row$class}
+        if (is.null(gbif_out_row$phylum) == "FALSE"){unique_taxa$new_phylum[i] <- gbif_out_row$phylum}
+        unique_taxa$new_kingdom[i] <- gbif_out_row$kingdom
       } else {# status is not accepted
         if (gbif_out_row$status == "DOUBTFUL"){
           unique_taxa$error[i] <- "error1"
@@ -201,12 +200,12 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
           unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
           unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
           unique_taxa$new_author[i] <- gsub(paste(key_record$canonicalName, " ", sep = ""), "", key_record$scientificName)
-          if (is.null(key_record$genus) == "FALSE"){unique_taxa$genus[i] <- key_record$genus}
-          if (is.null(key_record$family) == "FALSE"){unique_taxa$family[i] <- key_record$family}
-          if (is.null(key_record$order) == "FALSE"){unique_taxa$order[i] <- key_record$order}
-          if (is.null(key_record$class) == "FALSE"){unique_taxa$class[i] <- key_record$class}
-          if (is.null(key_record$phylum) == "FALSE"){unique_taxa$phylum[i] <- key_record$phylum}
-          unique_taxa$kingdom[i] <- key_record$kingdom
+          if (is.null(key_record$genus) == "FALSE"){unique_taxa$new_genus[i] <- key_record$genus}
+          if (is.null(key_record$family) == "FALSE"){unique_taxa$new_family[i] <- key_record$family}
+          if (is.null(key_record$order) == "FALSE"){unique_taxa$new_order[i] <- key_record$order}
+          if (is.null(key_record$class) == "FALSE"){unique_taxa$new_class[i] <- key_record$class}
+          if (is.null(key_record$phylum) == "FALSE"){unique_taxa$new_phylum[i] <- key_record$phylum}
+          unique_taxa$new_kingdom[i] <- key_record$kingdom
         }
       }
     }
@@ -215,37 +214,9 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
   if(exists("gbif_out_row", inherits = FALSE)){remove(gbif_out_row)}
 
 #Put new names into original input file
-  #Add columns for name update output
-  out <- data.frame(matrix(nrow=nrow(data_cond),ncol = 13))
-  colnames(out) <- c("new_name", "new_author", "new_full_name", "new_kingdom",
-                     "new_phylum", "new_class", "new_order", "new_family",
-                     "new_genus", "new_specific_epithet", "taxon_conf",
-                     "taxon_matchtype", "error")
-  data_cond <- cbind(data_cond,out)
-  data_cond[is.na(data_cond)] <- ""
-
-  for (i in 1:length(data_cond$query_name)){
-    new_name_row <- unique_taxa[unique_taxa$query_full_name == data_cond$query_full_name[i], ]
-    data_cond$new_name[i] <- new_name_row$new_name
-    data_cond$new_author[i] <- new_name_row$new_author
-    data_cond$new_full_name[i] <- new_name_row$new_full_name
-    data_cond$new_kingdom[i] <- new_name_row$kingdom
-    data_cond$new_phylum[i] <- new_name_row$phylum
-    data_cond$new_class[i] <- new_name_row$class
-    data_cond$new_order[i] <- new_name_row$order
-    data_cond$new_family[i] <- new_name_row$family
-    data_cond$new_genus[i] <- new_name_row$genus
-    data_cond$new_specific_epithet[i] <- gsub("\\s.*", "", gsub("^\\S*\\s|^\\S*$", "", new_name_row$new_name, perl = TRUE),
-                                              perl = TRUE)
-    data_cond$taxon_conf[i] <- as.integer(new_name_row$taxon_conf)
-    data_cond$taxon_matchtype[i] <- new_name_row$taxon_matchtype
-    data_cond$error[i] <- new_name_row$error
-    data_cond$new_name[i] <- new_name_row$new_name
-    data_cond$new_author[i] <- new_name_row$new_author
-    data_cond$new_full_name[i] <- new_name_row$new_full_name
-  }
-
-  data <- cbind(data, data_cond[,!colnames(data_cond) %in% c("query_name", "query_authorship")])#Remove query_name and query_authorship; keep "query_full_name" column, contains the exact query submitted to GBIF
+  data_cond <- dplyr::inner_join(data_cond, unique_taxa, by="query_full_name")
+  data_cond$new_specific_epithet <- gsub("^\\S+\\s|^\\S+$", "", data_cond$new_name)
+  data <- cbind(data, data_cond[,!colnames(data_cond) %in% c("query_name.x", "query_authorship.x", "query_name.y", "query_authorship.y")])#Remove query_name and query_authorship; keep "query_full_name" column, contains the exact query submitted to GBIF
 
   return(data)
 }
