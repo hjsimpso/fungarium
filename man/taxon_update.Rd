@@ -87,8 +87,8 @@ Boettiger, Karthik Ram, Ignasi Bartomeus, John Baumgartner, James O'Donnell,
 Jari Oksanen, Bastian Greshake Tzovaras, Philippe Marchand, Vinh Tran, Maëlle
 Salmon, Gaopeng Li, and Matthias Grenié. (2020) taxize: Taxonomic information
 from around the web. R package version 0.9.95. https://github.com/ropensci/taxize
-\item Simpson, H.J., Schilling, J.S. 2020. Using aggregated field collections data
-and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}.
+\item Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data
+and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
 }
 }
 \author{
