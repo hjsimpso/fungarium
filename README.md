@@ -135,7 +135,7 @@ temporal patterns of fungal fire association.
 ## Meta
 
   - Get citation information for fungarium in R via `citation(package =
-    'taxize')`
+    'fungarium')`
   - This package is released with a [Contributor Code of
     Conduct](https://github.com/hjsimpso/fungarium/blob/main/CODE_OF_CONDUCT.md).
     By contributing to this project, you agree to abide by its terms.
