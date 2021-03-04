@@ -13,7 +13,7 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
-Imports: dplyr, taxize (>= 0.9.97), NameNeedle, data.table
+Imports: dplyr, taxize (>= 0.9.97), NameNeedle, data.table, tm, plyr
 Suggests: 
     rvest,
     RSelenium,
