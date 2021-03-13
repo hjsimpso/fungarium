@@ -35,17 +35,19 @@ growing on or near other fungal taxa;
 growing in a habitat affected by a particular disturbance (e.g. wind, fire, logging)
 }
 \examples{
-MP_data <- mycoportal_tab("Pleurotus")
-MP_data_updated <- taxon_update(MP_data)
+library(fungarium)
+data(strophariaceae) #import sample dataset
+MP_data <- taxon_update(strophariaceae) #update taxon names
 
-#Finds records that are relevant to fire association
-  string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|
-    (?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+#Finds fire-associated records
+string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
 
-#Removes records that were falsely identfied as
-being fire-associated because they contain the words "burnt" or "burned"
-  string2 <- "(?i)un.?burn(t|ed)"
+#Removes records falsely identfied as fire-associated
+string2 <- "(?i)un.?burn(t|ed)"
 
-trait_records <- find_trait(MP_data_updated, string1,
-  trait_columns, string2)
+#filter out records that do not contain any environmental metadata (optional) - may help increase accuracy of enrichment values calculated later
+MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+
+#find trait-relevant records
+trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
 }
