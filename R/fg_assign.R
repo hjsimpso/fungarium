@@ -2,19 +2,13 @@
 #'
 #' Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed in a
 #' dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
-#' This is a modifed version of the fg_assign function originally built by
-#' Colin Averill (https://github.com/colinaverill/fg_assign.r).
 #'
-#' @param tax_table  Dataframe of taxonomic classifications. Must include columns with phylum, class, order, family, genus, and species names. Missing values is allowed, but may inhibit the assignment of FUNGuild data to that row.
+#' @param tax_table  Data.frame/data.table of taxonomic classifications (e.g. phylum, class, order, family, genus, and species names)
 #' @param url        URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.
-#' @param phylum_col     Character string specifying the phylum column name. Default is "new_phylum" (name given in the output of \code{\link[fungarium]{taxon_update}}).
-#' @param class_col      Character string specifying the class column name. Default is "new_class".
-#' @param order_col      Character string specifying the order column name. Default is "new_order".
-#' @param family_col     Character string specifying the family column name. Default is "new_family".
-#' @param genus_col      Character string specifying the genus column name. Default is "new_genus".
-#' @param species_col    Character string specifying the species column name (i.e. full canonical name, not just specific epithet). Default is "new_name".
+#' @param tax_cols   Character vector specifying the column names containing taxonomic variables. Names must be in descending order of taxonomic rank.
+#' Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_name").
 #'
-#' @return           Returns the input dataframe with FUNGuild assignments appended.
+#' @return           Returns the input data.frame/data.table with FUNGuild assignments appended.
 #' @references
 #' \enumerate{
 #'   \item Nguyen NH, Song Z, Bates ST, Branco S, Tedersoo L, Menke J, Schilling JS, Kennedy PG. 2016. FUNGuild: An open annotation tool for parsing fungal community datasets by ecological guild. \emph{Fungal Ecology}, 20: 241-248. doi:10.1016/j.funeco.2015.06.006
@@ -22,11 +16,31 @@
 #' @export
 #'
 #' @examples
+#' library(fungarium)
+#' data(strophariaceae) #import sample dataset
+#' MP_data <- taxon_update(strophariaceae) #update taxon names
 #'
-#' mycoportal_data <- taxon_update(mycoportal_data)
-#' guild_data <- fg_assign(mycoportal_data)
+#' #Finds fire-associated records
+#' string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
 #'
-fg_assign <- function(tax_table, url = "http://www.stbates.org/funguild_db.php", phylum_col="new_phylum", class_col="new_class", order_col="new_order", family_col="new_family", genus_col="new_genus", species_col="new_name"){
+#' #Removes records falsely identfied as fire-associated
+#' string2 <- "(?i)un.?burn(t|ed)"
+#'
+#' #filter out records that do not contain any environmental metadata (optional) - may help increase accuracy of enrichment values calculated later
+#' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+#'
+#' #find trait-relevant records
+#' trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
+#'
+#' #get trait enrichment
+#' trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
+#'
+#' #get funguild assignments
+#' trait_w_funguild <- fg_assign(trait_enrichment)
+#'
+fg_assign <- function(tax_table,
+                      url = "http://www.stbates.org/funguild_db.php",
+                      tax_cols = c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_name")){
   #check for dependencies
   if (!requireNamespace("rvest", quietly = TRUE)) {
     stop("Please install the \"rvest\" package.",
@@ -37,12 +51,12 @@ fg_assign <- function(tax_table, url = "http://www.stbates.org/funguild_db.php",
          call. = FALSE)
   }
 
-  #check that the input is formatted right. If not, stop, throw an error.
+  #check input data format
   if (!is.data.frame(tax_table)){
-    stop('Taxonomy input data needs to be a data.frame.')
+    stop("Input data must be a data.frame or data.table.")
   }
 
-  #download FUNGuild database, convert it to something R interpretable.
+  #download FUNGuild database
   fg <- xml2::read_html(url)
   fg <- rvest::html_text(fg)
   fg <- jsonlite::fromJSON(gsub("funguild_db_2", "", fg))
@@ -52,34 +66,19 @@ fg_assign <- function(tax_table, url = "http://www.stbates.org/funguild_db.php",
   colnames(out) <- colnames(fg)[4:10]
   tax_table <- cbind(tax_table,out)
 
-  #matching taxa in input dataframe with taxa in FUNGuild database.
-  for(i in 1:nrow(tax_table)){#species level match
-    if(tax_table[[species_col]][i] %in% fg$taxon){
-      tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[species_col]][i],fg$taxon),4:10]
-    }else{
-      if(tax_table[[genus_col]][i] %in% fg$taxon){#genus level match
-        tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[genus_col]][i],fg$taxon),4:10]
-      }else{
-        if(tax_table[[family_col]][i] %in% fg$taxon){#family level match
-          tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[family_col]][i],fg$taxon),4:10]
-        }else{
-          if(tax_table[[order_col]][i] %in% fg$taxon){#order level match
-            tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[order_col]][i],fg$taxon),4:10]
-          }else{
-            if(tax_table[[class_col]][i] %in% fg$taxon){#class level match
-              tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[class_col]][i],fg$taxon),4:10]
-            }else{
-              if(tax_table[[phylum_col]][i] %in% fg$taxon){#phylum level match
-                tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[phylum_col]][i],fg$taxon),4:10]
-              }
-            }
-          }
-        }
+  #matching taxa in input data with taxa in FUNGuild database
+  for(i in 1:nrow(tax_table)){
+    j <- length(tax_cols)
+    while (assigned==F & j>0){
+      if (tax_table[[tax_cols[j]]][i] %in% fg$taxon){
+        assigned <- T
+        tax_table[i,(ncol(tax_table) - 6):ncol(tax_table)] <- fg[match(tax_table[[tax_cols[j]]][i],fg$taxon),4:10]
       }
+      j <- j-1
     }
   }
 
-  #report and return output.
+  #report and return output
   cat(sum(!is.na(tax_table$guild))/(nrow(tax_table))*100,'% of taxa assigned a functional guild.', sep = '')
   return(tax_table)
 }

@@ -7,45 +7,48 @@
 fg_assign(
   tax_table,
   url = "http://www.stbates.org/funguild_db.php",
-  phylum_col = "new_phylum",
-  class_col = "new_class",
-  order_col = "new_order",
-  family_col = "new_family",
-  genus_col = "new_genus",
-  species_col = "new_name"
+  tax_cols = c("new_phylum", "new_class", "new_order", "new_family", "new_genus",
+    "new_name")
 )
 }
 \arguments{
-\item{tax_table}{Dataframe of taxonomic classifications. Must include columns with phylum, class, order, family, genus, and species names. Missing values is allowed, but may inhibit the assignment of FUNGuild data to that row.}
+\item{tax_table}{Data.frame/data.table of taxonomic classifications (e.g. phylum, class, order, family, genus, and species names)}
 
 \item{url}{URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.}
 
-\item{phylum_col}{Character string specifying the phylum column name. Default is "new_phylum" (name given in the output of \code{\link[fungarium]{taxon_update}}).}
-
-\item{class_col}{Character string specifying the class column name. Default is "new_class".}
-
-\item{order_col}{Character string specifying the order column name. Default is "new_order".}
-
-\item{family_col}{Character string specifying the family column name. Default is "new_family".}
-
-\item{genus_col}{Character string specifying the genus column name. Default is "new_genus".}
-
-\item{species_col}{Character string specifying the species column name (i.e. full canonical name, not just specific epithet). Default is "new_name".}
+\item{tax_cols}{Character vector specifying the column names containing taxonomic variables. Names must be in descending order of taxonomic rank.
+Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_name").}
 }
 \value{
-\preformatted{      Returns the input dataframe with FUNGuild assignments appended.
+\preformatted{      Returns the input data.frame/data.table with FUNGuild assignments appended.
 }
 }
 \description{
 Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed in a
 dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
-This is a modifed version of the fg_assign function originally built by
-Colin Averill (https://github.com/colinaverill/fg_assign.r).
 }
 \examples{
+library(fungarium)
+data(strophariaceae) #import sample dataset
+MP_data <- taxon_update(strophariaceae) #update taxon names
 
-mycoportal_data <- taxon_update(mycoportal_data)
-guild_data <- fg_assign(mycoportal_data)
+#Finds fire-associated records
+string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+
+#Removes records falsely identfied as fire-associated
+string2 <- "(?i)un.?burn(t|ed)"
+
+#filter out records that do not contain any environmental metadata (optional) - may help increase accuracy of enrichment values calculated later
+MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+
+#find trait-relevant records
+trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
+
+#get trait enrichment
+trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
+
+#get funguild assignments
+trait_w_funguild <- fg_assign(trait_enrichment)
 
 }
 \references{
