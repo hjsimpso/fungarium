@@ -4,7 +4,7 @@
 #' datasets of sporocarp records from fungaria collections and citizen-science observations.
 #' Datasets are downloaded as tab-delimited files to a specified directory and then automatically read into R as a data.frame, if desired.
 #' This function was modified from the \code{mycoportal} function in the rMyCoPortal package (Krah et al. 2019).
-#' See Simpson and Schilling (2020).
+#' See Simpson and Schilling (2021).
 #'
 #' @param download_dir Character string specifying the path to the directory where you would like files downloaded from MyCoPortal to be stored.
 #' @param read_files Logical. If TRUE, files are downloaded into the specified directory AND are automatically imported into R as a data.frame. If FALSE, files are still downloaded into the specified directory, but not imported into R.
@@ -52,8 +52,8 @@
 #' @references \enumerate{
 #' \item Krah FS, Bates S, Miller A. 2019. rMyCoPortal - an R package to interface
 #' with the Mycology Collections Portal. Biodiversity Data Journal 7:e31511.
-#' \item Simpson, H.J., Schilling, J.S. 2020. Using aggregated field collections data
-#' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN REVIEW}
+#' \item Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data
+#' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
 #' }
 #' @export
 #' @return If read_files is TRUE, a data.frame of MyCoPortal records is returned.
