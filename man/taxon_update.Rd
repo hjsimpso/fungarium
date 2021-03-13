@@ -8,26 +8,30 @@ taxon_update(
   data,
   taxon_col = "scientificName",
   authorship_col = "scientificNameAuthorship",
-  status_feed = TRUE,
+  show_names = FALSE,
   species_only = TRUE,
-  force_accepted = FALSE
+  force_accepted = FALSE,
+  show_status = TRUE
 )
 }
 \arguments{
-\item{data}{Dataframe containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).}
+\item{data}{Data.frame or data.table containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).}
 
 \item{taxon_col}{Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).}
 
-\item{authorship_col}{Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets).}
+\item{authorship_col}{Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets). If input dataset has no authorship column, use NULL. This assumes that no authorship information is available. Taxon names and authorship names combined in one column (e.g."Pleurotus ostreatus (Jacq.) P.Kumm." ), is currently not supported.}
 
-\item{status_feed}{Logical. If TRUE, progress of taxa names being queried in the GBIF database is printed on the console.}
+\item{show_names}{Logical. Default is FALSE. If TRUE, taxon names are printed on the console as they are submitted as queries to GBIF.}
 
-\item{species_only}{Logical. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.}
+\item{species_only}{Logical. Default if TRUE. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.}
 
-\item{force_accepted}{Logical. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.}
+\item{force_accepted}{Logical. Default is FALSE. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.}
+
+\item{show_status}{Logical. Default is TRUE. If TRUE, percent completion and the number of unique taxa left to process is printed in the console.}
 }
 \value{
 The input dataframe with the following output fields appended:
+\item{query_full_name}{exact string used in GBIF query}
 \item{new_name}{currently accepted scientific name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
 \item{new_author}{authorship associated with the currently accepted scientific name}
 \item{new_full_name}{name and authorship combined into one character string}
@@ -51,7 +55,9 @@ error7: the synonym of the matched GBIF record is also listed as a synonym (may 
 error8: name has authorship listed and the best GBIF match is of a higher taxonomic rank.}
 }
 \description{
-Validates or updates the scientific names of fungi, and their associated taxonomic classification, based on currently accepted scientific consensus listed in the \href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
+Validates or updates the scientific names of fungi, and their associated taxonomic
+classification, based on currently accepted scientific consensus listed in the
+\href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
 }
 \details{
 Queries the GBIF database for each taxon, via \code{get_gbifid_}
@@ -74,9 +80,13 @@ This ensures that if an error (e.g. loss of internet connection) would occur whi
 \cr
 Subspecies in input dataset are automatically updated to the species level. The accepted synonyms of subspecies listed in the GBIF database are the species names.
 }
+\note{
+Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \link{https://www.gbif.org/}.
+}
 \examples{
-MP_data <- mycoportal_tab("Pleurotus")
-MP_data_updated <- taxon_update(MP_data)
+library(fungarium)
+data(strophariaceae) #import sample dataset
+MP_data <- taxon_update(strophariaceae) #update taxon names
 
 }
 \references{

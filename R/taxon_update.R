@@ -1,16 +1,20 @@
 #' Update scientific names of fungi
 #'
-#' Validates or updates the scientific names of fungi, and their associated taxonomic classification, based on currently accepted scientific consensus listed in the \href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
+#' Validates or updates the scientific names of fungi, and their associated taxonomic
+#' classification, based on currently accepted scientific consensus listed in the
+#' \href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
 #'
 #'
-#' @param data Dataframe containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
+#' @param data Data.frame or data.table containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
 #' @param taxon_col Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).
-#' @param authorship_col Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets).
-#' @param status_feed Logical. If TRUE, progress of taxa names being queried in the GBIF database is printed on the console.
-#' @param species_only Logical. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.
-#' @param force_accepted Logical. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.
+#' @param authorship_col Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets). If input dataset has no authorship column, use NULL. This assumes that no authorship information is available. Taxon names and authorship names combined in one column (e.g."Pleurotus ostreatus (Jacq.) P.Kumm." ), is currently not supported.
+#' @param species_only Logical. Default if TRUE. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.
+#' @param force_accepted Logical. Default is FALSE. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.
+#' @param show_status Logical. Default is TRUE. If TRUE, percent completion and the number of unique taxa left to process is printed in the console.
+#' @param show_names Logical. Default is FALSE. If TRUE, taxon names are printed on the console as they are submitted as queries to GBIF.
 #'
 #' @return The input dataframe with the following output fields appended:
+#' \item{query_full_name}{exact string used in GBIF query}
 #' \item{new_name}{currently accepted scientific name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
 #' \item{new_author}{authorship associated with the currently accepted scientific name}
 #' \item{new_full_name}{name and authorship combined into one character string}
@@ -49,9 +53,8 @@
 #' Function is tailored for large datasets of diverse taxa, like the archived sporocarp collection/observation records accessible through the \href{https://mycoportal.org/}{MyCoPortal}.
 #' However, function will work on any dataset with taxon names and authorship. Becasue processing time can be significant, it may be helpful to breakup extremely large datasets (>50,000 records) and apply this function to each smaller subset.
 #' This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.\cr
-#' \cr
-#' Subspecies in input dataset are automatically updated to the species level. The accepted synonyms of subspecies listed in the GBIF database are the species names.
 #' @author Hunter J. Simpson
+#' @note Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \link{https://www.gbif.org/}.
 #' @references \enumerate{
 #' \item Scott Chamberlain and Eduard Szocs (2013). taxize - taxonomic search and retrieval in R. F1000Research, 2:191. URL:http://f1000research.com/articles/2-191/v2.
 #' \item Scott Chamberlain, Eduard Szoecs, Zachary Foster, Zebulun Arendsee, Carl
@@ -63,18 +66,25 @@
 #' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
 #' }
 #' @export
-#'
 #' @examples
-#' MP_data <- mycoportal_tab("Pleurotus")
-#' MP_data_updated <- taxon_update(MP_data)
+#' library(fungarium)
+#' data(strophariaceae) #import sample dataset
+#' MP_data <- taxon_update(strophariaceae) #update taxon names
 #'
-taxon_update <- function(data, taxon_col="scientificName", authorship_col="scientificNameAuthorship", status_feed=TRUE, species_only=TRUE, force_accepted=FALSE){
+taxon_update <- function(data, taxon_col="scientificName", authorship_col="scientificNameAuthorship", show_names=FALSE, species_only=TRUE, force_accepted=FALSE, show_status=TRUE){
   #check that the input is formatted correctly. If not, stop and print error.
   if (!is.data.frame(data)){
     stop('Input data needs to be a data.frame.')
   }
+
+  #if there is no authorship column in input data, create a blank authorship column; authorship column (even if blank) needed for downstream processing
+  if (is.null(authorship_col)){
+    data$authorship <- ""
+    authorship_col <- "authorship"
+  }
+
   #Remove all non species-level taxa if species_only is TRUE; also removes any records with blanks in taxon name column
-  if (species_only==TRUE){data <- data[grep("(?i)[a-z]+\\s[a-z]+",data[[taxon_col]]),]}
+  if (species_only){data <- data[grep("(?i)[a-z]+\\s[a-z]+",data[[taxon_col]]),]}
   #Create new data frame with only name and authorship info
   data_cond <- data.frame(query_name=data[[taxon_col]], query_authorship=data[[authorship_col]])
   #Fix erroneous capitalization of specific epithet
@@ -88,14 +98,14 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
 
 #Name update using GBIF via taxize
   #Add columns for name update output
-  out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 13))
+  out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 15))
   colnames(out) <- c("new_name", "new_author", "new_full_name", "new_kingdom",
                      "new_phylum", "new_class", "new_order", "new_family",
-                     "new_genus", "new_specific_epithet", "taxon_conf",
+                     "new_genus", "new_specific_epithet","species", "rank", "taxon_conf",
                      "taxon_matchtype", "error")
   unique_taxa <- cbind(unique_taxa,out)
   unique_taxa[is.na(unique_taxa)] <- ""
-
+  tot <- 0
   for (i in 1:nrow(unique_taxa)){
     one_row_analysis <- FALSE
     gbif_new_key <- ""
@@ -103,7 +113,7 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
       blank <- TRUE
     }else{
       blank <- FALSE
-      gbif_out_df <- taxize::get_gbifid_(sci = unique_taxa$query_full_name[i], method = "backbone", messages=status_feed)[[unique_taxa$query_full_name[i]]]
+      gbif_out_df <- taxize::get_gbifid_(sci = unique_taxa$query_full_name[i], method = "backbone", messages=show_names)[[unique_taxa$query_full_name[i]]]
     }
     if (nrow(gbif_out_df) == 0 | blank==TRUE){ #No records returned from GBIF OR the query was blank (i.e. ""); blanks cause errors if submitted in get_gbif_ query
       unique_taxa$error[i] <- "error5"
@@ -164,19 +174,21 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
         }
       }
     }
-    if (one_row_analysis == TRUE){
+    if (one_row_analysis){
       if (gbif_out_row$status == "ACCEPTED"){ #Don't need to go to "new Key" gbif page
         unique_taxa$new_full_name[i] <- gbif_out_row$scientificname
         unique_taxa$new_name[i] <- gbif_out_row$canonicalname
         unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
         unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
         unique_taxa$new_author[i] <- gsub(paste(gbif_out_row$canonicalname, " ", sep = ""), "", gbif_out_row$scientificname)
-        if (is.null(gbif_out_row$genus) == "FALSE"){unique_taxa$new_genus[i] <- gbif_out_row$genus}
-        if (is.null(gbif_out_row$family) == "FALSE"){unique_taxa$new_family[i] <- gbif_out_row$family}
-        if (is.null(gbif_out_row$order) == "FALSE"){unique_taxa$new_order[i] <- gbif_out_row$order}
-        if (is.null(gbif_out_row$class) == "FALSE"){unique_taxa$new_class[i] <- gbif_out_row$class}
-        if (is.null(gbif_out_row$phylum) == "FALSE"){unique_taxa$new_phylum[i] <- gbif_out_row$phylum}
+        if (!is.null(gbif_out_row$genus)){unique_taxa$new_genus[i] <- gbif_out_row$genus}
+        if (!is.null(gbif_out_row$family)){unique_taxa$new_family[i] <- gbif_out_row$family}
+        if (!is.null(gbif_out_row$order)){unique_taxa$new_order[i] <- gbif_out_row$order}
+        if (!is.null(gbif_out_row$class)){unique_taxa$new_class[i] <- gbif_out_row$class}
+        if (!is.null(gbif_out_row$phylum)){unique_taxa$new_phylum[i] <- gbif_out_row$phylum}
         unique_taxa$new_kingdom[i] <- gbif_out_row$kingdom
+        unique_taxa$rank[i] <- gbif_out_row$rank
+        if (!is.null(gbif_out_row$species)){unique_taxa$species[i] <- gbif_out_row$species}
       } else {# status is not accepted
         if (gbif_out_row$status == "DOUBTFUL"){
           unique_taxa$error[i] <- "error1"
@@ -206,10 +218,17 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
           if (is.null(key_record$class) == "FALSE"){unique_taxa$new_class[i] <- key_record$class}
           if (is.null(key_record$phylum) == "FALSE"){unique_taxa$new_phylum[i] <- key_record$phylum}
           unique_taxa$new_kingdom[i] <- key_record$kingdom
+          unique_taxa$rank[i] <- tolower(key_record$rank)
+          if (!is.null(key_record$species)){unique_taxa$species[i] <- key_record$species}
         }
       }
     }
+    if (show_status){
+      tot <- tot + 1
+      cat(paste0(round((tot / nrow(unique_taxa)) * 100), '% completed.',' Taxa left:', nrow(unique_taxa)-tot, "   "), "\r") #track progress
+    }
   }
+
   if(exists("gbif_out_rows", inherits = FALSE)){remove(gbif_out_rows)}
   if(exists("gbif_out_row", inherits = FALSE)){remove(gbif_out_row)}
 
@@ -217,6 +236,10 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
   data_cond <- dplyr::inner_join(data_cond, unique_taxa, by="query_full_name")
   data_cond$new_specific_epithet <- gsub("^\\S+\\s|^\\S+$", "", data_cond$new_name)
   data <- cbind(data, data_cond[,!colnames(data_cond) %in% c("query_name.x", "query_authorship.x", "query_name.y", "query_authorship.y")])#Remove query_name and query_authorship; keep "query_full_name" column, contains the exact query submitted to GBIF
-
+  data <- data.frame(iconv(as.matrix(data),from="UTF-8", to="latin1"))
+  if (show_status){cat(paste0(100, '% completed.', "            "), "\r")} #track progress
+  if (species_only){
+    data <- data[data$error!=""|data$rank=="species",]#post-update species removal; pre-update species removal not always 100% effective, but still useful to remove species before name updating - saves processing time
+  }
   return(data)
 }
