@@ -5,10 +5,10 @@ citEntry(
   title    = "Using aggregated field collections data and the novel R package fungarium to investigate fungal fire association",
   author   = personList(as.person("H.J. Simpson"), as.person("J.S. Schilling")),
   journal  = "Mycologia",
-  year     = "2020",
+  year     = "2021",
   volume   = "",
   number   = "",
   pages    = "",
   url      = "",
-  textVersion = "Simpson, H.J., Schilling, J.S. 2020. Using aggregated field collections data and the novel R package fungarium to investigate fungal fire association. Mycologia."
+  textVersion = "Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data and the novel R package fungarium to investigate fungal fire association. Mycologia. (IN PRESS)"
 )
