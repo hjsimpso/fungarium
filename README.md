@@ -5,6 +5,13 @@
 
 <!-- badges: start -->
 
+![GitHub](https://img.shields.io/github/license/hjsimpso/fungarium)
+[![GitHub
+release](https://img.shields.io/github/release/hjsimpso/fungarium.svg)](https://GitHub.com/hjsimpso/fungarium/releases/)
+![Github
+commits](https://img.shields.io/github/commits-since/hjsimpso/fungarium/latest)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/hjsimpso/fungarium/graphs/commit-activity)
+
 <!-- badges: end -->
 
 An R package for enhancing the access and analysis of fungaria
