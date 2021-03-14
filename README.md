@@ -14,8 +14,8 @@ commits](https://img.shields.io/github/commits-since/hjsimpso/fungarium/latest)
 
 <!-- badges: end -->
 
-An R package for enhancing the access and analysis of fungaria
-collections data.
+An R package for enabling the use of fungaria collections data in
+comprehensive trait analyses.
 
 ## Introduction
 
