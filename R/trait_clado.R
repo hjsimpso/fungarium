@@ -10,8 +10,8 @@
 #' @param trait_col      Character string specifying the name of the column containing enrichment factors (must be numeric). Default is: "trait_ratio".
 #' @param ladderize      Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.
 #' @param continuous     Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.
-#' @param rooted         Logical. Should the cladogram be rooted? Default is FALSE.
-#' @param ...            Additional ggtree args. See \code{ggtree::ggtree}.
+#' @param layout         Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.
+#' @param ...            Additional args passed to ggtree. See \code{ggtree::ggtree}.
 #' @return           Returns a ggtree object.
 #'
 #' @details Cladogram produced using \code{ggtree::ggtree};
@@ -33,7 +33,7 @@
 #' MP_data <- taxon_update(strophariaceae) #update taxon names
 #'
 #' #Finds fire-associated records
-#' string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+#' string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
 #'
 #' #Removes records falsely identfied as fire-associated
 #' string2 <- "(?i)un.?burn(t|ed)"
@@ -54,33 +54,37 @@
 #' library(ggtree)
 #' library(ggplot2)
 #'
-#' tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T, ladderize=T, layout="circular", size=0.6)+
-#'  geom_tiplab2(color = "black", hjust = 0, offset = 0.1, size = 1.5, fontface = "italic") +
-#'  ggtitle("Strophariaceae (US records): fire-association")+
-#'  scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
-#'                        name = "Fire-associated records enrichment",
-#'                        limits = c(0, max(trait_enrichment$fire_ratio)),
-#'                        guide = guide_colourbar(label.vjust = 0.6, label.theme = element_text(size = 10, colour = "black", angle = 0),
-#'                                                title.position = "top", nbin=100, draw.ulim = FALSE, draw.llim = FALSE, barwidth = 15, barheight = 0.5)
-#'  )+
-#'  theme(plot.margin=margin(0,0,0,0),
-#'        legend.title = element_text(size = 10, margin = margin(0,0,0,0)),
-#'        legend.title.align = 0.5,
-#'        legend.position = "bottom",
-#'        legend.justification = "center",
-#'        legend.margin = margin(0,0,0,0),
-#'        plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
-#'  xlim(-1,6.5)
+#' tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T,
+#'                     ladderize=T, layout="circular", size=1,
+#'                     formula = ~new_order/new_family/new_genus/new_species)+
+#'   geom_tiplab2(color = "black", hjust = 0, offset = 0.1, size = 1.5, fontface = "italic") + #add species labels
+#'   geom_tippoint(shape=20, aes(color=trait_ratio, size=trait_freq))+ #add tree tips; size corresponds to the number of fire-associated records
+#'   ggtitle("Strophariaceae (US records): fire-association")+
+#'   scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
+#'                         name = "Fire-associated records enrichment",
+#'                         limits = c(0, max(trait_enrichment$trait_ratio)+(0.01*max(trait_enrichment$trait_ratio))),
+#'                         guide = guide_colourbar(label.vjust = 0.6, label.theme = element_text(size = 10, colour = "black", angle = 0),
+#'                                                 title.position = "top", nbin=100, draw.ulim = FALSE, draw.llim = FALSE, barwidth = 15, barheight = 0.5)
+#'   )+
+#'   scale_size(name = "Fire-associated records",
+#'              guide = guide_legend(keywidth = 2, keyheight = 1,
+#'                                   label.position = "bottom", label.vjust = 0.6,
+#'                                   label.theme = element_text(size = 10, colour = "black", angle = 0),
+#'                                   title.position = "top")) +
+#'   theme(plot.margin=margin(0,0,0,0),
+#'         legend.title = element_text(size = 10, margin = margin(0,0,0,0)),
+#'         legend.title.align = 0.5,
+#'         legend.position = "bottom",
+#'         legend.justification = "center",
+#'         legend.margin = margin(0,0,0,0),
+#'         plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
+#'   xlim(-1, 3.6)#move root away from center; can help improve appearance if root has more than two branches
 #'
 #' tree
 #'
-#'
-#'
-#'
-#'
 trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
                         trait_col="trait_ratio",
-                        ladderize=TRUE, continuous=TRUE, rooted=FALSE,
+                        ladderize=TRUE, continuous=TRUE, layout="circular",
                         ...){
   #check for dependencies
   if (!requireNamespace("ggtree", quietly = TRUE)) {
@@ -126,7 +130,7 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   }
 
   #make phylo object
-  tree <- as.phylo.formula2(formula, data, rooted = rooted)
+  tree <- as.phylo.formula2(formula, data, root = F)
 
   #Calculating trait_ratio for higher taxa
   label_data <- data
@@ -163,14 +167,16 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   label_data$trait_freq <- as.numeric(label_data$trait_freq)
   label_data$freq <- as.numeric(label_data$freq)
 
-  tree2 <- suppressMessages(ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous,
-                                           ggplot2::aes(color = label_data[[trait_col]]), ...)+
-                            ggplot2::ylim(0.5,(length(tree$tip.label)+0.5)))#fixes gap in circular plots
+  tree2 <- ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous, layout=layout,
+                                           ggplot2::aes(color = label_data[[trait_col]]), ...)
+
+  if (layout=="circular"){suppressMessages(tree2 <- tree2 +ggplot2::ylim(0.5,(length(tree$tip.label)+0.5)))}#fixes gap in circular plots
+  #add addiotional data to ggtree object
   tree2$data$tax_level <- label_data[match(label_data$label, tree2$data$label),]$tax_level
   tree2$data$trait_ratio <- label_data[match(label_data$label, tree2$data$label),]$trait_ratio
   tree2$data$trait_freq <- label_data[match(label_data$label, tree2$data$label),]$trait_freq
   tree2$data$freq <- label_data[match(label_data$label, tree2$data$label),]$freq
-  tree2$data$label <- gsub("_", " ", tree2$data$label)
+  tree2$data$label <- gsub("_", " ", tree2$data$label) #fix tip labels
 
   return(tree2)
 }
