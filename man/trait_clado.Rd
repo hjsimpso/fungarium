@@ -10,7 +10,6 @@ trait_clado(
   trait_col = "trait_ratio",
   ladderize = TRUE,
   continuous = TRUE,
-  rooted = FALSE,
   layout = "circular",
   ...
 )
@@ -25,8 +24,6 @@ trait_clado(
 \item{ladderize}{Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.}
 
 \item{continuous}{Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.}
-
-\item{rooted}{Logical. Should the cladogram be rooted? Default is FALSE.}
 
 \item{layout}{Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.}
 
@@ -56,7 +53,7 @@ data(strophariaceae) #import sample dataset
 MP_data <- taxon_update(strophariaceae) #update taxon names
 
 #Finds fire-associated records
-string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
 
 #Removes records falsely identfied as fire-associated
 string2 <- "(?i)un.?burn(t|ed)"
@@ -77,29 +74,33 @@ trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]
 library(ggtree)
 library(ggplot2)
 
-tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T, ladderize=T, layout="circular", size=0.6)+
- geom_tiplab2(color = "black", hjust = 0, offset = 0.1, size = 1.5, fontface = "italic") +
- ggtitle("Strophariaceae (US records): fire-association")+
- scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
-                       name = "Fire-associated records enrichment",
-                       limits = c(0, max(trait_enrichment$fire_ratio)),
-                       guide = guide_colourbar(label.vjust = 0.6, label.theme = element_text(size = 10, colour = "black", angle = 0),
-                                               title.position = "top", nbin=100, draw.ulim = FALSE, draw.llim = FALSE, barwidth = 15, barheight = 0.5)
- )+
- theme(plot.margin=margin(0,0,0,0),
-       legend.title = element_text(size = 10, margin = margin(0,0,0,0)),
-       legend.title.align = 0.5,
-       legend.position = "bottom",
-       legend.justification = "center",
-       legend.margin = margin(0,0,0,0),
-       plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
- xlim(-1,6.5)
+tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T,
+                    ladderize=T, layout="circular", size=1,
+                    formula = ~new_order/new_family/new_genus/new_species)+
+  geom_tiplab2(color = "black", hjust = 0, offset = 0.1, size = 1.5, fontface = "italic") + #add species labels
+  geom_tippoint(shape=20, aes(color=trait_ratio, size=trait_freq))+ #add tree tips; size corresponds to the number of fire-associated records
+  ggtitle("Strophariaceae (US records): fire-association")+
+  scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
+                        name = "Fire-associated records enrichment",
+                        limits = c(0, max(trait_enrichment$trait_ratio)+(0.01*max(trait_enrichment$trait_ratio))),
+                        guide = guide_colourbar(label.vjust = 0.6, label.theme = element_text(size = 10, colour = "black", angle = 0),
+                                                title.position = "top", nbin=100, draw.ulim = FALSE, draw.llim = FALSE, barwidth = 15, barheight = 0.5)
+  )+
+  scale_size(name = "Fire-associated records",
+             guide = guide_legend(keywidth = 2, keyheight = 1,
+                                  label.position = "bottom", label.vjust = 0.6,
+                                  label.theme = element_text(size = 10, colour = "black", angle = 0),
+                                  title.position = "top")) +
+  theme(plot.margin=margin(0,0,0,0),
+        legend.title = element_text(size = 10, margin = margin(0,0,0,0)),
+        legend.title.align = 0.5,
+        legend.position = "bottom",
+        legend.justification = "center",
+        legend.margin = margin(0,0,0,0),
+        plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
+  xlim(-1, 3.6)#move root away from center; can help improve appearance if root has more than two branches
 
 tree
-
-
-
-
 
 }
 \references{

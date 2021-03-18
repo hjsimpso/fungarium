@@ -40,7 +40,7 @@ data(strophariaceae) #import sample dataset
 MP_data <- taxon_update(strophariaceae) #update taxon names
 
 #Finds fire-associated records
-string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
 
 #Removes records falsely identfied as fire-associated
 string2 <- "(?i)un.?burn(t|ed)"

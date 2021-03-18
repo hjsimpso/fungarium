@@ -21,7 +21,7 @@
 #' MP_data <- taxon_update(strophariaceae) #update taxon names
 #'
 #' #Finds fire-associated records
-#' string1 <- "(?i)charred|(?i)burn(t|ed)|(?i)scorched|(?i)fire.?(killed|damaged|scarred)|(?i)killed.by.fire"
+#' string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
 #'
 #' #Removes records falsely identfied as fire-associated
 #' string2 <- "(?i)un.?burn(t|ed)"
@@ -34,6 +34,9 @@
 #'
 #' #get trait enrichment
 #' trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
+#'
+#' #filter taxa based on total number of records (optional)
+#' trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]
 #'
 #' #get funguild assignments
 #' trait_w_funguild <- fg_assign(trait_enrichment)
