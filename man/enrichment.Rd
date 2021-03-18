@@ -9,7 +9,7 @@ enrichment(
   trait_rec,
   by = "new_full_name",
   cols = c("new_name", "new_author", "new_kingdom", "new_phylum", "new_class",
-    "new_order", "new_family", "new_genus", "new_specific_epithet"),
+    "new_order", "new_family", "new_genus", "new_species"),
   coll_bias = TRUE,
   cores = 1,
   status_feed = TRUE
@@ -50,8 +50,8 @@ If calculating enrichment by taxon, note that some taxa may share the same canon
 This seems to be an issue for varieties in particular. For example, 	"Galerina vittiformis f. vittiformis"
 is currently accepted by GBIF (as of Mar. 12, 2021) and the accepted canonical name is "Galerina vittiformis vittiformis", while
 "Galerina vittiformis var. vittiformis" is also accepted and shares the same canonical name; thus, enrichment factors
-will vary depending on whether or not you use the full name or canonical name. However, this seems to be a rare occurrence and will
-likley change over time as the GBIF database is changed/improved.
+will vary depending on whether or not you use the full name or canonical name. However, if using the taxon update function with
+\code{species_only} set to TRUE, sub species are automatically removed from the dataset.
 }
 \examples{
 library(fungarium)
@@ -73,7 +73,4 @@ trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
 #get trait enrichment
 trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
 
-}
-\author{
-Hunter J. Simpson
 }
