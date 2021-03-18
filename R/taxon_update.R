@@ -15,9 +15,9 @@
 #'
 #' @return The input dataframe with the following output fields appended:
 #' \item{query_full_name}{exact string used in GBIF query}
-#' \item{new_name}{currently accepted scientific name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
+#' \item{new_name}{currently accepted canonical name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
 #' \item{new_author}{authorship associated with the currently accepted scientific name}
-#' \item{new_full_name}{name and authorship combined into one character string}
+#' \item{new_full_name}{name and authorship combined into one character string. Represents the full scientific name.}
 #' \item{new_kingdom}{kingdom classification based on the new scientific name}
 #' \item{new_phylum}{phylum classification based on the new scientific name}
 #' \item{new_class}{class classification based on the new scientific name}
@@ -25,6 +25,8 @@
 #' \item{new_family}{family classification based on the new scientific name}
 #' \item{new_genus}{genus associated with the new scientific name}
 #' \item{new_specific_epithet}{specific epithet asscociated with the new scientific name}
+#' \item{rank}{taxonomic rank}
+#' \item{new_species}{canonical species name based on the new scientific name. This is useful for getting the species name for varieties or sub-species, which will have the full variety or subspecies names listed for "new_full_name".}
 #' \item{taxon_conf}{confidence score (0-100) for match quality of the full scientific name. Ex: "Trametes versicolor (L.) Lloyd" in sporocarp dataset matched with "Trametes versicolor (L.) Lloyd" in GBIF database would give a confidence score of 100.}
 #' \item{taxon_matchtype}{refers to match type of the canonical name. EXACT means a perfect match. Ex: "Trametes versicolor" in sporocarp dataset matched to "Trametes versicolor" in GBIF database. FUZZY means an imperfect match, likely due to spelling errors. Ex: "Trametes versacolor" in sporocarp dataset matched with "Trametes versicolor" in GBIF database.}
 #' \item{error}{error code for why a name could not be validated or updated.
@@ -101,7 +103,7 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
   out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 15))
   colnames(out) <- c("new_name", "new_author", "new_full_name", "new_kingdom",
                      "new_phylum", "new_class", "new_order", "new_family",
-                     "new_genus", "new_specific_epithet","species", "rank", "taxon_conf",
+                     "new_genus", "new_specific_epithet","new_species", "rank", "taxon_conf",
                      "taxon_matchtype", "error")
   unique_taxa <- cbind(unique_taxa,out)
   unique_taxa[is.na(unique_taxa)] <- ""
@@ -188,7 +190,7 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
         if (!is.null(gbif_out_row$phylum)){unique_taxa$new_phylum[i] <- gbif_out_row$phylum}
         unique_taxa$new_kingdom[i] <- gbif_out_row$kingdom
         unique_taxa$rank[i] <- gbif_out_row$rank
-        if (!is.null(gbif_out_row$species)){unique_taxa$species[i] <- gbif_out_row$species}
+        if (!is.null(gbif_out_row$species)){unique_taxa$new_species[i] <- gbif_out_row$species}
       } else {# status is not accepted
         if (gbif_out_row$status == "DOUBTFUL"){
           unique_taxa$error[i] <- "error1"
@@ -219,7 +221,7 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
           if (is.null(key_record$phylum) == "FALSE"){unique_taxa$new_phylum[i] <- key_record$phylum}
           unique_taxa$new_kingdom[i] <- key_record$kingdom
           unique_taxa$rank[i] <- tolower(key_record$rank)
-          if (!is.null(key_record$species)){unique_taxa$species[i] <- key_record$species}
+          if (!is.null(key_record$species)){unique_taxa$new_species[i] <- key_record$species}
         }
       }
     }
