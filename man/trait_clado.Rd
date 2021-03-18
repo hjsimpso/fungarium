@@ -11,6 +11,7 @@ trait_clado(
   ladderize = TRUE,
   continuous = TRUE,
   rooted = FALSE,
+  layout = "circular",
   ...
 )
 }
@@ -27,7 +28,9 @@ trait_clado(
 
 \item{rooted}{Logical. Should the cladogram be rooted? Default is FALSE.}
 
-\item{...}{Additional ggtree args. See \code{ggtree::ggtree}.}
+\item{layout}{Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.}
+
+\item{...}{Additional args passed to ggtree. See \code{ggtree::ggtree}.}
 }
 \value{
 \preformatted{      Returns a ggtree object.
