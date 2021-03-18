@@ -32,9 +32,9 @@ taxon_update(
 \value{
 The input dataframe with the following output fields appended:
 \item{query_full_name}{exact string used in GBIF query}
-\item{new_name}{currently accepted scientific name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
+\item{new_name}{currently accepted canonical name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
 \item{new_author}{authorship associated with the currently accepted scientific name}
-\item{new_full_name}{name and authorship combined into one character string}
+\item{new_full_name}{name and authorship combined into one character string. Represents the full scientific name.}
 \item{new_kingdom}{kingdom classification based on the new scientific name}
 \item{new_phylum}{phylum classification based on the new scientific name}
 \item{new_class}{class classification based on the new scientific name}
@@ -42,6 +42,8 @@ The input dataframe with the following output fields appended:
 \item{new_family}{family classification based on the new scientific name}
 \item{new_genus}{genus associated with the new scientific name}
 \item{new_specific_epithet}{specific epithet asscociated with the new scientific name}
+\item{rank}{taxonomic rank}
+\item{new_species}{canonical species name based on the new scientific name. This is useful for getting the species name for varieties or sub-species, which will have the full variety or subspecies names listed for "new_full_name".}
 \item{taxon_conf}{confidence score (0-100) for match quality of the full scientific name. Ex: "Trametes versicolor (L.) Lloyd" in sporocarp dataset matched with "Trametes versicolor (L.) Lloyd" in GBIF database would give a confidence score of 100.}
 \item{taxon_matchtype}{refers to match type of the canonical name. EXACT means a perfect match. Ex: "Trametes versicolor" in sporocarp dataset matched to "Trametes versicolor" in GBIF database. FUZZY means an imperfect match, likely due to spelling errors. Ex: "Trametes versacolor" in sporocarp dataset matched with "Trametes versicolor" in GBIF database.}
 \item{error}{error code for why a name could not be validated or updated.
@@ -77,8 +79,6 @@ taxonomic status, the queried taxon is not validated or updated (i.e. the output
 Function is tailored for large datasets of diverse taxa, like the archived sporocarp collection/observation records accessible through the \href{https://mycoportal.org/}{MyCoPortal}.
 However, function will work on any dataset with taxon names and authorship. Becasue processing time can be significant, it may be helpful to breakup extremely large datasets (>50,000 records) and apply this function to each smaller subset.
 This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.\cr
-\cr
-Subspecies in input dataset are automatically updated to the species level. The accepted synonyms of subspecies listed in the GBIF database are the species names.
 }
 \note{
 Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \link{https://www.gbif.org/}.
