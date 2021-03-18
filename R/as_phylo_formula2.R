@@ -1,6 +1,6 @@
 #trait_clado helper function; modified from ape function as.phylo.formula
 
-as.phylo.formula2 <- function(x, data, rooted=FALSE)
+as.phylo.formula2 <- function(x, data, root=FALSE)
 {
   ## Testing formula syntax:
   err <- "Formula must be of the kind ~A1/A2/.../An."
@@ -38,7 +38,7 @@ as.phylo.formula2 <- function(x, data, rooted=FALSE)
     }
     t
   }
-  if (rooted==T){
+  if (root){
     string <- paste0("(", paste(f.rec(taxo.data), collapse = ","), ");")
   }else{
     string <- paste0(paste(f.rec(taxo.data), collapse = ","), ";")
