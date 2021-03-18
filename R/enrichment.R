@@ -58,7 +58,7 @@ enrichment <- function(all_rec,
                        cols=c("new_name", "new_author", "new_kingdom",
                                                       "new_phylum", "new_class", "new_order",
                                                       "new_family", "new_genus",
-                                                      "new_specific_epithet"),
+                                                      "new_species"),
                        coll_bias=TRUE,
                        cores=1,
                        status_feed=TRUE){
