@@ -77,21 +77,29 @@ get_coll_bias <- function(data, all_rec, trait_rec, by="new_full_name", cores){
   #assign bias metrics using all records dataset
   data <- data[order(data[["freq"]]),]#order by descending freq; helps speed up processing if using parallel computing
   out1.1 <- data.frame(x=rep(1, nrow(data[data$freq==1,])), y=rep(1, nrow(data[data$freq==1,])))#assign bias values for elements with one record; easy assignment: 1,1
-  low_elem <- nrow(out1.1)
+  low_elem <- nrow(out1.1)#total number of variable elements with just 1 trait record
   out1.2 <- bias_outer(data[data$freq!=1], data_type = all_rec, freq_type = "freq", by=by, cores=cores, low_elem=low_elem)#assign bias values by analyzing collectors in records
-  colnames(out1.2) <- c("x","y")
-  out1 <- rbind(out1.1, out1.2)#combine outputs
+  if(nrow(out1.2)>0){
+    colnames(out1.2) <- c("x","y")
+    out1 <- rbind(out1.1, out1.2)#combine outputs
+  }else{
+    out1 <- out1.1
+  }
   data <- cbind(data, out1) #append bias values to input counts data
 
   #assign bias metrics using trait records dataset
   data <- data[order(data$trait_freq),]#order by descending fire freq; helps speed up processing if using parallel computing
   out2.0 <- data.frame(x=rep(0, nrow(data[data$trait_freq==0,])), y=rep(0, nrow(data[data$trait_freq==0,])))#assign bias values for elements with zero trait records; easy assignment: 0,0
   out2.1 <- data.frame(x=rep(1, nrow(data[data$trait_freq==1,])), y=rep(1, nrow(data[data$trait_freq==1,])))#assign bias values for elements with one trait record; easy assignment: 1,1
-  low_elem <- nrow(out2.0)+nrow(out2.1)
-  out2.2 <- bias_outer(data[!data$trait_freq%in%c(0,1),], data_type = trait_rec, freq_type = "trait_freq", by=by, cores=cores, low_elem = low_elem)#assign bias values by analyzing collectors in trait records
-  colnames(out2.2) <- c("x","y")
   out2 <- rbind(out2.0, out2.1)#combine outputs
-  out2 <- rbind(out2, out2.2)#combine outputs
+  low_elem <- nrow(out2) #total number of variable elements with 0 or 1 trait records
+  out2.2 <- bias_outer(data[!data$trait_freq%in%c(0,1),], data_type = trait_rec, freq_type = "trait_freq", by=by, cores=cores, low_elem = low_elem)#assign bias values by analyzing collectors in trait records
+  if(nrow(out2.2)>0){
+    colnames(out2.2) <- c("x","y")
+    out2 <- rbind(out2, out2.2)#combine outputs
+  }else{
+    out2 <- out2
+  }
   data <- cbind(data, out2)#append trait bias values to input counts data
   colnames(data)[(length(data[1,])-3):length(data[1,])] <- c("max_bias", "coll_groups", "max_bias_t", "coll_groups_t")
   data <- data[order(data[[by]]),]
