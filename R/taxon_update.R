@@ -56,7 +56,7 @@
 #' However, function will work on any dataset with taxon names and authorship. Becasue processing time can be significant, it may be helpful to breakup extremely large datasets (>50,000 records) and apply this function to each smaller subset.
 #' This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.\cr
 #' @author Hunter J. Simpson
-#' @note Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \link{https://www.gbif.org}.
+#' @note Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \href{https://www.gbif.org}.
 #' @references \enumerate{
 #' \item Scott Chamberlain and Eduard Szocs (2013). taxize - taxonomic search and retrieval in R. F1000Research, 2:191. URL:http://f1000research.com/articles/2-191/v2.
 #' \item Scott Chamberlain, Eduard Szoecs, Zachary Foster, Zebulun Arendsee, Carl
@@ -72,7 +72,6 @@
 #' library(fungarium)
 #' data(strophariaceae) #import sample dataset
 #' MP_data <- taxon_update(strophariaceae) #update taxon names
-#'
 taxon_update <- function(data, taxon_col="scientificName", authorship_col="scientificNameAuthorship", show_names=FALSE, species_only=TRUE, force_accepted=FALSE, show_status=TRUE){
   #check that the input is formatted correctly. If not, stop and print error.
   if (!is.data.frame(data)){

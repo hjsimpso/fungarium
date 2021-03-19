@@ -59,7 +59,7 @@ error8: name has authorship listed and the best GBIF match is of a higher taxono
 \description{
 Validates or updates the scientific names of fungi, and their associated taxonomic
 classification, based on currently accepted scientific consensus listed in the
-\href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
+\href{https://www.gbif.org}{GBIF} Backbone Taxonomy database.
 }
 \details{
 Queries the GBIF database for each taxon, via \code{get_gbifid_}
@@ -81,7 +81,7 @@ However, function will work on any dataset with taxon names and authorship. Beca
 This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.\cr
 }
 \note{
-Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \link{https://www.gbif.org/}.
+Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \href{https://www.gbif.org}.
 }
 \examples{
 library(fungarium)
