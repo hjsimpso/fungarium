@@ -1,5 +1,5 @@
 Package: fungarium
-Title: Tools for enhancing the access and analysis of fungaria collections data
+Title: An R package for enabling the use of fungaria collections data in comprehensive trait analyses
 Version: 1.1.0.9000
 Authors@R: 
     person(given = "Hunter",
@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "hjsimpso6058@gmail.com",
            comment = c(ORCID = "0000-0003-1377-5916"))
-Description:
+Description: Fungarium enables the use of digitized fungal collections (i.e. fungarium specimens) or observations (e.g. iNaturalist, MushroomObserver) for taxonomic, geographic, and temporal analyses of ecological traits in fungi (e.g. habitat, host, substrate associations). This is accomplished through a variety of features including mispelled taxon or location name correction, thorough trait searching capabilities, trait visualization tools, and a tool for enhancing access to records avaible in the MyCoPortal (https://mycoportal.org/).
 License: `use_gpl3_license()`
 Encoding: UTF-8
 LazyData: true
