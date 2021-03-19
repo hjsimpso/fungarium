@@ -2,7 +2,7 @@
 #'
 #' Validates or updates the scientific names of fungi, and their associated taxonomic
 #' classification, based on currently accepted scientific consensus listed in the
-#' \href{https://www.gbif.org/}{GBIF} Backbone Taxonomy database.
+#' \href{https://www.gbif.org}{GBIF} Backbone Taxonomy database.
 #'
 #'
 #' @param data Data.frame or data.table containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
