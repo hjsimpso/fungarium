@@ -77,6 +77,8 @@ mycoportal_tab(
 
 \item{synonyms}{Logical. If TRUE, synonyms from MycoBank and IndexFungorum are searched}
 
+\item{messages}{Logical. If TRUE, updates are printed when navigating to the MyCoPortal website and downloading datasets.}
+
 \item{rec_numb}{Logical. If TRUE, the number of available records is displayed and user is prompted with yes/no question about proceeding with the download. If FASLE, number of records is not displayed and download proceeds automatically.}
 
 \item{read_files}{Logical. If TRUE, files are downloaded into the specified directory AND are automatically imported into R as a data.frame. If FALSE, files are still downloaded into the specified directory, but not imported into R.}
