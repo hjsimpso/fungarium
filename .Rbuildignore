@@ -3,3 +3,6 @@
 ^README\.Rmd$
 ^data-raw$
 ^LICENSE\.md$
+^R/mycoportal_tab.R
+^man/mycoportal_tab.md
+^data/strophariaceae.tab
