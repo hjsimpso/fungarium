@@ -3,3 +3,6 @@
 ^README\.Rmd$
 ^data-raw$
 ^LICENSE\.md$
+^LICENSE$
+^CODE_OF_CONDUCT\.md$
+^Example_fire_association
