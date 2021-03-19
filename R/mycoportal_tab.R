@@ -30,6 +30,7 @@
 #' @param coll_date2 Character string specifying collection data from, e.g., "19 August 2018"
 #' @param synonyms Logical. If TRUE, synonyms from MycoBank and IndexFungorum are searched
 #' @param rec_numb Logical. If TRUE, the number of available records is displayed and user is prompted with yes/no question about proceeding with the download. If FASLE, number of records is not displayed and download proceeds automatically.
+#' @param messages Logical. If TRUE, updates are printed when navigating to the MyCoPortal website and downloading datasets.
 #'
 #' @details
 #' Docker software must be installed and running on your system before using this function.
@@ -412,7 +413,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
     system2("docker", c("rm", "-f", "sel_con"), stdout = F, stderr = F)
     on.exit()
     if(messages){message("Reading file into R...")}
-    files <- read.delim(paste(download_dir,"/", tab_file, sep=""), colClasses = "character", quote="", encoding = "latin1")
+    files <- utils::read.delim(paste(download_dir,"/", tab_file, sep=""), colClasses = "character", quote="", encoding = "latin1")
     if(nrow(files)!=as.integer(recs)){warning("Data.frame truncated due to memory constraints. Full MyCoPortal file can still be found in the specified download directory.")}
     return(files)
 
