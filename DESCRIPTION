@@ -20,9 +20,13 @@ Imports:
     NameNeedle, 
     data.table, 
     tm, 
-    plyr
+    plyr,
 Suggests: 
     rvest,
+    jsonlite,
+    stringr,
+    xml2,
+    ISOcodes,
     RSelenium,
     knitr,
     rmarkdown,
