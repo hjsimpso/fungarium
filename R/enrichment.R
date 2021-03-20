@@ -42,7 +42,7 @@
 #' #Removes records falsely identfied as fire-associated
 #' string2 <- "(?i)un.?burn(t|ed)"
 #'
-#' #filter out records that do not contain any environmental metadata (optional) - may help increase accuracy of enrichment values calculated later
+#' #filter out records that do not contain any environmental metadata (optional)
 #' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
 #'
 #' #find trait-relevant records

@@ -38,7 +38,7 @@
 #' #Removes records falsely identfied as fire-associated
 #' string2 <- "(?i)un.?burn(t|ed)"
 #'
-#' #filter out records that do not contain any environmental metadata (optional) - may help increase accuracy of enrichment values calculated later
+#' #filter out records that do not contain any environmental metadata (optional)
 #' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
 #'
 #' #find trait-relevant records
@@ -78,7 +78,7 @@
 #'         legend.justification = "center",
 #'         legend.margin = margin(0,0,0,0),
 #'         plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
-#'   xlim(-1, 3.6)#move root away from center; can help improve appearance if root has more than two branches
+#'   xlim(-1, 3.6)#move root away from center; can help improve appearance of circular plot if root has more than two branches
 #'
 #' tree
 #'
