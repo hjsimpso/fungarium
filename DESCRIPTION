@@ -31,5 +31,6 @@ Suggests:
     knitr,
     rmarkdown,
     ggplot2,
+    ape,
     ggtree
 VignetteBuilder: knitr
