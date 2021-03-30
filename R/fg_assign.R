@@ -27,7 +27,8 @@
 #' string2 <- "(?i)un.?burn(t|ed)"
 #'
 #' #filter out records that do not contain any environmental metadata (optional)
-#' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+#' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
+#'                    MP_data$habitat!=""|MP_data$substrate!="",]
 #'
 #' #find trait-relevant records
 #' trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
@@ -72,6 +73,7 @@ fg_assign <- function(tax_table,
   #matching taxa in input data with taxa in FUNGuild database
   for(i in 1:nrow(tax_table)){
     j <- length(tax_cols)
+    assigned <- F
     while (assigned==F & j>0){
       if (tax_table[[tax_cols[j]]][i] %in% fg$taxon){
         assigned <- T

@@ -26,7 +26,7 @@ find_trait(
 }
 \description{
 Find records within a dataset of fungal collections/observations
-(e.g. \href{https://mycoportal.org/portal/index.php}{MyCoPortal} dataset)
+(e.g. \href{https://mycoportal.org}{MyCoPortal} dataset)
 that have environmental metadata relevant to a particular trait.
 Example traits: growing on wood, soil, or leaves;
 growing on downed log or standing tree;
@@ -46,7 +46,8 @@ string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|kille
 string2 <- "(?i)un.?burn(t|ed)"
 
 #filter out records that do not contain any environmental metadata (optional)
-MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
+                   MP_data$habitat!=""|MP_data$substrate!="",]
 
 #find trait-relevant records
 trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)

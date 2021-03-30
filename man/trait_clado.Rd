@@ -58,8 +58,9 @@ string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|kille
 #Removes records falsely identfied as fire-associated
 string2 <- "(?i)un.?burn(t|ed)"
 
-#filter out records that do not contain any environmental metadata (optional) - may help increase accuracy of enrichment values calculated later
-MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+#filter out records that do not contain any environmental metadata (optional)
+MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
+                   MP_data$habitat!=""|MP_data$substrate!="",]
 
 #find trait-relevant records
 trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
@@ -77,19 +78,33 @@ library(ggplot2)
 tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T,
                     ladderize=T, layout="circular", size=1,
                     formula = ~new_order/new_family/new_genus/new_species)+
-  geom_tiplab2(color = "black", hjust = 0, offset = 0.1, size = 1.5, fontface = "italic") + #add species labels
-  geom_tippoint(shape=20, aes(color=trait_ratio, size=trait_freq))+ #add tree tips; size corresponds to the number of fire-associated records
+  geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
+               size = 1.5, fontface = "italic") + #add species labels
+  geom_tippoint(shape=20, aes(color=trait_ratio, size=trait_freq))+#add tree tips
   ggtitle("Strophariaceae (US records): fire-association")+
   scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
                         name = "Fire-associated records enrichment",
-                        limits = c(0, max(trait_enrichment$trait_ratio)+(0.01*max(trait_enrichment$trait_ratio))),
-                        guide = guide_colourbar(label.vjust = 0.6, label.theme = element_text(size = 10, colour = "black", angle = 0),
-                                                title.position = "top", nbin=100, draw.ulim = FALSE, draw.llim = FALSE, barwidth = 15, barheight = 0.5)
+                        limits = c(0, max(trait_enrichment$trait_ratio)+
+                                   (0.01*max(trait_enrichment$trait_ratio))),
+                        guide = guide_colourbar(label.vjust = 0.6,
+                                                label.theme = element_text(size = 10,
+                                                                           colour = "black",
+                                                                           angle = 0),
+                                                title.position = "top",
+                                                nbin=100,
+                                                draw.ulim = FALSE,
+                                                draw.llim = FALSE,
+                                                barwidth = 15,
+                                                barheight = 0.5)
   )+
   scale_size(name = "Fire-associated records",
-             guide = guide_legend(keywidth = 2, keyheight = 1,
-                                  label.position = "bottom", label.vjust = 0.6,
-                                  label.theme = element_text(size = 10, colour = "black", angle = 0),
+             guide = guide_legend(keywidth = 2,
+                                  keyheight = 1,
+                                  label.position = "bottom",
+                                  label.vjust = 0.6,
+                                  label.theme = element_text(size = 10,
+                                                             colour = "black",
+                                                             angle = 0),
                                   title.position = "top")) +
   theme(plot.margin=margin(0,0,0,0),
         legend.title = element_text(size = 10, margin = margin(0,0,0,0)),
@@ -98,10 +113,9 @@ tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T
         legend.justification = "center",
         legend.margin = margin(0,0,0,0),
         plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
-  xlim(-1, 3.6)#move root away from center; can help improve appearance if root has more than two branches
+  xlim(-1, 3.6)#move root away from center; can help improve appearance of circular plot
 
 tree
-
 }
 \references{
 \enumerate{

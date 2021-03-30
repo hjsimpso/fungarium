@@ -78,16 +78,15 @@ taxonomic status, the queried taxon is not validated or updated (i.e. the output
 \cr
 Function is tailored for large datasets of diverse taxa, like the archived sporocarp collection/observation records accessible through the \href{https://mycoportal.org/}{MyCoPortal}.
 However, function will work on any dataset with taxon names and authorship. Becasue processing time can be significant, it may be helpful to breakup extremely large datasets (>50,000 records) and apply this function to each smaller subset.
-This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.\cr
+This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.
 }
 \note{
-Http errors may indicate issues with the GBIF database. Monitor GBIF system health at \href{https://www.gbif.org}.
+Http errors may indicate issues with the GBIF database. Monitor GBIF system health at https://www.gbif.org.
 }
 \examples{
 library(fungarium)
 data(strophariaceae) #import sample dataset
 MP_data <- taxon_update(strophariaceae) #update taxon names
-
 }
 \references{
 \enumerate{

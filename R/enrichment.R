@@ -10,6 +10,7 @@
 #' @param cols Character vector specifiying which columns associated with the specified variable should be included in the output. Default is: c("new_name", "new_author", "new_kingdom","new_phylum", "new_class", "new_order","new_family", "new_genus","new_specific_epithet").
 #' @param coll_bias Logical. If TRUE, collector bias for total records and trait records is calculated for each variable element.
 #' @param cores Integer. Default is 1. Specifies number of cores to use for processing. Values greater than 1 utilize parallel processing (not allowed on Windows systems). Parallel processing not recommended for use in GUI setting. See \code{parallel::mclapply}.
+#' @param status_feed Logical. If TRUE, status of collector bias analysis in printed to the console.
 #'
 #' @return Data.table containing unique variable elements in the input dataset (e.g. unique taxa) with the following output fields appended for each variable element.
 #' Note that if \code{cols} is non-NULL, the specifying variables will be appended as well.
@@ -43,7 +44,8 @@
 #' string2 <- "(?i)un.?burn(t|ed)"
 #'
 #' #filter out records that do not contain any environmental metadata (optional)
-#' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|MP_data$habitat!=""|MP_data$substrate!="",]
+#' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
+#'                    MP_data$habitat!=""|MP_data$substrate!="",]
 #'
 #' #find trait-relevant records
 #' trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
