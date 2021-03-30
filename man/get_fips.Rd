@@ -64,7 +64,8 @@ The only way to circumvent this issue is to include ALL historical names for eve
 reference dataset, which currently has not been done.
 }
 \examples{
-MP_data <- mycoportal_tab("Pleurotus") #Retrieve fungal data from MyCoPortal
-MP_data <- get_fips(MP_data) #Assign fips codes to counties listed in fungal records
+library(fungarium)
+data(strophariaceae) #import sample dataset
+MP_data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
 
 }

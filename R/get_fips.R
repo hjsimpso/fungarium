@@ -48,8 +48,9 @@
 #' @export
 #'
 #' @examples
-#' MP_data <- mycoportal_tab("Pleurotus") #Retrieve fungal data from MyCoPortal
-#' MP_data <- get_fips(MP_data) #Assign fips codes to counties listed in fungal records
+#' library(fungarium)
+#' data(strophariaceae) #import sample dataset
+#' MP_data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
 #'
 get_fips <- function(data, state_col="stateProvince", county_col="county", assign_counties=TRUE){
   #check that the input is formatted correctly. If not, stop, and print an error.
