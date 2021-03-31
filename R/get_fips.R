@@ -171,7 +171,7 @@ get_fips <- function(data, state_col="stateProvince", county_col="county", assig
     unique_counties <- data.frame(county=data[[county_col]], state_fips=data$state_fips)#make a list of unique counties (i.e. county/state combos) in fungi file then make them all lowercase
     unique_counties$county_clean <- str_clean(unique_counties$county, periods="")
     unique_counties$county_clean <- gsub(" county", "", unique_counties$county_clean)
-    unique_counties$county_clean <- gsub(" co", "", unique_counties$county_clean)
+    unique_counties$county_clean <- gsub(" co($|\\s)", "", unique_counties$county_clean)
     unique_counties$county_clean <- gsub(" parish", "", unique_counties$county_clean)
     unique_counties$county_clean <- gsub(" borough", "", unique_counties$county_clean)
     unique_counties$county_clean <- gsub(" census area", "", unique_counties$county_clean)
