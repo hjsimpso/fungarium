@@ -141,7 +141,7 @@ get_fips <- function(data, state_col="stateProvince", county_col="county", assig
   }
 
   #merge dataframe that has assigned fips codes with reference file that contains original (uncleaned) state names listed in fungal records file
-  state_ref <- dplyr::inner_join(state_ref, unique_states, by=state_clean)
+  state_ref <- dplyr::inner_join(state_ref, unique_states, by="state_clean")
 
   #put the ID'd fips codes back into the original fungi file
   for(i in 1:nrow(data)){
