@@ -8,7 +8,8 @@ find_trait(
   data,
   pos_string,
   metadata_cols = c("host", "substrate", "habitat", "occurrenceRemarks"),
-  neg_string = NULL
+  neg_string = NULL,
+  string_clean = TRUE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ find_trait(
 \item{metadata_cols}{Character vector containing names of columns with trait-relevant metadata. Default names are "occurrenceRemarks", "host", "habitat", and "substrate" (names used in MyCoPortal datasets).}
 
 \item{neg_string}{Character string ("negative") containing a regular expression that is used to remove records that were falsely identfied, via the "positive" search string, as being trait-relevant. This argument is optional.}
+
+\item{string_clean}{Logical. If TRUE (the default), strings in metadata_cols are "cleaned" prior to trait searching. This includes converting strings to lowercase and removing any puncuation (e.g., periods, commas, question marks, etc.) or extra white space.}
 }
 \value{
 \preformatted{      Returns a dataframe of records with trait-relevant metadata.
@@ -37,7 +40,7 @@ growing in a habitat affected by a particular disturbance (e.g. wind, fire, logg
 \examples{
 library(fungarium)
 data(strophariaceae) #import sample dataset
-MP_data <- taxon_update(strophariaceae) #update taxon names
+data <- strophariaceae
 
 #Finds fire-associated records
 string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
@@ -46,9 +49,9 @@ string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|kille
 string2 <- "(?i)un.?burn(t|ed)"
 
 #filter out records that do not contain any environmental metadata (optional)
-MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
-                   MP_data$habitat!=""|MP_data$substrate!="",]
+data <- data[data$occurrenceRemarks!=""|data$host!=""|
+                   data$habitat!=""|data$substrate!="",]
 
 #find trait-relevant records
-trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
+trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
 }
