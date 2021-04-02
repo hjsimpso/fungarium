@@ -71,7 +71,8 @@
 #' @examples
 #' library(fungarium)
 #' data(strophariaceae) #import sample dataset
-#' MP_data <- taxon_update(strophariaceae) #update taxon names
+#' data <- taxon_update(strophariaceae) #update taxon names
+
 taxon_update <- function(data, taxon_col="scientificName", authorship_col="scientificNameAuthorship", show_names=FALSE, species_only=TRUE, force_accepted=FALSE, show_status=TRUE){
   #check that the input is formatted correctly. If not, stop and print error.
   if (!is.data.frame(data)){

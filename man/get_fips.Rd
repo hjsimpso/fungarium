@@ -66,6 +66,6 @@ reference dataset, which currently has not been done.
 \examples{
 library(fungarium)
 data(strophariaceae) #import sample dataset
-MP_data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
+data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
 
 }

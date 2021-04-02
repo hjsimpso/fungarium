@@ -58,7 +58,7 @@ will vary depending on whether or not you use the full name or canonical name. H
 \examples{
 library(fungarium)
 data(strophariaceae) #import sample dataset
-MP_data <- taxon_update(strophariaceae) #update taxon names
+data <- taxon_update(strophariaceae) #update taxon names
 
 #Finds fire-associated records
 string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
@@ -67,14 +67,14 @@ string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|kille
 string2 <- "(?i)un.?burn(t|ed)"
 
 #filter out records that do not contain any environmental metadata (optional)
-MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
-                   MP_data$habitat!=""|MP_data$substrate!="",]
+data <- data[data$occurrenceRemarks!=""|data$host!=""|
+                   data$habitat!=""|data$substrate!="",]
 
 #find trait-relevant records
-trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
+trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
 
 #get trait enrichment
-trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
+trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data)
 
 #filter taxa based on total number of records (optional)
 trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]

@@ -50,7 +50,7 @@
 #' @examples
 #' library(fungarium)
 #' data(strophariaceae) #import sample dataset
-#' MP_data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
+#' data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
 #'
 get_fips <- function(data, state_col="stateProvince", county_col="county", assign_counties=TRUE){
   #check that the input is formatted correctly
