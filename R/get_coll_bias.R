@@ -59,7 +59,7 @@ bias_inner <- function (rec_v, freq_type, by) {
 }
 
 
-bias_outer <- function(data, data_type, freq_type,by, cores, low_elem){
+bias_outer <- function(data, data_type, freq_type,by, cores, low_elem, status_feed){
   setkeyv(data_type,by)
   rec_v <- lapply(data[[by]], function(x){
     rec_df <- data_type[list(x)];
@@ -67,18 +67,18 @@ bias_outer <- function(data, data_type, freq_type,by, cores, low_elem){
     }) #subset records for taxon
   out_loop <- maxjobs.mclapply(rec_v, function(x){#use multicore processing to process each variable element (e.g. process multiple taxa simultaneously on different cores)
     bias_inner(rec_v=x, freq_type=freq_type,by=by)
-    }, cores = cores, low_elem=low_elem, freq_type = freq_type)
+    }, cores = cores, low_elem=low_elem, freq_type = freq_type, status_feed = status_feed)
 
   out_loop <- data.table::rbindlist(lapply(out_loop, as.data.frame.list), use.names = F)#add out
   return(out_loop)
 }
 
-get_coll_bias <- function(data, all_rec, trait_rec, by="new_full_name", cores){
+get_coll_bias <- function(data, all_rec, trait_rec, by="new_full_name", cores, status_feed){
   #assign bias metrics using all records dataset
   data <- data[order(data[["freq"]]),]#order by descending freq; helps speed up processing if using parallel computing
   out1.1 <- data.frame(x=rep(1, nrow(data[data$freq==1,])), y=rep(1, nrow(data[data$freq==1,])))#assign bias values for elements with one record; easy assignment: 1,1
   low_elem <- nrow(out1.1)#total number of variable elements with just 1 trait record
-  out1.2 <- bias_outer(data[data$freq!=1], data_type = all_rec, freq_type = "freq", by=by, cores=cores, low_elem=low_elem)#assign bias values by analyzing collectors in records
+  out1.2 <- bias_outer(data[data$freq!=1], data_type = all_rec, freq_type = "freq", by=by, cores=cores, low_elem=low_elem, status_feed = status_feed)#assign bias values by analyzing collectors in records
   if(nrow(out1.2)>0){
     colnames(out1.2) <- c("x","y")
     out1 <- rbind(out1.1, out1.2)#combine outputs
@@ -93,7 +93,7 @@ get_coll_bias <- function(data, all_rec, trait_rec, by="new_full_name", cores){
   out2.1 <- data.frame(x=rep(1, nrow(data[data$trait_freq==1,])), y=rep(1, nrow(data[data$trait_freq==1,])))#assign bias values for elements with one trait record; easy assignment: 1,1
   out2 <- rbind(out2.0, out2.1)#combine outputs
   low_elem <- nrow(out2) #total number of variable elements with 0 or 1 trait records
-  out2.2 <- bias_outer(data[!data$trait_freq%in%c(0,1),], data_type = trait_rec, freq_type = "trait_freq", by=by, cores=cores, low_elem = low_elem)#assign bias values by analyzing collectors in trait records
+  out2.2 <- bias_outer(data[!data$trait_freq%in%c(0,1),], data_type = trait_rec, freq_type = "trait_freq", by=by, cores=cores, low_elem = low_elem, status_feed = status_feed)#assign bias values by analyzing collectors in trait records
   if(nrow(out2.2)>0){
     colnames(out2.2) <- c("x","y")
     out2 <- rbind(out2, out2.2)#combine outputs
@@ -106,7 +106,7 @@ get_coll_bias <- function(data, all_rec, trait_rec, by="new_full_name", cores){
   return(data)
 }
 
-maxjobs.mclapply <- function(X, FUN, cores, low_elem, freq_type){
+maxjobs.mclapply <- function(X, FUN, cores, low_elem, freq_type, status_feed){
   N <- length(X)
   i.list <- parallel::splitIndices(N, N/cores)
   result.list <- list()

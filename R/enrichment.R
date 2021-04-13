@@ -108,7 +108,7 @@ enrichment <- function(all_rec,
   if (coll_bias==F){
     return(counts)
   }else{
-    counts <- get_coll_bias(data.table(counts), all_rec, trait_rec, by, cores)
+    counts <- get_coll_bias(data.table(counts), all_rec, trait_rec, by, cores, status_feed)
     return(counts)
   }
 }
