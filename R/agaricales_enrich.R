@@ -12,6 +12,7 @@
 #'   \item{new_author}{up-to-date authorship}
 #'   \item{new_kingdom}{up-to-date kingdom}
 #'   \item{new_phylum}{up-to-date phylum}
+#'   \item{new_class}{up-to-date class}
 #'   \item{new_order}{up-to-date order}
 #'   \item{new_family}{up-to-date family}
 #'   \item{new_genus}{up-to-date genus}
