@@ -35,7 +35,7 @@
 #' @examples
 #' library(fungarium)
 #' data(strophariaceae) #import sample dataset
-#' data <- taxon_update(strophariaceae) #update taxon names
+#' data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 #'
 #' #Finds fire-associated records
 #' string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
@@ -51,7 +51,10 @@
 #' trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
 #'
 #' #get trait enrichment
-#' trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data)
+#' trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data, status_feed=FALSE)
+#'
+#' #filter taxa based on collector bias (optional)
+#' trait_enrichment <- trait_enrichment[trait_enrichment$max_bias<=0.75,]
 #'
 #' #filter taxa based on total number of records (optional)
 #' trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]

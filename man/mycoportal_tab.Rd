@@ -115,11 +115,15 @@ more memory may be available.
 }
 \examples{
 #Query for all Pleurotus records in Minnesota, USA.
-mp_query <- mycoportal_tab("~", "Pleurotus",
-                           taxon_type="1", country="United States", state="Minnesota")
+mp_query <- mycoportal_tab(path.expand("~"), "Pleurotus",
+                           taxon_type="1", country="United States",
+                           state="Minnesota", read_files=TRUE,
+                           messages=FALSE, rec_numb=FALSE)
 #Query for all Polyporales records in Minnesota, USA.
-mp_query <- mycoportal_tab("~", "Polyporales",
-                           taxon_type="4", country="United States", state="Minnesota")
+mp_query <- mycoportal_tab(path.expand("~"), "Polyporales",
+                           taxon_type="4", country="United States",
+                           state="Minnesota", read_files=TRUE,
+                           messages=FALSE, rec_numb=FALSE)
 
 }
 \references{

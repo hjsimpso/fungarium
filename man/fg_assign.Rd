@@ -32,7 +32,7 @@ library(fungarium)
 data(strophariaceae) #import sample dataset
 
 #update taxon names
-data <- taxon_update(strophariaceae)
+data <- taxon_update(strophariaceae, show_status=FALSE)
 
 #get funguild assignments
 trait_w_funguild <- fg_assign(data)

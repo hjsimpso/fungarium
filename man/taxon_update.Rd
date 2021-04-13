@@ -86,7 +86,7 @@ Http errors may indicate issues with the GBIF database. Monitor GBIF system heal
 \examples{
 library(fungarium)
 data(strophariaceae) #import sample dataset
-data <- taxon_update(strophariaceae) #update taxon names
+data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 }
 \references{
 \enumerate{
