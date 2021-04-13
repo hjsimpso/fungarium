@@ -2,3 +2,5 @@
 fungarium.Rproj
 .Rhistory
 inst/doc
+^Example_fire_association
+README_old.*
