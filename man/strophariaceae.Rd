@@ -5,7 +5,7 @@
 \alias{strophariaceae}
 \title{Sample dataset of MyCoPortal records}
 \format{
-A data frame with 89 rows and 52567 variables:
+A data frame with 10000 rows and 18 variables:
 \describe{
 \item{id}{unique MyCoPortal ID for each record}
 \item{institutionCode}{code for the collection that houses the specimen, or digital observation}
@@ -34,8 +34,8 @@ A data frame with 89 rows and 52567 variables:
 strophariaceae
 }
 \description{
-Sample dataset of fungal records downloaded from the MycoPortal (https://mycoportal.org) on March 10, 2021.
-Includes all Strophariaceae records in the United States.
+Sample dataset of fungal records downloaded from the MyCoPortal (https://mycoportal.org) on March 10, 2021.
+Includes Strophariaceae records in the United States.
 Downloaded as tab-delimited file in ISO-8859-1 encoding.
 }
 \keyword{datasets}
