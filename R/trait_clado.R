@@ -11,6 +11,9 @@
 #' @param ladderize      Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.
 #' @param continuous     Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.
 #' @param layout         Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.
+#' @param show           Character string ("all"), or integer, specifying the number of elements to select from the input data when trait_col is ordered. Positive integers select from data that is put in descending order. Negative integers select from data that is put in ascending order. Ex: "100" selects the top 100 elements (e.g., species) with the highest trait_col values; "-100" selects the top 100 elements (e.g., species) with the lowest trait_col values
+#' @param node_color     Logical. If TRUE (the default), nodes are colored based on the values in trait_col.
+#' @param node_all       Logical. If TRUE (the default), all elements in the input data are used for calculating node enrichment values. This becomes important if \code{show} is used to select a subset of the data for display in the cladogram.
 #' @param ...            Additional args passed to ggtree. See \code{ggtree::ggtree}.
 #' @return           Returns a ggtree object.
 #'
@@ -30,7 +33,7 @@
 #' @examples
 #' library(fungarium)
 #' data(strophariaceae) #import sample dataset
-#' MP_data <- taxon_update(strophariaceae) #update taxon names
+#' data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 #'
 #' #Finds fire-associated records
 #' string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
@@ -39,14 +42,17 @@
 #' string2 <- "(?i)un.?burn(t|ed)"
 #'
 #' #filter out records that do not contain any environmental metadata (optional)
-#' MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
-#'                    MP_data$habitat!=""|MP_data$substrate!="",]
+#' data <- data[data$occurrenceRemarks!=""|data$host!=""|
+#'                    data$habitat!=""|data$substrate!="",]
 #'
 #' #find trait-relevant records
-#' trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
+#' trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
 #'
 #' #get trait enrichment
-#' trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
+#' trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data, status_feed=FALSE)
+#'
+#' #filter taxa based on collector bias (optional)
+#' trait_enrichment <- trait_enrichment[trait_enrichment$max_bias<=0.75,]
 #'
 #' #filter taxa based on total number of records (optional)
 #' trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]
@@ -55,8 +61,8 @@
 #' library(ggtree)
 #' library(ggplot2)
 #'
-#' tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T,
-#'                     ladderize=T, layout="circular", size=1,
+#' tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=TRUE,
+#'                     ladderize=TRUE, layout="circular", size=1,
 #'                     formula = ~new_order/new_family/new_genus/new_species)+
 #'   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
 #'                size = 1.5, fontface = "italic") + #add species labels
@@ -99,6 +105,7 @@
 
 trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
                         trait_col="trait_ratio",
+                        node_color=TRUE, show="all", node_all=TRUE,
                         ladderize=TRUE, continuous=TRUE, layout="circular",
                         ...){
   #check for dependencies
@@ -145,7 +152,16 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   }
 
   #make phylo object
-  tree <- as.phylo.formula2(formula, data, root = F)
+  if (show=="all"){
+    tree <- as.phylo.formula2(formula, data, root = F)
+  }else{
+    tree <- as.phylo.formula2(formula, data[order(data[[trait_col]], decreasing=ifelse(show<0,FALSE,TRUE)),][1:abs(show),], root = F)
+  }
+
+  #filter data based on "show" and "node_all"
+  if (show!="all"&node_all==FALSE){
+    data <- data[order(data[[trait_col]], decreasing=ifelse(show<0,FALSE,TRUE)),][1:abs(show),]
+  }
 
   #Calculating trait_ratio for higher taxa
   label_data <- data
@@ -153,7 +169,6 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   label_data$label <- as.character(label_data$label)
   label_list <- data.frame(label=append(tree$tip.label, tree$node.label))
   label_data <- merge(label_data, label_list, by = "label", all.y = T, all.x=T, sort = FALSE)
-  label_data <- label_data[match(label_list$label, label_data$label), ]
   label_data$tax_level <- ""
 
   for (i in 1:nrow(label_data)){
@@ -182,11 +197,25 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   label_data$trait_freq <- as.numeric(label_data$trait_freq)
   label_data$freq <- as.numeric(label_data$freq)
 
-  tree2 <- ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous, layout=layout,
-                                           ggplot2::aes(color = label_data[[trait_col]]), ...)
+  #filter tree tips based on trait_col
+  if (show!="all"&node_all){
+    label_data <- label_data[label_data$label%in%label_list$label,]#removes any taxa that are not to be included in final tree
+  }
 
+  #match label order
+  label_data <- label_data[match(label_list$label, label_data$label), ]
+
+  #color nodes based on trait_col
+  if(node_color){#color
+    tree2 <- ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous, layout=layout,
+                            ggplot2::aes(color = label_data[[trait_col]]), ...)
+  }else{#no color
+    tree2 <- ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous, layout=layout, ...)
+  }
+
+  #make ggtree object
   if (layout=="circular"){suppressMessages(tree2 <- tree2 +ggplot2::ylim(0.5,(length(tree$tip.label)+0.5)))}#fixes gap in circular plots
-  #add addiotional data to ggtree object
+  #add additional data to ggtree object
   tree2$data$tax_level <- label_data[match(label_data$label, tree2$data$label),]$tax_level
   tree2$data$trait_ratio <- label_data[match(label_data$label, tree2$data$label),]$trait_ratio
   tree2$data$trait_freq <- label_data[match(label_data$label, tree2$data$label),]$trait_freq

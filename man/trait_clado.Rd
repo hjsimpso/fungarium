@@ -8,6 +8,9 @@ trait_clado(
   data,
   formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
   trait_col = "trait_ratio",
+  node_color = TRUE,
+  show = "all",
+  node_all = TRUE,
   ladderize = TRUE,
   continuous = TRUE,
   layout = "circular",
@@ -20,6 +23,12 @@ trait_clado(
 \item{formula}{Formula describing how the taxonomic variables in your data.frame should be nested (e.g ~V1/V2/.../Vn). Taxonomic variables must be factors. See \code{ape::as.phylo.formula}.}
 
 \item{trait_col}{Character string specifying the name of the column containing enrichment factors (must be numeric). Default is: "trait_ratio".}
+
+\item{node_color}{Logical. If TRUE (the default), nodes are colored based on the values in trait_col.}
+
+\item{show}{Character string ("all"), or integer, specifying the number of elements to select from the input data when trait_col is ordered. Positive integers select from data that is put in descending order. Negative integers select from data that is put in ascending order. Ex: "100" selects the top 100 elements (e.g., species) with the highest trait_col values; "-100" selects the top 100 elements (e.g., species) with the lowest trait_col values}
+
+\item{node_all}{Logical. If TRUE (the default), all elements in the input data are used for calculating node enrichment values. This becomes important if \code{show} is used to select a subset of the data for display in the cladogram.}
 
 \item{ladderize}{Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.}
 
@@ -50,7 +59,7 @@ Cladogram in Simpson and Schilling (2021) created using \code{trait_clado}.
 \examples{
 library(fungarium)
 data(strophariaceae) #import sample dataset
-MP_data <- taxon_update(strophariaceae) #update taxon names
+data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 
 #Finds fire-associated records
 string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
@@ -59,14 +68,17 @@ string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|kille
 string2 <- "(?i)un.?burn(t|ed)"
 
 #filter out records that do not contain any environmental metadata (optional)
-MP_data <- MP_data[MP_data$occurrenceRemarks!=""|MP_data$host!=""|
-                   MP_data$habitat!=""|MP_data$substrate!="",]
+data <- data[data$occurrenceRemarks!=""|data$host!=""|
+                   data$habitat!=""|data$substrate!="",]
 
 #find trait-relevant records
-trait_data <- find_trait(MP_data, pos_string=string1, neg_string=string2)
+trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
 
 #get trait enrichment
-trait_enrichment <- enrichment(all_rec=MP_data, trait_rec=trait_data)
+trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data, status_feed=FALSE)
+
+#filter taxa based on collector bias (optional)
+trait_enrichment <- trait_enrichment[trait_enrichment$max_bias<=0.75,]
 
 #filter taxa based on total number of records (optional)
 trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]
@@ -75,8 +87,8 @@ trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]
 library(ggtree)
 library(ggplot2)
 
-tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T,
-                    ladderize=T, layout="circular", size=1,
+tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=TRUE,
+                    ladderize=TRUE, layout="circular", size=1,
                     formula = ~new_order/new_family/new_genus/new_species)+
   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
                size = 1.5, fontface = "italic") + #add species labels
