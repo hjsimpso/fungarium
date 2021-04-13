@@ -114,7 +114,9 @@ maxjobs.mclapply <- function(X, FUN, cores, low_elem, freq_type){
     i.vec <- i.list[[i]]
     result.list[i.vec] <- parallel::mclapply(X[i.vec], FUN, mc.cores=cores)
     #print status message
-    cat(paste(ifelse(freq_type=="freq","All records bias analysis. ", "Trait records bias analysis. "),round(((i*cores)+low_elem)/(N+low_elem)*100), "% of elements processed.", sep=""), "\r")
+    if (status_feed){
+      cat(paste(ifelse(freq_type=="freq","All records bias analysis. ", "Trait records bias analysis. "),round(((i*cores)+low_elem)/(N+low_elem)*100), "% of elements processed.", sep=""), "\r")
+    }
   }
   return(result.list)
 }
