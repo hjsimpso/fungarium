@@ -12,6 +12,7 @@
 #' @param force_accepted Logical. Default is FALSE. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.
 #' @param show_status Logical. Default is TRUE. If TRUE, percent completion and the number of unique taxa left to process is printed in the console.
 #' @param show_names Logical. Default is FALSE. If TRUE, taxon names are printed on the console as they are submitted as queries to GBIF.
+#' @param cores Integer. Default is 1. Specifies number of cores to use for processing. Values greater than 1 utilize parallel processing (not allowed on Windows systems). Parallel processing not recommended for use in GUI setting. See \code{parallel::mclapply}.
 #'
 #' @return The input dataframe with the following output fields appended:
 #' \item{query_full_name}{exact string used in GBIF query}
@@ -73,7 +74,11 @@
 #' data(strophariaceae) #import sample dataset
 #' data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 
-taxon_update <- function(data, taxon_col="scientificName", authorship_col="scientificNameAuthorship", show_names=FALSE, species_only=TRUE, force_accepted=FALSE, show_status=TRUE){
+taxon_update <- function(data, taxon_col="scientificName",
+                         authorship_col="scientificNameAuthorship",
+                         show_names=FALSE, species_only=TRUE,
+                         force_accepted=FALSE, show_status=TRUE,
+                         cores=1){
   #check that the input is formatted correctly. If not, stop and print error.
   if (!is.data.frame(data)){
     stop('Input data needs to be a data.frame.')
@@ -98,150 +103,54 @@ taxon_update <- function(data, taxon_col="scientificName", authorship_col="scien
   }
   unique_taxa <- dplyr::distinct(data_cond)
 
-#Name update using GBIF via taxize
+  #Name update using GBIF via taxize
   #Add columns for name update output
-  out <- data.frame(matrix(nrow=nrow(unique_taxa),ncol = 15))
-  colnames(out) <- c("new_name", "new_author", "new_full_name", "new_kingdom",
-                     "new_phylum", "new_class", "new_order", "new_family",
-                     "new_genus", "new_specific_epithet","new_species", "rank", "taxon_conf",
-                     "taxon_matchtype", "error")
+  out <- matrix(nrow=nrow(unique_taxa),ncol = 16)
   unique_taxa <- cbind(unique_taxa,out)
   unique_taxa[is.na(unique_taxa)] <- ""
-  tot <- 0
-  for (i in 1:nrow(unique_taxa)){
-    one_row_analysis <- FALSE
-    gbif_new_key <- ""
-    if (unique_taxa$query_full_name[i]==""){
-      blank <- TRUE
-    }else{
-      blank <- FALSE
-      gbif_out_df <- taxize::get_gbifid_(sci = unique_taxa$query_full_name[i], method = "backbone", messages=show_names)[[unique_taxa$query_full_name[i]]]
-    }
-    if (nrow(gbif_out_df) == 0 | blank==TRUE){ #No records returned from GBIF OR the query was blank (i.e. ""); blanks cause errors if submitted in get_gbif_ query
-      unique_taxa$error[i] <- "error5"
-    } else{ #One or more records returned from GBIF
-      if (unique_taxa$query_authorship[i] != ""){#Author listed for input record
-        gbif_out_row <- gbif_out_df[1, ]#Take the first (best) match returned from GBIF
-        if (gbif_out_row$matchtype == "HIGHERRANK"){#Check that best match is not a HIGHERRANK taxon match
-          unique_taxa$error[i] <- "error8"
-        }else {
-          one_row_analysis <- TRUE
-        }
-      }else {#No author listed for input record
-        gbif_out_rows <- gbif_out_df[gbif_out_df$matchtype == "EXACT", ]#Check for EXACT matches
-        if (nrow(gbif_out_rows) == 0){#No EXACT matches
-          if (nrow(gbif_out_df[gbif_out_df$matchtype != "HIGHERRANK", ])==0){#All non-EXACT matches are HIGHERRANK-can't update name
-            unique_taxa$error[i] <- "error2"
-          }else{#Some non-exact matches are FUZZY, can proceed with name update
-           gbif_out_rows <- gbif_out_df[gbif_out_df$matchtype != "HIGHERRANK", ]#Remove HIGHERRANK matches and keep FUZZY matches
-          }
-        }
-        if (nrow(gbif_out_rows)==1){#one match, can be FUZZY or EXACT
-          one_row_analysis <- TRUE
-          gbif_out_row <- gbif_out_rows
-        }
-        if (nrow(gbif_out_rows)>1) {#more than one match, can be all FUZZY or all EXACT
-          for (j in 1:nrow(gbif_out_rows)){#Check if all matches lead to the same valid or updated name
-            if (gbif_out_rows$status[j] == "ACCEPTED"){ #Record has ACCEPTED status
-              gbif_out_rows$new_key[j] <- gbif_out_rows$usagekey[j] #New key the same as "old" key
-            } else {
-              if (gbif_out_rows$status[j] == "DOUBTFUL"){#Record has DOUBTFUL status
-                gbif_out_rows$new_key[j] <- "" #No new key
-              } else { #Record has SYNONYM status
-                gbif_out_rows$new_key[j] <- gbif_out_rows$acceptedusagekey[j] #New key is the key of the SYNONYM taxon
-              }
-            }
-          }
-          if (length(unique(gbif_out_rows$new_key)) == 1) {#New key the same for each match
-            if (unique(gbif_out_rows$new_key) == ""){ #All matches had DOUBTFUL status, so no new key - can't update name
-              unique_taxa$error[i] <- "error3"
-            }else{#Matches were either ACCEPTED or SYNONYM status and resulted in one unique new key
-              if (nrow(gbif_out_rows[gbif_out_rows$status== "ACCEPTED",])>0){#When matches include ACCEPTED record
-                one_row_analysis <- TRUE
-                gbif_out_row <- gbif_out_rows[gbif_out_rows$status== "ACCEPTED",]
-              }else{#When matches are all SYNONYM status
-                gbif_new_key <- gbif_out_rows$new_key[1]
-                gbif_out_row <- gbif_out_rows[1,]#Get matchtype and taxon_conf info from best (highest conf) SYNONYM match
-              }
-            }
-          } else {#Matches have different new keys - can't update name; unless...
-            if (force_accepted == T & "ACCEPTED" %in% gbif_out_rows$status){#pick ACCEPTED gbif match and proceed with name update regardless of how "accurate" the match really is
-              one_row_analysis <- TRUE
-              gbif_out_row <- gbif_out_rows[gbif_out_rows$status == "ACCEPTED",][1,]
-            }else{#pick_accpted option is FALSE; won't update name
-              unique_taxa$error[i] <- "error4"
-            }
 
-          }
-        }
-      }
-    }
-    if (one_row_analysis){
-      if (gbif_out_row$status == "ACCEPTED"){ #Don't need to go to "new Key" gbif page
-        unique_taxa$new_full_name[i] <- gbif_out_row$scientificname
-        unique_taxa$new_name[i] <- gbif_out_row$canonicalname
-        unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
-        unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
-        unique_taxa$new_author[i] <- gsub(paste(gbif_out_row$canonicalname, " ", sep = ""), "", gbif_out_row$scientificname)
-        if (!is.null(gbif_out_row$genus)){unique_taxa$new_genus[i] <- gbif_out_row$genus}
-        if (!is.null(gbif_out_row$family)){unique_taxa$new_family[i] <- gbif_out_row$family}
-        if (!is.null(gbif_out_row$order)){unique_taxa$new_order[i] <- gbif_out_row$order}
-        if (!is.null(gbif_out_row$class)){unique_taxa$new_class[i] <- gbif_out_row$class}
-        if (!is.null(gbif_out_row$phylum)){unique_taxa$new_phylum[i] <- gbif_out_row$phylum}
-        unique_taxa$new_kingdom[i] <- gbif_out_row$kingdom
-        unique_taxa$rank[i] <- gbif_out_row$rank
-        if (!is.null(gbif_out_row$species)){unique_taxa$new_species[i] <- gbif_out_row$species}
-      } else {# status is not accepted
-        if (gbif_out_row$status == "DOUBTFUL"){
-          unique_taxa$error[i] <- "error1"
-        } else {#synonym, go to new key gbif page to get new name info
-          gbif_new_key <- gbif_out_row$acceptedusagekey
-        }
-      }
-    }
-  #Following loop accounts for the fact that even though some taxa are listed as synonyms in get_gbifid_ output, the synonym itself may have DOUBTFUL status (i.e. you have to check the status of the synonym as well)
-  #Additionally, gbif_name_usage is used here instead of get_gbifid_, because the original query using get_gbifid_ outputs the synonym name with no authorship. Using the acceptedusagekey (given in the original get_gbifid_ output) with gbif_name_usage you can retrieve the new name AND authorship.
-    if(gbif_new_key != ""){ #Go to new key page to extract name info
-      key_record <- taxize::gbif_name_usage(key = gbif_new_key)
-      if (key_record$taxonomicStatus == "DOUBTFUL"){#New name has DOUBTFUL status - can't update name
-        unique_taxa$error[i] <- "error6"
-      } else {
-        if (key_record$taxonomicStatus == "SYNONYM"){#New name is still a synonym (likely indicates an error within GBIF) - can't update name
-          unique_taxa$error[i] <- "error7"
-        }else{#New name is ACCEPTED
-          unique_taxa$new_name[i] <- key_record$canonicalName
-          unique_taxa$new_full_name[i] <- key_record$scientificName
-          unique_taxa$taxon_conf[i] <- gbif_out_row$confidence
-          unique_taxa$taxon_matchtype[i] <- gbif_out_row$matchtype
-          unique_taxa$new_author[i] <- gsub(paste(key_record$canonicalName, " ", sep = ""), "", key_record$scientificName)
-          if (is.null(key_record$genus) == "FALSE"){unique_taxa$new_genus[i] <- key_record$genus}
-          if (is.null(key_record$family) == "FALSE"){unique_taxa$new_family[i] <- key_record$family}
-          if (is.null(key_record$order) == "FALSE"){unique_taxa$new_order[i] <- key_record$order}
-          if (is.null(key_record$class) == "FALSE"){unique_taxa$new_class[i] <- key_record$class}
-          if (is.null(key_record$phylum) == "FALSE"){unique_taxa$new_phylum[i] <- key_record$phylum}
-          unique_taxa$new_kingdom[i] <- key_record$kingdom
-          unique_taxa$rank[i] <- tolower(key_record$rank)
-          if (!is.null(key_record$species)){unique_taxa$new_species[i] <- key_record$species}
-        }
-      }
-    }
-    if (show_status){
-      tot <- tot + 1
-      cat(paste0(round((tot / nrow(unique_taxa)) * 100), '% completed.',' Taxa left:', nrow(unique_taxa)-tot, "   "), "\r") #track progress
-    }
-  }
+  #update unique taxon names
+  unique_taxa <- as.list(as.data.frame(t(unique_taxa)))
+  unique_taxa <- maxjobs.mclapply2(unique_taxa, name_update_loop,cores=cores,
+                                   show_names=show_names,show_status=show_status,
+                                   force_accepted=force_accepted)
+  unique_taxa <- data.frame(t(as.data.frame(unique_taxa)))
+  #unique_taxa <- data.frame(t(as.data.frame(iconv(unique_taxa,from="UTF-8", to="latin1"))))
+  colnames(unique_taxa)[1:16] <- c("query_full_name", "new_full_name", "new_name",
+                                   "new_author", "new_kingdom",
+                                   "new_phylum", "new_class",
+                                   "new_order", "new_family",
+                                   "new_genus", "new_specific_epithet",
+                                   "new_species", "rank",
+                                   "taxon_conf", "taxon_matchtype",
+                                   "error")
 
-  if(exists("gbif_out_rows", inherits = FALSE)){remove(gbif_out_rows)}
-  if(exists("gbif_out_row", inherits = FALSE)){remove(gbif_out_row)}
 
-#Put new names into original input file
+  #Put new names into original input file
   data_cond <- dplyr::inner_join(data_cond, unique_taxa, by="query_full_name")
   data_cond$new_specific_epithet <- gsub("^\\S+\\s|^\\S+$", "", data_cond$new_name)
-  data <- cbind(data, data_cond[,!colnames(data_cond) %in% c("query_name.x", "query_authorship.x", "query_name.y", "query_authorship.y")])#Remove query_name and query_authorship; keep "query_full_name" column, contains the exact query submitted to GBIF
-  data <- data.frame(iconv(as.matrix(data),from="UTF-8", to="latin1"))
-  if (show_status){cat(paste0(100, '% completed.', "            "), "\r")} #track progress
+  data <- cbind(data, data_cond)
+  data[,(ncol(data)-14):ncol(data)] <- data.frame(iconv(as.matrix(data[,(ncol(data)-14):ncol(data)]),from="UTF-8", to="latin1"))
   if (species_only){
     data <- data[data$error!=""|data$rank=="species",]#post-update species removal; pre-update species removal not always 100% effective, but still useful to remove species before name updating - saves processing time
   }
   return(data)
+}
+
+maxjobs.mclapply2 <- function(X, FUN, cores, show_names, show_status, force_accepted){
+  N <- length(X)
+  i.list <- parallel::splitIndices(N, N/cores)
+  result.list <- list()
+  for(i in seq_along(i.list)){
+    i.vec <- i.list[[i]]
+    result.list[i.vec] <- parallel::mclapply(X[i.vec], FUN,
+                                             show_names=show_names,
+                                             force_accepted=force_accepted,
+                                             mc.cores=cores)
+    #print status message
+    if (show_status){
+      cat(paste0(round((i*cores / length(X)) * 100), '% completed.',' Taxa left:', length(X)-i*cores, "   "), "\r") #track progress
+    }
+  }
+  return(result.list)
 }

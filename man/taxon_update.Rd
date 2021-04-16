@@ -11,7 +11,8 @@ taxon_update(
   show_names = FALSE,
   species_only = TRUE,
   force_accepted = FALSE,
-  show_status = TRUE
+  show_status = TRUE,
+  cores = 1
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ taxon_update(
 \item{force_accepted}{Logical. Default is FALSE. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.}
 
 \item{show_status}{Logical. Default is TRUE. If TRUE, percent completion and the number of unique taxa left to process is printed in the console.}
+
+\item{cores}{Integer. Default is 1. Specifies number of cores to use for processing. Values greater than 1 utilize parallel processing (not allowed on Windows systems). Parallel processing not recommended for use in GUI setting. See \code{parallel::mclapply}.}
 }
 \value{
 The input dataframe with the following output fields appended:
