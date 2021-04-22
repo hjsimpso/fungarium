@@ -16,7 +16,7 @@ taxon_update(
 )
 }
 \arguments{
-\item{data}{Data.frame or data.table containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).}
+\item{data}{Data.frame containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).}
 
 \item{taxon_col}{Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).}
 
@@ -33,7 +33,7 @@ taxon_update(
 \item{cores}{Integer. Default is 1. Specifies number of cores to use for processing. Values greater than 1 utilize parallel processing (not allowed on Windows systems). Parallel processing not recommended for use in GUI setting. See \code{parallel::mclapply}.}
 }
 \value{
-The input dataframe with the following output fields appended:
+The input data.frame with the following output fields appended:
 \item{query_full_name}{exact string used in GBIF query}
 \item{new_name}{currently accepted canonical name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
 \item{new_author}{authorship associated with the currently accepted scientific name}
@@ -84,7 +84,13 @@ However, function will work on any dataset with taxon names and authorship. Beca
 This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.
 }
 \note{
-Http errors may indicate issues with the GBIF database. Monitor GBIF system health at https://www.gbif.org.
+Http errors may indicate issues with the GBIF database (e.g., the taxonomy backbone is being updated). Monitor GBIF system health at https://www.gbif.org.\cr
+\cr
+Sporadic GBIF connection errors may also occur during parallel processing. The cause of this is currently unknown,
+but doesn't appear to be connected to GBIF system health. If an error does occur when processing a taxon name, that taxon is automatically reprocessed until an error no longer occurs.
+So far, this solution seems to work well; however, if the error is related to something that can't immediately be fixed (e.g., GBIF system health issues),
+the code may loop indefinitely. Track function progress output if you believe you may be experiencing this issue.
+Progress can be tracked in different ways using either \code{show_status} or \code{show_names}.
 }
 \examples{
 library(fungarium)

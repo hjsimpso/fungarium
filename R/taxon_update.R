@@ -5,7 +5,7 @@
 #' \href{https://www.gbif.org}{GBIF} Backbone Taxonomy database.
 #'
 #'
-#' @param data Data.frame or data.table containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
+#' @param data Data.frame containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
 #' @param taxon_col Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).
 #' @param authorship_col Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets). If input dataset has no authorship column, use NULL. This assumes that no authorship information is available. Taxon names and authorship names combined in one column (e.g."Pleurotus ostreatus (Jacq.) P.Kumm." ), is currently not supported.
 #' @param species_only Logical. Default if TRUE. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.
@@ -14,7 +14,7 @@
 #' @param show_names Logical. Default is FALSE. If TRUE, taxon names are printed on the console as they are submitted as queries to GBIF.
 #' @param cores Integer. Default is 1. Specifies number of cores to use for processing. Values greater than 1 utilize parallel processing (not allowed on Windows systems). Parallel processing not recommended for use in GUI setting. See \code{parallel::mclapply}.
 #'
-#' @return The input dataframe with the following output fields appended:
+#' @return The input data.frame with the following output fields appended:
 #' \item{query_full_name}{exact string used in GBIF query}
 #' \item{new_name}{currently accepted canonical name (may be the same as the name originally listed in the input file, meaning that the orginal name is currently accepted)}
 #' \item{new_author}{authorship associated with the currently accepted scientific name}
@@ -57,7 +57,13 @@
 #' However, function will work on any dataset with taxon names and authorship. Becasue processing time can be significant, it may be helpful to breakup extremely large datasets (>50,000 records) and apply this function to each smaller subset.
 #' This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.
 #' @author Hunter J. Simpson
-#' @note Http errors may indicate issues with the GBIF database. Monitor GBIF system health at https://www.gbif.org.
+#' @note Http errors may indicate issues with the GBIF database (e.g., the taxonomy backbone is being updated). Monitor GBIF system health at https://www.gbif.org.\cr
+#' \cr
+#' Sporadic GBIF connection errors may also occur during parallel processing. The cause of this is currently unknown,
+#' but doesn't appear to be connected to GBIF system health. If an error does occur when processing a taxon name, that taxon is automatically reprocessed until an error no longer occurs.
+#' So far, this solution seems to work well; however, if the error is related to something that can't immediately be fixed (e.g., GBIF system health issues),
+#' the code may loop indefinitely. Track function progress output if you believe you may be experiencing this issue.
+#' Progress can be tracked in different ways using either \code{show_status} or \code{show_names}.
 #' @references \enumerate{
 #' \item Scott Chamberlain and Eduard Szocs (2013). taxize - taxonomic search and retrieval in R. F1000Research, 2:191. URL:http://f1000research.com/articles/2-191/v2.
 #' \item Scott Chamberlain, Eduard Szoecs, Zachary Foster, Zebulun Arendsee, Carl
