@@ -22,7 +22,7 @@ enrichment(
 
 \item{by}{Character string specifying the variable in the all_rec/trait_rec datasets, for which enrichment factors will be calculated. Default is "new_full_name" (i.e. full taxon names).}
 
-\item{cols}{Character vector specifiying which columns associated with the specified variable should be included in the output. Default is: c("new_name", "new_author", "new_kingdom","new_phylum", "new_class", "new_order","new_family", "new_genus","new_specific_epithet").}
+\item{cols}{Character vector specifying which columns associated with the specified variable should be included in the output. Default is: c("new_name", "new_author", "new_kingdom","new_phylum", "new_class", "new_order","new_family", "new_genus","new_specific_epithet").}
 
 \item{coll_bias}{Logical. If TRUE, collector bias for total records and trait records is calculated for each variable element.}
 
