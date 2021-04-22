@@ -118,3 +118,36 @@ name_update_loop <- function(unique_taxa, show_names, force_accepted){#update a 
   }
   return(unique_taxa[3:18])
 }
+
+#parallelization loop
+maxjobs.mclapply2 <- function(X, FUN, cores, show_names, show_status, force_accepted){
+  N <- length(X)
+  i.list <- parallel::splitIndices(N, N/cores)
+  result.list <- list()
+  for(i in seq_along(i.list)){
+    i.vec <- i.list[[i]]
+    try_error <- TRUE
+    while (try_error){
+      result.list[i.vec] <- parallel::mclapply(X[i.vec], FUN,
+                                               show_names=show_names,
+                                               force_accepted=force_accepted,
+                                               mc.cores=cores)
+      error_check <- lapply(result.list[i.vec], class)
+      if ("try-error" %in% error_check){
+        message("'try-error' error detected in mclapply output. Rerunning scheduled tasks.")
+        try_error <- TRUE
+      }else{
+        try_error <- FALSE
+      }
+    }
+    #print status message
+    if (show_status){
+      if((length(X)-(i*cores))>0){
+        cat(paste0(round((i*cores / length(X)) * 100), '% completed.',' Taxa left:', (length(X)-(i*cores)), "   "), "\r") #track progress
+      }else{
+        cat(paste0('100% completed.',' Taxa left:0', "   "), "\r") #track progress
+      }
+    }
+  }
+  return(result.list)
+}

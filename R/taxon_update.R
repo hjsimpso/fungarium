@@ -136,21 +136,3 @@ taxon_update <- function(data, taxon_col="scientificName",
   }
   return(data)
 }
-
-maxjobs.mclapply2 <- function(X, FUN, cores, show_names, show_status, force_accepted){
-  N <- length(X)
-  i.list <- parallel::splitIndices(N, N/cores)
-  result.list <- list()
-  for(i in seq_along(i.list)){
-    i.vec <- i.list[[i]]
-    result.list[i.vec] <- parallel::mclapply(X[i.vec], FUN,
-                                             show_names=show_names,
-                                             force_accepted=force_accepted,
-                                             mc.cores=cores)
-    #print status message
-    if (show_status){
-      cat(paste0(round((i*cores / length(X)) * 100), '% completed.',' Taxa left:', length(X)-i*cores, "   "), "\r") #track progress
-    }
-  }
-  return(result.list)
-}
