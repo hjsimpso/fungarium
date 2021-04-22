@@ -18,8 +18,8 @@ comprehensive trait analyses.
 ## Installing fungarium
 
 ``` r
-install.packages("devtools") #Install 'devtools' (if not already installed)
-devtools::install_github("hjsimpso/fungarium") #Retrieve fungarium package from github repository and install
+install.packages("devtools") #install 'devtools' (if not already installed)
+devtools::install_github("hjsimpso/fungarium@*release") #install the latest fungarium release
 ```
 
 ## Installing Docker
