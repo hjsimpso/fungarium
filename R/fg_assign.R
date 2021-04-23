@@ -3,12 +3,12 @@
 #' Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed in a
 #' dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 #'
-#' @param tax_table  Data.frame/data.table of taxonomic classifications (e.g. phylum, class, order, family, genus, and species names)
+#' @param tax_table  Data.frame of taxonomic classifications (e.g. phylum, class, order, family, genus, and species names)
 #' @param url        URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.
 #' @param tax_cols   Character vector specifying the column names containing taxonomic variables. Names must be in descending order of taxonomic rank.
 #' Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_name").
 #'
-#' @return           Returns the input data.frame/data.table with FUNGuild assignments appended.
+#' @return           Returns the input data.frame with FUNGuild assignments appended.
 #' @references
 #' \enumerate{
 #'   \item Nguyen NH, Song Z, Bates ST, Branco S, Tedersoo L, Menke J, Schilling JS, Kennedy PG. 2016. FUNGuild: An open annotation tool for parsing fungal community datasets by ecological guild. \emph{Fungal Ecology}, 20: 241-248. doi:10.1016/j.funeco.2015.06.006
@@ -40,7 +40,7 @@ fg_assign <- function(tax_table,
 
   #check input data format
   if (!is.data.frame(tax_table)){
-    stop("Input data must be a data.frame or data.table.")
+    stop("Input data must be a data.frame.")
   }
 
   #download FUNGuild database

@@ -12,7 +12,7 @@ fg_assign(
 )
 }
 \arguments{
-\item{tax_table}{Data.frame/data.table of taxonomic classifications (e.g. phylum, class, order, family, genus, and species names)}
+\item{tax_table}{Data.frame of taxonomic classifications (e.g. phylum, class, order, family, genus, and species names)}
 
 \item{url}{URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.}
 
@@ -20,7 +20,7 @@ fg_assign(
 Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_name").}
 }
 \value{
-\preformatted{      Returns the input data.frame/data.table with FUNGuild assignments appended.
+\preformatted{      Returns the input data.frame with FUNGuild assignments appended.
 }
 }
 \description{
