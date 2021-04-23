@@ -103,6 +103,7 @@ get_coll_bias <- function(data, all_rec, trait_rec, by="new_full_name", cores, s
   data <- cbind(data, out2)#append trait bias values to input counts data
   colnames(data)[(length(data[1,])-3):length(data[1,])] <- c("max_bias", "coll_groups", "max_bias_t", "coll_groups_t")
   data <- data[order(data[[by]]),]
+  setDF(data)
   return(data)
 }
 
