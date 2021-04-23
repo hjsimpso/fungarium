@@ -114,6 +114,7 @@ to FALSE and import the file into R manually (via \code{\link{read.delim}}) at a
 more memory may be available.
 }
 \examples{
+library(fungarium)
 #Query for all Pleurotus records in Minnesota, USA.
 mp_query <- mycoportal_tab(path.expand("~"), "Pleurotus",
                            taxon_type="1", country="United States",

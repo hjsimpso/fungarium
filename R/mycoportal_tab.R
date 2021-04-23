@@ -60,6 +60,7 @@
 #' @return If read_files is TRUE, a data.frame of MyCoPortal records is returned.
 #'
 #' @examples
+#' library(fungarium)
 #' #Query for all Pleurotus records in Minnesota, USA.
 #' mp_query <- mycoportal_tab(path.expand("~"), "Pleurotus",
 #'                            taxon_type="1", country="United States",
@@ -234,7 +235,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   if(messages){message("Navigating to mycoportal website...\n")}
   dr$navigate("http://mycoportal.org/portal/collections/harvestparams.php")
   k <- 1
-  while(tryCatch({webElem <- dr$findElement("class name", "resetbtn")
+  while(tryCatch({webElem <- dr$findElement(using = "xpath", value='//*[@id="harvestparams"]/div[1]/div[2]/div[3]/button')
   "no_error"},
   error=function(e){"error"},
   warning=function(w){"warning"},
@@ -380,8 +381,10 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
       }
     }
 
-    webElem <- dr$findElement(using = "xpath", value = "/html/body/table/tbody/tr[2]/td/div[2]/div/div[2]/div/div[1]/div/a")
+    webElem <- dr$findElement(using = 'xpath', value = '//*[@id="queryrecords"]/div[1]/form[2]/button')
     webElem$clickElement()
+    #navigate to download pop-up window
+    myswitch(dr,dr$getWindowHandles()[[2]])
     #deselect zip file option
     while(tryCatch({webElem <- dr$findElement("name", "zip")
     "no_error"},
@@ -392,7 +395,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
     }
     webElem$clickElement()
     #select tab file option
-    webElem <- dr$findElement(using = "xpath", value = '//*[@id="innertext"]/div[2]/form/fieldset/table/tbody/tr[3]/td[2]/div/input[2]')
+    webElem <- dr$findElement(using = "xpath", value = '/html/body/div[1]/div[2]/form/fieldset/div[3]/div[2]/input[2]')
     webElem$clickElement()
     dload_url <- dr$getCurrentUrl()[[1]]
     webElem <- dr$findElement("name", "submitaction")
