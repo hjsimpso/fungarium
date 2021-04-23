@@ -13,7 +13,7 @@ find_trait(
 )
 }
 \arguments{
-\item{data}{Dataframe containing columns of trait-relevant metadata.}
+\item{data}{Data.frame containing columns of trait-relevant metadata.}
 
 \item{pos_string}{Character string ("positive") containing a \link{regular expression} that is used to find character strings within the specified metadata columns of the input data frame that contain trait-relevant keywords or phrases.}
 
@@ -24,7 +24,7 @@ find_trait(
 \item{string_clean}{Logical. If TRUE (the default), strings in metadata_cols are "cleaned" prior to trait searching. This includes converting strings to lowercase and removing any puncuation (e.g., periods, commas, question marks, etc.) or extra white space.}
 }
 \value{
-\preformatted{      Returns a dataframe of records with trait-relevant metadata.
+\preformatted{      Returns a data.frame of records with trait-relevant metadata.
 }
 }
 \description{

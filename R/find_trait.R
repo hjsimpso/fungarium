@@ -10,12 +10,12 @@
 #' growing in a habitat affected by a particular disturbance (e.g. wind, fire, logging)
 #'
 #'
-#' @param data           Dataframe containing columns of trait-relevant metadata.
+#' @param data           Data.frame containing columns of trait-relevant metadata.
 #' @param pos_string     Character string ("positive") containing a \link{regular expression} that is used to find character strings within the specified metadata columns of the input data frame that contain trait-relevant keywords or phrases.
 #' @param neg_string     Character string ("negative") containing a regular expression that is used to remove records that were falsely identfied, via the "positive" search string, as being trait-relevant. This argument is optional.
 #' @param metadata_cols  Character vector containing names of columns with trait-relevant metadata. Default names are "occurrenceRemarks", "host", "habitat", and "substrate" (names used in MyCoPortal datasets).
 #' @param string_clean   Logical. If TRUE (the default), strings in metadata_cols are "cleaned" prior to trait searching. This includes converting strings to lowercase and removing any puncuation (e.g., periods, commas, question marks, etc.) or extra white space.
-#' @return           Returns a dataframe of records with trait-relevant metadata.
+#' @return           Returns a data.frame of records with trait-relevant metadata.
 #' @export
 #'
 #' @examples
