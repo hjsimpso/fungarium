@@ -31,7 +31,7 @@ enrichment(
 \item{status_feed}{Logical. If TRUE, status of collector bias analysis in printed to the console.}
 }
 \value{
-Data.table containing unique variable elements in the input dataset (e.g. unique taxa) with the following output fields appended for each variable element.
+Data.frame containing unique variable elements in the input dataset (e.g. unique taxa) with the following output fields appended for each variable element.
 Note that if \code{cols} is non-NULL, the specifying variables will be appended as well.
 \item{freq}{Numeric. Number of records in the full dataset}
 \item{trait_freq}{Numeric. Number of records in the trait dataset}

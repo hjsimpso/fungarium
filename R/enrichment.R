@@ -12,7 +12,7 @@
 #' @param cores Integer. Default is 1. Specifies number of cores to use for processing. Values greater than 1 utilize parallel processing (not allowed on Windows systems). Parallel processing not recommended for use in GUI setting. See \code{parallel::mclapply}.
 #' @param status_feed Logical. If TRUE, status of collector bias analysis in printed to the console.
 #'
-#' @return Data.table containing unique variable elements in the input dataset (e.g. unique taxa) with the following output fields appended for each variable element.
+#' @return Data.frame containing unique variable elements in the input dataset (e.g. unique taxa) with the following output fields appended for each variable element.
 #' Note that if \code{cols} is non-NULL, the specifying variables will be appended as well.
 #' \item{freq}{Numeric. Number of records in the full dataset}
 #' \item{trait_freq}{Numeric. Number of records in the trait dataset}
@@ -77,11 +77,11 @@ enrichment <- function(all_rec,
     stop("Input data must be a data.frame or data.table.")
   }
   if (!is.data.table(all_rec)){#check specifically if input is data.table
-    message("Coercing input data to data.table.")
+    #message("Coercing input data to data.table.")
     all_rec <- setDT(all_rec)
   }
   if (!is.data.table(trait_rec)){#check specifically if input is data.table
-    message("Coercing input data to data.table.")
+    #message("Coercing input data to data.table.")
     trait_rec <- setDT(trait_rec)
   }
 
