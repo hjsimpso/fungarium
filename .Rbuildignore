@@ -9,3 +9,4 @@
 ^R/get_iso\.R$
 ^man/get_iso\.md$
 README_old.*
+^.vscode$
