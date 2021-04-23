@@ -4,12 +4,12 @@
 #' a fips code and the correctly spelled name is assigned using approximate
 #' name matching algorithms.
 #'
-#' @param data  Dataframe containing a column with state names and (optionally) a column of county names.
+#' @param data  Data.frame containing a column with state names and (optionally) a column of county names.
 #' @param state_col Character string specifying state column name. Defaults to "stateProvince" (name used by MyCoPortal).
 #' @param county_col Character string specifying county column name. Defaults to "county" (name used by MyCoPortal).
 #' @param assign_counties Logical. If TRUE, fips codes are assigned for states AND counties. If FALSE, only state fips codes are assigned.
 #'
-#' @return Returns input dataframe with the following output fields appended:
+#' @return Returns input data.frame with the following output fields appended:
 #' \item{state_name}{Character string. Matched state name.}
 #' \item{state_fips}{Character string. Two digit state fips code.}
 #' \item{state_matchtype}{Character string.
