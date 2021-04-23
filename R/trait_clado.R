@@ -129,7 +129,7 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
     stop("Input data must be a data.frame or data.table.")
   }
   if (!data.table::is.data.table(data)){#check specifically if input is data.table
-    message("Coercing input data to data.table.")
+    #message("Coercing input data to data.table.")
     data <- data.table::setDT(data)
   }
 
