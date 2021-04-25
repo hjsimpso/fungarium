@@ -135,8 +135,15 @@ taxon_update <- function(data, taxon_col="scientificName",
   #Put new names into original input file
   data_cond <- dplyr::inner_join(data_cond, unique_taxa, by="query_full_name")
   data_cond$new_specific_epithet <- gsub("^\\S+\\s|^\\S+$", "", data_cond$new_name)
+  data_cond <- data_cond[,!colnames(data_cond) %in% c("query_name", "query_authorship")]#Remove query_name and query_authorship; keep "query_full_name" column, contains the exact query submitted to GBIF
+  data_cond <- sapply(data_cond, function(x){
+   if("UTF-8"%in%Encoding(x)){iconv(x, from="UTF-8", to="latin1//TRANSLIT")}else{x}
+  })
   data <- cbind(data, data_cond)
-  data[,(ncol(data)-14):ncol(data)] <- data.frame(iconv(as.matrix(data[,(ncol(data)-14):ncol(data)]),from="UTF-8", to="latin1"))
+  #data[,(ncol(data)-15):ncol(data)] <- sapply(data[,(ncol(data)-15):ncol(data)], function(x){
+   # if("UTF-8"%in%Encoding(x)){iconv(x, from="UTF-8", to="latin1")}else{x}
+  #})
+  #data[,(ncol(data)-14):ncol(data)] <- data.frame(iconv(as.matrix(data[,(ncol(data)-14):ncol(data)]),from="UTF-8", to="latin1"))
   if (species_only){
     data <- data[data$error!=""|data$rank=="species",]#post-update species removal; pre-update species removal not always 100% effective, but still useful to remove species before name updating - saves processing time
   }
