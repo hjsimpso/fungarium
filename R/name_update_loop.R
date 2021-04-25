@@ -134,7 +134,7 @@ maxjobs.mclapply2 <- function(X, FUN, cores, show_names, show_status, force_acce
                                                mc.cores=cores)
       error_check <- lapply(result.list[i.vec], class)
       if ("try-error" %in% error_check){
-        message("'try-error' error detected in mclapply output. Rerunning scheduled tasks.")
+        message("'try-error' detected in mclapply output. Rerunning scheduled tasks.")
         try_error <- TRUE
       }else{
         try_error <- FALSE
