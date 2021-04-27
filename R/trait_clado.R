@@ -215,11 +215,17 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
 
   #make ggtree object
   if (layout=="circular"){suppressMessages(tree2 <- tree2 +ggplot2::ylim(0.5,(length(tree$tip.label)+0.5)))}#fixes gap in circular plots
-  #add additional data to ggtree object
-  tree2$data$tax_level <- label_data[match(label_data$label, tree2$data$label),]$tax_level
-  tree2$data$trait_ratio <- label_data[match(label_data$label, tree2$data$label),]$trait_ratio
-  tree2$data$trait_freq <- label_data[match(label_data$label, tree2$data$label),]$trait_freq
-  tree2$data$freq <- label_data[match(label_data$label, tree2$data$label),]$freq
+
+  #add additional data to ggtree object - can be used later for annotations
+  #if (!is.null(extra_data)){
+  #  for (i in 1:length(extra_data)){
+  #    tree2$data[[extra_data[i]]] <- label_data[match(label_data$label, tree2$data$label),][[extra_data[i]]]
+   # }
+  #}
+  #tree2$data$tax_level <- label_data[match(label_data$label, tree2$data$label),]$tax_level
+  #tree2$data$trait_ratio <- label_data[match(label_data$label, tree2$data$label),]$trait_ratio
+  #tree2$data$trait_freq <- label_data[match(label_data$label, tree2$data$label),]$trait_freq
+  #tree2$data$freq <- label_data[match(label_data$label, tree2$data$label),]$freq
   tree2$data$label <- gsub("_", " ", tree2$data$label) #fix tip labels
 
   return(tree2)
