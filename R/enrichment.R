@@ -34,24 +34,26 @@
 #'
 #' @examples
 #' library(fungarium)
-#' data(strophariaceae) #import sample dataset
+#' data(strophariaceae) #import sample data set
 #' data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 #'
 #' #Finds fire-associated records
 #' string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
 #'
-#' #Removes records falsely identfied as fire-associated
+#' #Removes records falsely identified as fire-associated
 #' string2 <- "(?i)un.?burn(t|ed)"
 #'
 #' #filter out records that do not contain any environmental metadata (optional)
-#' data <- data[data$occurrenceRemarks!=""|data$host!=""|
+#' #note that "host" is no longer present in new MyCoPortal data sets
+#' data_filt <- data[data$occurrenceRemarks!=""|data$host!=""|
 #'                    data$habitat!=""|data$substrate!="",]
 #'
 #' #find trait-relevant records
-#' trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
+#' trait_data <- find_trait(data_filt, c("occurrenceRemarks", "host", "habitat", "substrate"),
+#'                          pos_string=string1, neg_string=string2)
 #'
 #' #get trait enrichment
-#' trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data, status_feed=FALSE)
+#' trait_enrichment <- enrichment(all_rec=data_filt, trait_rec=trait_data, status_feed=FALSE)
 #'
 #' #filter taxa based on collector bias (optional)
 #' trait_enrichment <- trait_enrichment[trait_enrichment$max_bias<=0.75,]
