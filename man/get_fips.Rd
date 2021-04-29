@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_fips.R
 \name{get_fips}
 \alias{get_fips}
-\title{Fix mispelled names and assign fips codes to US states and counties}
+\title{Fix misspelled names and assign fips codes to US states and counties}
 \usage{
 get_fips(
   data,
@@ -27,7 +27,7 @@ Returns input data.frame with the following output fields appended:
 \item{state_matchtype}{Character string.
 EXACT: a state name was matched exactly to the state listed in the fungal dataset;
 PARTIAL: a state name was matched partially to the state listed in the fungal dataset;
-MISPELLED: a state name was matched approximately to the mispelled state listed in the fungal dataset;
+MISPELLED: a state name was matched approximately to the misspelled state listed in the fungal dataset;
 NONE: a state name could not be matched to the state listed in the fungal dataset.}
 \item{state_conf}{Integer. The confidence score when a mispelled state name is approximately matched (0-100).
 Names with NONE, EXACT, or PARTIAL matchtypes all get a score of 100.}
@@ -36,13 +36,13 @@ Names with NONE, EXACT, or PARTIAL matchtypes all get a score of 100.}
 \item{county_matchtype}{Character string.
 EXACT: a county name was matched exactly to the county listed in the fungal dataset;
 PARTIAL: a county name was matched partially to the county listed in the fungal dataset;
-MISPELLED: a county name was matched approximately to the mispelled county listed in the fungal dataset;
+MISPELLED: a county name was matched approximately to the misspelled county listed in the fungal dataset;
 NONE: a county name could not be matched to the county listed in the fungal dataset.}
-\item{county_conf}{Integer. Confidence score when a mispelled county name is approximately matched (0-100).
+\item{county_conf}{Integer. Confidence score when a misspelled county name is approximately matched (0-100).
 Names with NONE, EXACT, or PARTIAL matchtypes all get a score of 100.}
 }
 \description{
-Assigns fips codes to US states/territories or counties/county-equivalents. When a name is mispelled,
+Assigns fips codes to US states/territories or counties/county-equivalents. When a name is misspelled,
 a fips code and the correctly spelled name is assigned using approximate
 name matching algorithms.
 }
@@ -54,18 +54,18 @@ for the District of Columbia, US territories, and all 50 US states.\cr
 \cr
 When assigning fips codes, approximate name matches are possible
 when names have variable nomenclature (e.g. "Anoka", "Anoka Co.", "Anoka County") or are simply
-mispelled (e.g "Florda"). See "Value" section for validating the quality of
+misspelled (e.g "Florda"). See "Value" section for validating the quality of
 approximate matches.\cr
 \cr
 Only current county/county-equivalent names (as of December 2020) are used for assigning fips.
-Fungal records from counties that had substaintially different names in the past or
+Fungal records from counties that had substantially different names in the past or
 counties that no longer exist (e.g. Bedford City) may not have fips codes assigned.
 The only way to circumvent this issue is to include ALL historical names for every county in the
 reference dataset, which currently has not been done.
 }
 \examples{
 library(fungarium)
-data(strophariaceae) #import sample dataset
-data <- get_fips(strophariaceae) #Fix mispelled counties and assign fips codes
+data(strophariaceae) #import sample data set
+data <- get_fips(strophariaceae) #fix misspelled counties and assign fips codes
 
 }
