@@ -58,46 +58,32 @@ Cladogram in Simpson and Schilling (2021) created using \code{trait_clado}.
 }
 \examples{
 library(fungarium)
-data(strophariaceae) #import sample dataset
-data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 
-#Finds fire-associated records
-string1 <- "(?i)charred|burn(t|ed)|scorched|fire.?(killed|damaged|scarred)|killed.by.fire"
+#load sample enrichment data set for global Agaricales records
+data(agaricales_enrich)
 
-#Removes records falsely identfied as fire-associated
-string2 <- "(?i)un.?burn(t|ed)"
+#filter taxa based on collector bias
+agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias<=0.75,]
 
-#filter out records that do not contain any environmental metadata (optional)
-data <- data[data$occurrenceRemarks!=""|data$host!=""|
-                   data$habitat!=""|data$substrate!="",]
+#filter for taxa with at least 5 total records
+agaricales_enrich <- agaricales_enrich[agaricales_enrich$freq>=5,]
 
-#find trait-relevant records
-trait_data <- find_trait(data, pos_string=string1, neg_string=string2)
-
-#get trait enrichment
-trait_enrichment <- enrichment(all_rec=data, trait_rec=trait_data, status_feed=FALSE)
-
-#filter taxa based on collector bias (optional)
-trait_enrichment <- trait_enrichment[trait_enrichment$max_bias<=0.75,]
-
-#filter taxa based on total number of records (optional)
-trait_enrichment <- trait_enrichment[trait_enrichment$freq>=5,]
-
-#make cladogram
+#make circle cladogram
 library(ggtree)
 library(ggplot2)
 
-tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=TRUE,
-                    ladderize=TRUE, layout="circular", size=1,
-                    formula = ~new_order/new_family/new_genus/new_species)+
+trait_clado(data=agaricales_enrich, trait_col="trait_ratio", continuous=TRUE,
+            ladderize=TRUE, layout="circular", size=0.8,
+            formula = ~new_order/new_family/new_genus/new_name, show=300)+#make tree
   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
-               size = 1.5, fontface = "italic") + #add species labels
-  geom_tippoint(shape=20, aes(color=trait_ratio, size=trait_freq))+#add tree tips
-  ggtitle("Strophariaceae (US records): fire-association")+
+               size = 1.3, fontface = "italic") + #add species labels
+  geom_tippoint(shape=20,
+                aes(color=trait_ratio, size=trait_freq),
+                alpha=0.75)+#add tree tips
   scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
                         name = "Fire-associated records enrichment",
-                        limits = c(0, max(trait_enrichment$trait_ratio)+
-                                   (0.01*max(trait_enrichment$trait_ratio))),
+                        limits = c(0, max(agaricales_enrich$trait_ratio)+
+                                     (0.01*max(agaricales_enrich$trait_ratio))),
                         guide = guide_colourbar(label.vjust = 0.6,
                                                 label.theme = element_text(size = 10,
                                                                            colour = "black",
@@ -107,8 +93,7 @@ tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T
                                                 draw.ulim = FALSE,
                                                 draw.llim = FALSE,
                                                 barwidth = 15,
-                                                barheight = 0.5)
-  )+
+                                                barheight = 0.5))+
   scale_size(name = "Fire-associated records",
              guide = guide_legend(keywidth = 2,
                                   keyheight = 1,
@@ -125,9 +110,8 @@ tree <- trait_clado(data=trait_enrichment, trait_col="trait_ratio", continuous=T
         legend.justification = "center",
         legend.margin = margin(0,0,0,0),
         plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
-  xlim(-1, 3.6)#move root away from center; can help improve appearance of circular plot
+  xlim(-1,4)#move root away from center;can help improve appearance of circle plot
 
-tree
 }
 \references{
 \enumerate{
