@@ -1,6 +1,6 @@
 Package: fungarium
 Title: An R package for enabling the use of fungaria collections data in comprehensive trait analyses
-Version: 1.1.2
+Version: 1.1.3
 Authors@R: 
     person(given = "Hunter",
            family = "Simpson",
