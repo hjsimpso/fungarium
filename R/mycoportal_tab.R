@@ -15,7 +15,6 @@
 #' @param locality Character string specifying locality, e.g., "Harvard Forest"
 #' @param elevation_from Character string; meters, e.g., "1000"
 #' @param elevation_to Character string; meters
-#' @param host Character string specifying host species, e.g., "Betula alba"
 #' @param taxon_type Character, "1" to "5"; (1)Family or Scientific Name, (2)Family Only, (3)Scientific Name only, (4)Higher Taxonomy, (5)Common Name
 #' @param north_lat Character string, bounding box coordinate; ("-90" to "90")
 #' @param south_lat Character string, bounding box coordinate; ("-90" to "90")
@@ -75,7 +74,7 @@
 
 mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
                     county = NULL, locality = NULL, elevation_from = NULL, elevation_to = NULL,
-                    host = NULL, taxon_type = "1", north_lat = NULL,
+                    taxon_type = "1", north_lat = NULL,
                     south_lat = NULL, west_lon = NULL, east_lon = NULL, point_lat = NULL,
                     point_lon = NULL, radius = NULL, collector = NULL, collector_num = NULL,
                     coll_date1 = NULL, coll_date2 = NULL, synonyms = TRUE, messages = TRUE,
@@ -90,7 +89,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   #check input arguments
   if(length(c(taxon, country, state,
               county, locality, elevation_from, elevation_to,
-              host, north_lat,
+              north_lat,
               south_lat , west_lon, east_lon, point_lat,
               point_lon, radius, collector, collector_num,
               coll_date1, coll_date2))==0){
@@ -98,7 +97,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   }
   if("" %in% c(download_dir, taxon, taxon_type, country, state,
        county, locality, elevation_from, elevation_to,
-       host, north_lat,
+       north_lat,
        south_lat , west_lon, east_lon, point_lat,
        point_lon, radius, collector, collector_num,
        coll_date1, coll_date2)){
@@ -117,7 +116,6 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   if(!is.null(locality) & !is.character(locality)){stop("'locality' must be a character string.")}
   if(!is.null(elevation_from) & !is.character(elevation_from)){stop("'elevation_from' must be a character string.")}
   if(!is.null(elevation_to) & !is.character(elevation_to)){stop("'elevation_to' must be a character string.")}
-  if(!is.null(host) & !is.character(host)){stop("'host' must be a character string.")}
   if(!is.null(north_lat)){if(!is.character(north_lat) | !as.numeric(north_lat) %in% c(-90:90)){stop("'north_lat' must be a character string. ('-90' to '90')")}}
   if(!is.null(south_lat)){if(!is.character(south_lat) | !as.numeric(south_lat) %in% c(-90:90)){stop("'south_lat' must be a character string. ('-90' to '90')")}}
   if(!is.null(north_lat) & !is.null(south_lat)){if(as.numeric(north_lat)<as.numeric(south_lat)){stop("'north_lat' must be higher than 'south_lat'")}}
@@ -274,9 +272,6 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   if(!is.null(elevation_to)){
     webElem <- dr$findElement("id", "elevhigh")
     webElem$sendKeysToElement(list(elevation_to))}
-  if(!is.null(host)){
-    webElem <- dr$findElement("id", "assochost")
-    webElem$sendKeysToElement(list(host))}
   if(!is.null(north_lat)){
     if(length(grep("-", north_lat))>0){
       webElem <- dr$findElement(using = "xpath", '//*[@id="nlS"]')

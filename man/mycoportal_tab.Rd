@@ -13,7 +13,6 @@ mycoportal_tab(
   locality = NULL,
   elevation_from = NULL,
   elevation_to = NULL,
-  host = NULL,
   taxon_type = "1",
   north_lat = NULL,
   south_lat = NULL,
@@ -48,8 +47,6 @@ mycoportal_tab(
 \item{elevation_from}{Character string; meters, e.g., "1000"}
 
 \item{elevation_to}{Character string; meters}
-
-\item{host}{Character string specifying host species, e.g., "Betula alba"}
 
 \item{taxon_type}{Character, "1" to "5"; (1)Family or Scientific Name, (2)Family Only, (3)Scientific Name only, (4)Higher Taxonomy, (5)Common Name}
 
