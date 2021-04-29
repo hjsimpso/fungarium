@@ -94,7 +94,7 @@ Progress can be tracked in different ways using either \code{show_status} or \co
 }
 \examples{
 library(fungarium)
-data(strophariaceae) #import sample dataset
+data(strophariaceae) #import sample data set
 data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 }
 \references{

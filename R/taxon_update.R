@@ -77,7 +77,7 @@
 #' @export
 #' @examples
 #' library(fungarium)
-#' data(strophariaceae) #import sample dataset
+#' data(strophariaceae) #import sample data set
 #' data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
 
 taxon_update <- function(data, taxon_col="scientificName",
