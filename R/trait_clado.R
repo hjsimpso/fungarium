@@ -11,7 +11,7 @@
 #' @param ladderize      Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.
 #' @param continuous     Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.
 #' @param layout         Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.
-#' @param filter         Character vector specifying data set filtering parameters. Default is NULL. To select taxa with the highest or lowest values for a certain variable (e.g., trait_ratio, trait_freq, freq) use "high-100-trait_ratio", "high-150-trait_freq", "low-200-freq", etc. To set a value threshold filter (i.e., filter out taxa with less than or more than a certain value for trait_ratio, trait_freq, max_bias, etc.) use "trait_freq>=5", "freq>20", "max_bias<0.75", etc. Full vector example: c("trait_freq>=10", "max_bias<=0.75", "max_bias_t<=0.75"). This example will filter out all taxa with less than 10 trait_freq and taxa that have max_bias or max_bias_t values greater than 0.75.
+#' @param filter         Character vector specifying data set filtering parameters. Default is NULL. To select taxa with the highest or lowest values for a certain variable (e.g., trait_ratio, trait_freq, freq) use "high-100-trait_ratio", "high-150-trait_freq", "low-200-freq", etc. To set a value threshold filter (i.e., filter out taxa with less than or more than a certain value for trait_ratio, trait_freq, max_bias, etc.) use "trait_freq>=5", "freq>20", "max_bias<0.75", etc. Full vector example: c("trait_freq>=10", "max_bias<=0.75", "max_bias_t<=0.75"). This example will filter out all taxa with less than 10 trait_freq and taxa that have max_bias or max_bias_t values greater than 0.75. Note that inequality filters are used prior to selecting "high" or "low" taxa.
 #' @param node_color     Logical. If TRUE (the default), nodes are colored based on the values in trait_col.
 #' @param node_all       Logical. If TRUE (the default), all taxa in the original input data (before filtering via the \code{filtering} parameter) are used for calculating node enrichment values. This becomes important if \code{filter} is non NULL.
 #' @param ...            Additional args passed to ggtree. See \code{ggtree::ggtree}.
@@ -89,7 +89,7 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
                         ladderize=TRUE, continuous=TRUE, layout="circular",
                         ...){
   #check for deprecated arguments
-  if(exists(show, inherits = FALSE)){
+  if(exists("show", inherits = FALSE)){
     stop("'show' argument is deprecated. Please use 'filter'.")
   }
   #check for dependencies
