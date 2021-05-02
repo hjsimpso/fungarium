@@ -11,9 +11,9 @@
 #' @param ladderize      Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.
 #' @param continuous     Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.
 #' @param layout         Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.
-#' @param show           Character string ("all"), or integer, specifying the number of elements to select from the input data when trait_col is ordered. Positive integers select from data that is put in descending order. Negative integers select from data that is put in ascending order. Ex: "100" selects the top 100 elements (e.g., species) with the highest trait_col values; "-100" selects the top 100 elements (e.g., species) with the lowest trait_col values
+#' @param filter         Character vector specifying data set filtering parameters. Default is NULL. To select taxa with the highest or lowest values for a certain variable (e.g., trait_ratio, trait_freq, freq) use "high-100-trait_ratio", "high-150-trait_freq", "low-200-freq", etc. To set a value threshold filter (i.e., filter out taxa with less than or more than a certain value for trait_ratio, trait_freq, max_bias, etc.) use "trait_freq>=5", "freq>20", "max_bias<0.75", etc. Full vector example: c("trait_freq>=10", "max_bias<=0.75", "max_bias_t<=0.75"). This example will filter out all taxa with less than 10 trait_freq and taxa that have max_bias or max_bias_t values greater than 0.75.
 #' @param node_color     Logical. If TRUE (the default), nodes are colored based on the values in trait_col.
-#' @param node_all       Logical. If TRUE (the default), all elements in the input data are used for calculating node enrichment values. This becomes important if \code{show} is used to select a subset of the data for display in the cladogram.
+#' @param node_all       Logical. If TRUE (the default), all taxa in the original input data (before filtering via the \code{filtering} parameter) are used for calculating node enrichment values. This becomes important if \code{filter} is non NULL.
 #' @param ...            Additional args passed to ggtree. See \code{ggtree::ggtree}.
 #' @return           Returns a ggtree object.
 #'
@@ -36,19 +36,15 @@
 #' #load sample enrichment data set for global Agaricales records
 #' data(agaricales_enrich)
 #'
-#' #filter taxa based on collector bias
-#' agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias<=0.75,]
-#'
-#' #filter for taxa with at least 5 total records
-#' agaricales_enrich <- agaricales_enrich[agaricales_enrich$freq>=5,]
-#'
 #' #make circle cladogram
 #' library(ggtree)
 #' library(ggplot2)
 #'
 #' trait_clado(data=agaricales_enrich, trait_col="trait_ratio", continuous=TRUE,
 #'             ladderize=TRUE, layout="circular", size=0.8,
-#'             formula = ~new_order/new_family/new_genus/new_name, show=300)+#make tree
+#'             formula = ~new_order/new_family/new_genus/new_name,
+#'             filter=c("high-300-trait_ratio", "freq>=5",
+#'                      "max_bias<=0.75", "max_bias_t<=0.75")+#make tree
 #'   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
 #'                size = 1.3, fontface = "italic") + #add species labels
 #'   geom_tippoint(shape=20,
@@ -89,9 +85,13 @@
 
 trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
                         trait_col="trait_ratio",
-                        node_color=TRUE, show="all", node_all=TRUE,
+                        node_color=TRUE, filter=NULL, node_all=TRUE,
                         ladderize=TRUE, continuous=TRUE, layout="circular",
                         ...){
+  #check for deprecated arguments
+  if(exists(show, inherits = FALSE)){
+    stop("'show' argument is deprecated. Please use 'filter'.")
+  }
   #check for dependencies
   if (!requireNamespace("ggtree", quietly = TRUE)) {
     stop("Please install the \"ggtree\" package.",
@@ -136,15 +136,33 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   }
 
   #make phylo object
-  if (show=="all"){
+  if (is.null(filter)){
     tree <- as.phylo.formula2(formula, data, root = F)
   }else{
-    tree <- as.phylo.formula2(formula, data[order(data[[trait_col]], decreasing=ifelse(show<0,FALSE,TRUE)),][1:abs(show),], root = F)
+    data_filt <- data
+    inequality <- filter[grep("<|>", filter)]
+    if(length(inequality)>0){#check for inequalities in filter
+      for (k in 1:length(inequality)){#loop through multiple inequalities
+        data_filt[[gsub("<.+|>.+","",inequality[k])]]<- as.numeric(data_filt[[gsub("<.+|>.+","",inequality[k])]])#convert variable used in inequality to numeric
+        data_filt <- data_filt[eval(parse(text=paste0("data_filt$", inequality[k]))),]
+      }
+    }
+    highlow <- filter[grep("high|low", filter)]
+    if (length(highlow)>0){#select taxa with highest or lowest values
+      if (length(highlow)>1){#check if multiple high or low filters used
+        stop("Multiple 'high' or 'low' values not allowed. Please adjust the 'filter' parameter.")
+      }else{
+        highlow_var <- gsub("^.+-.+-","",highlow)
+        data_filt[[highlow_var]] <- as.numeric(data_filt[[highlow_var]])#convert filter variable to numeric
+        data_filt <- data_filt[order(data_filt[[gsub("(^.+-.+-)(.+$)", "\\2", highlow)]], decreasing=ifelse(length(grep("low", highlow)==1),FALSE,TRUE)),][1:abs(as.integer(gsub("(^.+-)(.+)(-.+$)", "\\2", highlow))),]
+      }
+    }
+    tree <- as.phylo.formula2(formula, data_filt, root = F)
   }
 
-  #filter data based on "show" and "node_all"
-  if (show!="all"&node_all==FALSE){
-    data <- data[order(data[[trait_col]], decreasing=ifelse(show<0,FALSE,TRUE)),][1:abs(show),]
+  #filter data based on "filter" and "node_all"
+  if (!is.null(filter)&node_all==FALSE){
+    data <- data_filt
   }
 
   #Calculating trait_ratio for higher taxa
@@ -182,7 +200,7 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   label_data$freq <- as.numeric(label_data$freq)
 
   #filter tree tips based on trait_col
-  if (show!="all"&node_all){
+  if (!is.null(filter)&node_all){
     label_data <- label_data[label_data$label%in%label_list$label,]#removes any taxa that are not to be included in final tree
   }
 

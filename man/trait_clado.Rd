@@ -9,7 +9,7 @@ trait_clado(
   formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
   trait_col = "trait_ratio",
   node_color = TRUE,
-  show = "all",
+  filter = NULL,
   node_all = TRUE,
   ladderize = TRUE,
   continuous = TRUE,
@@ -26,9 +26,9 @@ trait_clado(
 
 \item{node_color}{Logical. If TRUE (the default), nodes are colored based on the values in trait_col.}
 
-\item{show}{Character string ("all"), or integer, specifying the number of elements to select from the input data when trait_col is ordered. Positive integers select from data that is put in descending order. Negative integers select from data that is put in ascending order. Ex: "100" selects the top 100 elements (e.g., species) with the highest trait_col values; "-100" selects the top 100 elements (e.g., species) with the lowest trait_col values}
+\item{filter}{Character vector specifying data set filtering parameters. Default is NULL. To select taxa with the highest or lowest values for a certain variable (e.g., trait_ratio, trait_freq, freq) use "high-100-trait_ratio", "high-150-trait_freq", "low-200-freq", etc. To set a value threshold filter (i.e., filter out taxa with less than or more than a certain value for trait_ratio, trait_freq, max_bias, etc.) use "trait_freq>=5", "freq>20", "max_bias<0.75", etc. Full vector example: c("trait_freq>=10", "max_bias<=0.75", "max_bias_t<=0.75"). This example will filter out all taxa with less than 10 trait_freq and taxa that have max_bias or max_bias_t values greater than 0.75.}
 
-\item{node_all}{Logical. If TRUE (the default), all elements in the input data are used for calculating node enrichment values. This becomes important if \code{show} is used to select a subset of the data for display in the cladogram.}
+\item{node_all}{Logical. If TRUE (the default), all taxa in the original input data (before filtering via the \code{filtering} parameter) are used for calculating node enrichment values. This becomes important if \code{filter} is non NULL.}
 
 \item{ladderize}{Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.}
 
@@ -62,19 +62,15 @@ library(fungarium)
 #load sample enrichment data set for global Agaricales records
 data(agaricales_enrich)
 
-#filter taxa based on collector bias
-agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias<=0.75,]
-
-#filter for taxa with at least 5 total records
-agaricales_enrich <- agaricales_enrich[agaricales_enrich$freq>=5,]
-
 #make circle cladogram
 library(ggtree)
 library(ggplot2)
 
 trait_clado(data=agaricales_enrich, trait_col="trait_ratio", continuous=TRUE,
             ladderize=TRUE, layout="circular", size=0.8,
-            formula = ~new_order/new_family/new_genus/new_name, show=300)+#make tree
+            formula = ~new_order/new_family/new_genus/new_name,
+            filter=c("high-300-trait_ratio", "freq>=5",
+                     "max_bias<=0.75", "max_bias_t<=0.75")+#make tree
   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
                size = 1.3, fontface = "italic") + #add species labels
   geom_tippoint(shape=20,
