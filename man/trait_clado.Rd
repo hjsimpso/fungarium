@@ -7,7 +7,6 @@
 trait_clado(
   data,
   formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
-  trait_col = "trait_ratio",
   node_color = TRUE,
   filter = NULL,
   node_all = TRUE,
@@ -18,11 +17,9 @@ trait_clado(
 )
 }
 \arguments{
-\item{data}{Data.frame/data.table containing taxonomic classification variables (e.g. kingdom, phylum, class, etc), and enrichment values.}
+\item{data}{Enrichment table from \code{fungarium::enrichment} (i.e., data.frame containing taxonomic classification variables and enrichment values).}
 
-\item{formula}{Formula describing how the taxonomic variables in your data.frame should be nested (e.g ~V1/V2/.../Vn). Taxonomic variables must be factors. See \code{ape::as.phylo.formula}.}
-
-\item{trait_col}{Character string specifying the name of the column containing enrichment factors (must be numeric). Default is: "trait_ratio".}
+\item{formula}{Formula describing how the taxonomic variables (e.g. kingdom, phylum, class, etc.) in your enrichment table should be nested (e.g ~V1/V2/.../Vn). Default: ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name.}
 
 \item{node_color}{Logical. If TRUE (the default), nodes are colored based on the values in trait_col.}
 
@@ -78,7 +75,7 @@ agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias<=0.75,]
 agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias_t<=0.75,]
 
 #make cladogram
-trait_clado(data=agaricales_enrich, trait_col="trait_ratio", continuous=TRUE,
+trait_clado(data=agaricales_enrich, continuous=TRUE,
             ladderize=TRUE, layout="circular", size=0.8,
             formula = ~new_order/new_family/new_genus/new_name,
             filter=c("high-300-trait_ratio", "freq>=5")+#make tree

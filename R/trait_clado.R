@@ -4,9 +4,8 @@
 #' trait enrichment factors.
 #'
 #'
-#' @param data           Data.frame/data.table containing taxonomic classification variables (e.g. kingdom, phylum, class, etc), and enrichment values.
-#' @param formula        Formula describing how the taxonomic variables in your data.frame should be nested (e.g ~V1/V2/.../Vn). Taxonomic variables must be factors. See \code{ape::as.phylo.formula}.
-#' @param trait_col      Character string specifying the name of the column containing enrichment factors (must be numeric). Default is: "trait_ratio".
+#' @param data           Enrichment table from \code{fungarium::enrichment} (i.e., data.frame containing taxonomic classification variables and enrichment values).
+#' @param formula        Formula describing how the taxonomic variables (e.g. kingdom, phylum, class, etc.) in your enrichment table should be nested (e.g ~V1/V2/.../Vn). Default: ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name.
 #' @param ladderize      Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.
 #' @param continuous     Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.
 #' @param layout         Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.
@@ -50,7 +49,7 @@
 #' agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias_t<=0.75,]
 #'
 #' #make cladogram
-#' trait_clado(data=agaricales_enrich, trait_col="trait_ratio", continuous=TRUE,
+#' trait_clado(data=agaricales_enrich, continuous=TRUE,
 #'             ladderize=TRUE, layout="circular", size=0.8,
 #'             formula = ~new_order/new_family/new_genus/new_name,
 #'             filter=c("high-300-trait_ratio", "freq>=5")+#make tree
@@ -93,13 +92,15 @@
 #'
 
 trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
-                        trait_col="trait_ratio",
                         node_color=TRUE, filter=NULL, node_all=TRUE,
                         ladderize=TRUE, continuous=TRUE, layout="circular",
                         ...){
   #check for deprecated arguments
   if(exists("show", inherits = FALSE)){
-    stop("'show' argument is deprecated. Please use 'filter'.")
+    stop('"show" argument is deprecated. Please use "filter".')
+  }
+  if(exists("trait_col", inherits = FALSE)){
+    warning('"trait_col" no longer needs to be specified. The standard field for enrichment values is now "trait_ratio"')
   }
   #check for dependencies
   if (!requireNamespace("ggtree", quietly = TRUE)) {
@@ -110,6 +111,15 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
     stop("Please install the \"ggplot2\" package.",
          call. = FALSE)
   }
+  #check that input is enrichment table
+  if (T%in%(!c("freq", "trait_freq", "trait_ratio")%in%colnames(data))){
+    stop('Input data must be an enrichment table containing the fields "freq", "trait_freq", "trait_ratio". See fungarium::enrichment')
+  }
+  #convert trait numeric data from characters to numeric
+  data$freq <- as.numeric(data$freq)
+  data$trait_freq <- as.numeric(data$trait_freq)
+  data$trait_ratio <- as.numeric(data$trait_ratio)
+
   #get taxonomic variables
   vars <- all.vars(formula)
   vars_check <- F%in%(vars%in%colnames(data))
