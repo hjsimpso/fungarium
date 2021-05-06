@@ -193,7 +193,7 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   label_data$tax_level <- ""
 
   for (i in 1:nrow(label_data)){
-    if (is.na(label_data[[trait_col]][i])){
+    if (is.na(label_data[["trait_ratio"]][i])){
       j <- 1
       matched <- F
       while (matched==F & j < length(vars)){
@@ -229,7 +229,7 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   #color nodes based on trait_col
   if(node_color){#color
     tree2 <- ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous, layout=layout,
-                            ggplot2::aes(color = label_data[[trait_col]]), ...)
+                            ggplot2::aes(color = label_data[["trait_ratio"]]), ...)
   }else{#no color
     tree2 <- ggtree::ggtree(tree, ladderize = ladderize, continuous=continuous, layout=layout, ...)
   }
