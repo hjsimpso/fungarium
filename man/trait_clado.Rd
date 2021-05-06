@@ -78,7 +78,7 @@ agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias_t<=0.75,]
 trait_clado(data=agaricales_enrich, continuous=TRUE,
             ladderize=TRUE, layout="circular", size=0.8,
             formula = ~new_order/new_family/new_genus/new_name,
-            filter=c("high-300-trait_ratio", "freq>=5")+#make tree
+            filter=c("high-300-trait_ratio", "freq>=5"))+#make tree
   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
                size = 1.3, fontface = "italic") + #add species labels
   geom_tippoint(shape=20,
