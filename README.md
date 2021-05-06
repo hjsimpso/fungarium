@@ -20,6 +20,8 @@ comprehensive trait analyses.
 ``` r
 install.packages("remotes") #install 'remotes' (if not already installed)
 remotes::install_github("hjsimpso/fungarium@*release") #install the latest fungarium release
+#to install the latest development version use:
+remotes::install_github("hjsimpso/fungarium@main")
 ```
 
 ## Installing Docker

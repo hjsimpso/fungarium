@@ -27,6 +27,8 @@ An R package for enabling the use of fungaria collections data in comprehensive 
 ```{r installation, include=TRUE, eval=FALSE, echo=TRUE}
 install.packages("remotes") #install 'remotes' (if not already installed)
 remotes::install_github("hjsimpso/fungarium@*release") #install the latest fungarium release
+#to install the latest development version use:
+remotes::install_github("hjsimpso/fungarium@main")
 ```
 
 ## Installing Docker
