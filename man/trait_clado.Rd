@@ -2,7 +2,7 @@
 % Please edit documentation in R/trait_clado.R
 \name{trait_clado}
 \alias{trait_clado}
-\title{Plot enrichment factors within a cladogram based on taxonomic classification}
+\title{Visualize trait enrichment factors within a cladogram based on taxonomic classification}
 \usage{
 trait_clado(
   data,
@@ -43,18 +43,25 @@ trait_clado(
 }
 }
 \description{
-Taxonomic classification data is used to create a cladogram,
-with node colors corresponding to trait enrichment factors. Useful for displaying
-the distribution of a trait among different taxonomic groups.
+Taxonomic classification data is used to create a cladogram, which is then annotated with
+trait enrichment factors.
 }
 \details{
 Cladogram produced using \code{ggtree::ggtree};
-thus, all \code{ggtree} arguments are accepted. Additional
-ggplot layers can be added to the tree as if it were a ggplot object.\cr
-\cr
-Please cite: \code{ggtree}. To get citation info use: \code{citation(package = 'ggtree')}.\cr
-\cr
-Cladogram in Simpson and Schilling (2021) created using \code{trait_clado}.
+thus, all \code{ggtree} arguments are accepted (e.g., \code{geom_tiplab}, \code{geom_tippoint}, etc.).
+Additional ggplot layers (e.g., \code{geom_bar}, \code{geom_point}, etc.) can be added to the tree as if it were a ggplot object.
+}
+\note{
+Choose \code{filter} and \code{node_all} values carefully. These values control how enrichment
+values are displayed for higher level taxa (i.e., nodes). If a \code{filter} condition is used and \code{node_all}
+is set to TRUE, node enrichment factors will be calculated using all lowest rank taxa in the input data set, prior to filtering
+(i.e., sum of trait records/sum of total records for all lowest rank taxa in these higher level groups).
+If \code{node_all} is FALSE, only the lowest rank taxa that remain after filtering (which are the taxa that will be plotted as tree tips)
+will be used to calculate node enrichment factors. The former method is likely to give a more accurate representation
+of trait enrichment for higher level taxa, especially if your filtering parameters are removing a significant amount of lowest rank taxa.
+Note that it may useful to do some data set filtering prior to calling this function. For example, it may be useful to
+filter out taxa with high collector bias (i.e. high values for \code{max_bias} and \code{max_bias_t}; see \code{fungarium::enrichment}) metrics,
+prior to using \code{trait_clado}, so that these biased taxa are not used in the calculations of enrichment for higher level taxa.
 }
 \examples{
 library(fungarium)
