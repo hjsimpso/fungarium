@@ -71,8 +71,9 @@
 #' Jari Oksanen, Bastian Greshake Tzovaras, Philippe Marchand, Vinh Tran, Maëlle
 #' Salmon, Gaopeng Li, and Matthias Grenié. (2020) taxize: Taxonomic information
 #' from around the web. R package version 0.9.95. https://github.com/ropensci/taxize
-#' \item Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data
-#' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
+#' \item Hunter J. Simpson & Jonathan S. Schilling (2021) Using aggregated field
+#' collection data and the novel r package fungarium to investigate fungal fire
+#' association, Mycologia, 113:4, 842-855, DOI: 10.1080/00275514.2021.1884816
 #' }
 #' @export
 #' @examples
