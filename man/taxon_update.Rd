@@ -16,7 +16,7 @@ taxon_update(
 )
 }
 \arguments{
-\item{data}{Data.frame containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).}
+\item{data}{Data.frame (must be in utf8 encoding) containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2021).}
 
 \item{taxon_col}{Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).}
 

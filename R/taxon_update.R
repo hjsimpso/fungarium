@@ -5,7 +5,7 @@
 #' \href{https://www.gbif.org}{GBIF} Backbone Taxonomy database.
 #'
 #'
-#' @param data Data.frame containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2020).
+#' @param data Data.frame (must be in utf8 encoding) containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2021).
 #' @param taxon_col Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).
 #' @param authorship_col Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets). If input dataset has no authorship column, use NULL. This assumes that no authorship information is available. Taxon names and authorship names combined in one column (e.g."Pleurotus ostreatus (Jacq.) P.Kumm." ), is currently not supported.
 #' @param species_only Logical. Default if TRUE. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.
