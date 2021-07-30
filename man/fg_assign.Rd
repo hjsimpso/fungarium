@@ -8,7 +8,7 @@ fg_assign(
   tax_table,
   url = "http://www.stbates.org/funguild_db.php",
   tax_cols = c("new_phylum", "new_class", "new_order", "new_family", "new_genus",
-    "new_name")
+    "new_species")
 )
 }
 \arguments{
@@ -17,7 +17,7 @@ fg_assign(
 \item{url}{URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.}
 
 \item{tax_cols}{Character vector specifying the column names containing taxonomic variables. Names must be in descending order of taxonomic rank.
-Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_name").}
+Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_species").}
 }
 \value{
 \preformatted{      Returns the input data.frame with FUNGuild assignments appended.
