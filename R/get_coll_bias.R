@@ -62,8 +62,9 @@ bias_inner <- function (rec_v, freq_type, by) {
 bias_outer <- function(data, data_type, freq_type,by, cores, low_elem, status_feed){
   setkeyv(data_type,by)
   rec_v <- lapply(data[[by]], function(x){
-    rec_df <- data_type[list(x)];
-    rec_v <- str_clean(paste(rec_df$recordedBy, rec_df$associatedCollectors, sep = " "),periods=" ", letter_thresh = 2);
+    #rec_df <- data_type[list(x)];
+    rec_v <- fungarium:::str_clean(data_type[list(x)]$recordedBy,periods=" ", letter_thresh = 2);
+    return(rec_v)
     }) #subset records for taxon
   out_loop <- maxjobs.mclapply(rec_v, function(x){#use multicore processing to process each variable element (e.g. process multiple taxa simultaneously on different cores)
     bias_inner(rec_v=x, freq_type=freq_type,by=by)
