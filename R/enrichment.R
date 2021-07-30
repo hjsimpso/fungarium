@@ -99,8 +99,7 @@ enrichment <- function(all_rec,
   colnames(counts2)[2] <- "trait_freq"
 
   #Merge total frequency and trait frequency data into one dataframe
-  counts <- merge(counts1, counts2, by.x=by,
-                  by.y=by, all.x=T, all.y=T)
+  counts <- dplyr::left_join(counts1, counts2, by=by)
   counts[is.na(counts$trait_freq),"trait_freq"] <- 0
 
   #Use total freq and trait freq to calculate enrichment factors
@@ -110,7 +109,7 @@ enrichment <- function(all_rec,
   if (coll_bias==F){
     return(counts)
   }else{
-    counts <- get_coll_bias(data.table(counts), all_rec, trait_rec, by, cores, status_feed)
+    counts <- get_coll_bias(setDT(counts), all_rec, trait_rec, by, cores, status_feed)
     return(counts)
   }
 }
