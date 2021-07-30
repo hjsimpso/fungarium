@@ -32,5 +32,11 @@ Suggests:
     rmarkdown,
     ggplot2,
     ape,
-    ggtree
+    ggtree,
+    lubridate,
+    rnaturalearth,
+    rnaturalearthhires
+Remotes:
+    ropensci/rnaturalearthhires,
+    YuLab-SMU/ggtree
 VignetteBuilder: knitr
