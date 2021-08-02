@@ -1,21 +1,6 @@
-#clean up helpers
 
-clean_data <- function(data, date=T, coord=T){
-  if(date==F&coord==F){
-    stop("'date' and 'coord' cannot both be FALSE")
-  }
-  if(date==T){
-    data <- date_fix(data)
-  }
-  if(coord==T){
-    data <- coord_fix(data)
-  }
-  return(data)
-}
-
-
-##date fix helper
-date_fix <- function(data, date_col="eventDate", date_res="year"){
+##date clean
+date_clean <- function(data, date_col="eventDate", date_res="year"){
   if (date_res=="year"){
     date_res <- "Y"
   }else if(date_res=="month"){
@@ -68,52 +53,5 @@ date_fix <- function(data, date_col="eventDate", date_res="year"){
     data$day_fixed <- lubridate::day(data$parsed_date)
   }
   print(paste0("null_rows=", null_rows,"; error1_rows=", error1_rows,"; res_rows=",res_rows, "; error2_rows=", error2_rows, "; total_removed=", rows1-nrow(data)))
-  return(data)
-}
-
-##coord fix helper
-coord_fix <- function(data, tests=c("capitals", "centroids", "equal","gbif", "institutions",
-                                    "zeros", "countries", "seas")){
-  rows0 <- nrow(data)
-  #fix country codes
-  codes1 <- data.frame(Alpha_3=ISOcodes::ISO_3166_1$Alpha_3, country=ISOcodes::ISO_3166_1$Name)
-  codes2 <- data.frame(Alpha_3=ISOcodes::ISO_3166_1$Alpha_3, country=ISOcodes::ISO_3166_1$Official_name)
-  codes3 <- data.frame(Alpha_3=ISOcodes::ISO_3166_1$Alpha_3, country=ISOcodes::ISO_3166_1$Alpha_2)
-  codes4 <- data.frame(Alpha_3=ISOcodes::ISO_3166_1$Alpha_3, country=ISOcodes::ISO_3166_1$Alpha_3)
-  codes <- rbindlist(list(codes1, codes2, codes3, codes4))
-  codes$country <- fungarium:::str_clean(codes$country)
-  codes$country <- gsub("(\\s|^)the\\s", "", codes$country)
-  codes <- codes[!is.na(codes$country), ]
-  data$country <- fungarium:::str_clean(data$country)
-  data$country <- gsub("(\\s|^)the\\s", "", data$country)
-  data <- dplyr::left_join(data, codes, by="country")
-  print(paste("Blank country:", nrow(data[data$country=="",]), "records"))
-  data <- data[data$country!="",]
-  print(paste("Bad country:", nrow(data[is.na(data$Alpha_3),]), "records"))
-  data <- data[!is.na(data$Alpha_3), ]
-
-  #remove bad lat long
-  data$decimalLatitude <- as.numeric(data$decimalLatitude)
-  data$decimalLongitude <- as.numeric(data$decimalLongitude)
-  row1 <- nrow(data)
-  data <- data[!is.na(data$decimalLatitude)&!is.na(data$decimalLongitude),]
-  data <- data[data$decimalLatitude<=90&data$decimalLatitude>=-90&data$decimalLongitude<=180&data$decimalLongitude>=-180,]
-  print(paste("Bad lat/long:", row1-nrow(data), "records"))
-
-  #flag problems
-  rows2 <- nrow(data)
-  data <- CoordinateCleaner::clean_coordinates(x = data,
-                                               lon = "decimalLongitude",
-                                               lat = "decimalLatitude",
-                                               countries = "Alpha_3",
-                                               species = NULL,
-                                               tests = tests,
-                                               capitals_rad = 100,
-                                               centroids_rad = 100,
-                                               seas_scale = 110,
-                                               country_ref = rnaturalearth::ne_countries('large'),
-                                               value = "clean")
-  print(paste("Flagged lat/long:", rows2-nrow(data), "records"))
-  print(paste("Total removed:", rows0-nrow(data), "records"))
   return(data)
 }
