@@ -28,7 +28,7 @@
 coord_clean <- function(data, lat="decimalLatitude", lon="decimalLongitude", country="country",
                         tests=c("zero", "equal", "countries", "centroids", "capitals"),
                         centroid_dis=100,
-                        show_status=T, round_digits=4){
+                        round_digits=4){
   if(!is.null(centroid_dis)){
     centroid_dis <- units::as_units(centroid_dis, "m")
   }
@@ -82,9 +82,8 @@ coord_clean <- function(data, lat="decimalLatitude", lon="decimalLongitude", cou
     shp2$row_numb <- 0:(nrow(shp2)-1) #shapefile row labels start at 0
     data2 <- subset(as.data.frame(data), select=c(row_numb,country))
     data2 <- dplyr::left_join(data2, shp2, by="row_numb")
-    check <- maxjobs.mclapply.clean_coord(as.list(as.data.frame(t(data2))),
-                                          country_check, show_status=show_status,
-                                          cores=1)
+    check <- lapply(as.list(as.data.frame(t(data2))),
+                    country_check)
     rm(shp2)
     check <- as.logical(check)
     data <- data[check,]
@@ -110,37 +109,6 @@ country_check <- function(x){
   x <- fungarium:::str_clean(x)
   out <- x[2]%in%x[3:length(x)]
   return(out)
-}
-
-#parallelization loop
-maxjobs.mclapply.clean_coord <- function(X, FUN, cores, show_status){
-  N <- length(X)
-  i.list <- parallel::splitIndices(N, N/cores)
-  result.list <- list()
-  for(i in seq_along(i.list)){
-    i.vec <- i.list[[i]]
-    try_error <- TRUE
-    while (try_error){
-      result.list[i.vec] <- parallel::mclapply(X[i.vec], FUN,
-                                               mc.cores=cores)
-      error_check <- lapply(result.list[i.vec], class)
-      if ("try-error" %in% error_check){
-        message("'try-error' detected in mclapply output. Rerunning scheduled tasks.")
-        try_error <- TRUE
-      }else{
-        try_error <- FALSE
-      }
-    }
-    #print status message
-    if (show_status){
-      if((length(X)-(i*cores))>0){
-        cat(paste0(round((i*cores / length(X)) * 100), '% completed.',' Records left:', (length(X)-(i*cores)), "   "), "\r") #track progress
-      }else{
-        cat(paste0('100% completed.',' Records left:0', "   "), "\r") #track progress
-      }
-    }
-  }
-  return(result.list)
 }
 
 
