@@ -12,7 +12,7 @@ License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Depends: R (>= 4.0.0)
 Imports: 
     dplyr, 
@@ -21,21 +21,21 @@ Imports:
     data.table, 
     tm, 
     plyr,
-Suggests: 
-    rvest,
-    jsonlite,
-    stringr,
-    xml2,
-    ISOcodes,
-    RSelenium,
+    lubridate,
     knitr,
     rmarkdown,
+    rnaturalearth,
+    rnaturalearthhires,
+    sf,
+    stringr,
     ggplot2,
     ape,
-    ggtree,
-    lubridate,
-    rnaturalearth,
-    rnaturalearthhires
+    ggtree (>= 3.3.0),
+    units
+Suggests:
+    rvest,
+    jsonlite,
+    xml2
 Remotes:
     ropensci/rnaturalearthhires,
     YuLab-SMU/ggtree
