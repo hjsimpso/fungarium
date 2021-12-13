@@ -6,5 +6,5 @@ README_old.*
 mycoportal_tab.*
 mp_collections.*
 Introduction.*
-data-raw
-vignettes
+data-raw/
+vignettes/
