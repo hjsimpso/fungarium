@@ -12,5 +12,5 @@ README_old.*
 ^.vscode$
 mycoportal_tab.*
 mp_collections.*
-Example_fire_association.*
+Example_fire_association*
 Introduction.Rmd
