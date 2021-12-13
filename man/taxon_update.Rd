@@ -18,15 +18,15 @@ taxon_update(
 \arguments{
 \item{data}{Data.frame (must be in utf8 encoding) containing a column of canonical names (e.g. "Pleurotus", "Pleurotus ostreatus") and a column of corresponding authorships (e.g. "(Fr.) P.Kumm.", "(Jacq.) P.Kumm."). Taxa listed in the dataframe can be from any taxonomic rank from kingdom to species; however, there are caveats when updated names for ranks other than species. See Simpson & Schilling (2021).}
 
-\item{taxon_col}{Character string specifying the name of the column containing canonical names. Default is "scientificName" (name used in MyCoPortal datasets).}
+\item{taxon_col}{Character string specifying the name of the column containing canonical names. Default is "scientificName".}
 
-\item{authorship_col}{Character string specifying the name of the column containing authorships. Default is "scientificNameAuthorship" (name used in MyCoPortal datasets). If input dataset has no authorship column, use NULL. This assumes that no authorship information is available. Taxon names and authorship names combined in one column (e.g."Pleurotus ostreatus (Jacq.) P.Kumm." ), is currently not supported.}
+\item{authorship_col}{Character string specifying the name of the column containing authorship. Default is "scientificNameAuthorship". If input data set has no authorship column, use NULL. Taxon names and authorship combined in one column (e.g."Pleurotus ostreatus (Jacq.) P.Kumm." ) is currently not supported.}
 
 \item{show_names}{Logical. Default is FALSE. If TRUE, taxon names are printed on the console as they are submitted as queries to GBIF.}
 
-\item{species_only}{Logical. Default if TRUE. If TRUE, records not identified to the species-level are removed from the dataset prior to name updates.}
+\item{species_only}{Logical. Default if TRUE. If TRUE, records not identified to the species-level are removed from the data set prior to name updates.}
 
-\item{force_accepted}{Logical. Default is FALSE. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships with for the given canonical names would lead to the same ACCEPTED full scientific name.}
+\item{force_accepted}{Logical. Default is FALSE. If TRUE, records that do not have authorship information will be updated as the ACCEPTED full scientific name, if one exists, regardless of whether or not all potential authorships for the given canonical names would lead to the same ACCEPTED full scientific name.}
 
 \item{show_status}{Logical. Default is TRUE. If TRUE, percent completion and the number of unique taxa left to process is printed in the console.}
 
@@ -65,23 +65,18 @@ classification, based on currently accepted scientific consensus listed in the
 \href{https://www.gbif.org}{GBIF} Backbone Taxonomy database.
 }
 \details{
-Queries the GBIF database for each taxon, via \code{get_gbifid_}
-in the taxize package (Chamberlain and Szocs 2013; Chamberlain et al. 2020), after correcting any erroneous capitalizations of specific epithets (e.g. "Pleurotus Ostreatus").
-If a taxon name is mispelled in the input dataset, the best approximate match is selected from the GBIF match results.
-See \code{taxon_conf} and \code{taxon_matchtype} in the "Value" section for more details about approximate matches.
-Note that an internet connection is required to retrieve data from the GBIF database.\cr
+Queries the GBIF database for each taxon. Note that an internet
+connection is required to retrieve data from the GBIF database.\cr
 \cr
 If a queried taxon is matched to a GBIF record and that record has "accepted" taxonomic
 status, the queried name is "validated" (i.e. the output "new_name" is the same as the queried name).
 If the matched GBIF record is a "synonym", the "accepted" record associated with that
-synomym is used to "update" the queried taxon (i.e. the ouput "new_name" is different from the queried name).\cr
+synonym is used to "update" the queried taxon (i.e. the output "new_name" is different from the queried name).\cr
 \cr
 If a queried taxon has no GBIF matches or the GBIF match has "doubtful"
-taxonomic status, the queried taxon is not validated or updated (i.e. the output "new_name" will be blank) and an error code is output. See \code{error} in "Value" section.\cr
+taxonomic status, the queried taxon is not validated or updated
+(i.e. the output "new_name" will be blank) and an error code is output. See \code{error} in "Value" section.\cr
 \cr
-Function is tailored for large datasets of diverse taxa, like the archived sporocarp collection/observation records accessible through the \href{https://mycoportal.org/}{MyCoPortal}.
-However, function will work on any dataset with taxon names and authorship. Becasue processing time can be significant, it may be helpful to breakup extremely large datasets (>50,000 records) and apply this function to each smaller subset.
-This ensures that if an error (e.g. loss of internet connection) would occur while the function is running the time lost would be minimized.
 }
 \note{
 Http errors may indicate issues with the GBIF database (e.g., the taxonomy backbone is being updated). Monitor GBIF system health at https://www.gbif.org.\cr
@@ -94,8 +89,15 @@ Progress can be tracked in different ways using either \code{show_status} or \co
 }
 \examples{
 library(fungarium)
-data(strophariaceae) #import sample data set
-data <- taxon_update(strophariaceae, show_status=FALSE) #update taxon names
+
+#import sample data set
+data(agaricales)
+
+#filter for records for specific state
+mn_records <- agaricales[agaricales$stateProvince=="Minnesota",]
+
+#update taxon names
+mn_updated <- taxon_update(mn_records, show_status=FALSE)
 }
 \references{
 \enumerate{
