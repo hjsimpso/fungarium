@@ -8,6 +8,7 @@
 #'
 #' @param download_dir Character string specifying the path to the directory where you would like files downloaded from MyCoPortal to be stored.
 #' @param read_files Logical. If TRUE, files are downloaded into the specified directory AND are automatically imported into R as a data.frame. If FALSE, files are still downloaded into the specified directory, but not imported into R.
+#' @param collection Character vector of collection codes specifying which collections will be queried for relevant data (Default is "all", meaning all collections are queried). Use \code{mp_collections} to view all valid collection codes.
 #' @param taxon Character string specifying the taxon name (e.g., species name, family name or higher taxon).
 #' @param country Character string specifying country, e.g., "USA"
 #' @param state Character string specifying state, e.g., "Massachusetts"
@@ -21,7 +22,7 @@
 #' @param west_lon Character string, bounding box coordinate; ("-180" to "180")
 #' @param east_lon Character string, bounding box coordinate; ("-180" to "180")
 #' @param point_lat Character string, point-radius coordinate; ("-90" to "90")
-#' @param point_lon Character string, poitn-radius coordinate; ("-180" to "180")
+#' @param point_lon Character string, point-radius coordinate; ("-180" to "180")
 #' @param radius Character string, point radius; km, e.g., "50"
 #' @param collector Character string specifying collector's last name
 #' @param collector_num Character string specifying collector's number
@@ -34,10 +35,6 @@
 #' @details
 #' Docker software must be installed and running on your system before using this function.
 #' For additional details on Docker see 'Introduction' vignette via \code{vignette("help", package = "fungarium")}.\cr
-#' \cr
-#' All collections within MyCoPortal are queried, and selecting specific collections is
-#' not currently supported within the function. However, collection information is listed
-#' in the downloaded dataset, so records can be filtered by collection post-download.
 #' @note
 #' Queries that yield a large number of records may require excessive processing
 #' time to download and import. Use \code{rec_numb} parameter if you would like
@@ -48,12 +45,24 @@
 #' be stored in the specified download directory. To avoid truncation, try increasing memory
 #' availability prior to using \code{mycoportal_tab} or set the \code{read_file} option
 #' to FALSE and import the file into R manually (via \code{\link{read.delim}}) at a later time when
-#' more memory may be available.
+#' more memory may be available.\cr
+#' \cr
+#' Currently, downloads of more than 1,000,000 can be initiated in the MyCoPortal,
+#' but during the download process these datasets are ultimately truncated at 1,000,000 records.
+#' This is a MyCoPortal server issue. To circumvent this issue, large datasets can be downloaded in
+#' smaller batches and then combined later. This is automatically enabled in \code{mycoportal_tab}, by splitting
+#' the dataset based on collections (i.e., multiple smaller datasets are downloaded by querying 10 collections at a time).
+#' Smaller datasets can then be recombined into one large dataset later (this is a functional solution as of June 13, 2021).
+#' In this scenario where a large dataset must be split up, the downloaded files will
+#' not be automatically loaded into R,
+#' regardless of whether \code{read_files} is TRUE or FALSE. Hence, all downloaded files will need to be manually
+#' loaded into R and recombined into one large dataset by the user.
 #' @references \enumerate{
 #' \item Krah FS, Bates S, Miller A. 2019. rMyCoPortal - an R package to interface
 #' with the Mycology Collections Portal. Biodiversity Data Journal 7:e31511.
-#' \item Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data
-#' and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
+#' \item Hunter J. Simpson & Jonathan S. Schilling (2021) Using aggregated field
+#' collection data and the novel r package fungarium to investigate fungal fire
+#' association, Mycologia, 113:4, 842-855, DOI: 10.1080/00275514.2021.1884816
 #' }
 #' @export
 #' @return If read_files is TRUE, a data.frame of MyCoPortal records is returned.
@@ -78,7 +87,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
                     south_lat = NULL, west_lon = NULL, east_lon = NULL, point_lat = NULL,
                     point_lon = NULL, radius = NULL, collector = NULL, collector_num = NULL,
                     coll_date1 = NULL, coll_date2 = NULL, synonyms = TRUE, messages = TRUE,
-                    rec_numb=TRUE, read_files=TRUE)
+                    rec_numb=TRUE, read_files=TRUE, collection="all")
 {
   #check for dependencies
   if (!requireNamespace("RSelenium", quietly = TRUE)) {
@@ -87,6 +96,10 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   }
 
   #check input arguments
+  if(T%in%(!collection%in%c("all",mp_collections()$coll_code))){
+    stop("One or more collection codes are invalid. Please enter valid collection code or 'all'. See fungarium::mp_collections().")
+  }
+
   if(length(c(taxon, country, state,
               county, locality, elevation_from, elevation_to,
               north_lat,
@@ -192,7 +205,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
 
   #check if container by same name already exists; if so, stop and remove container
   if(!tryCatch({system2("docker", c("inspect", "--format=\"{{.Name}}\"", "sel_con"),stdout = T, stderr = F)
-    "no_error"},
+   "no_error"},
     error=function(e){"error"},
     warning=function(w){"warning"}) %in% c("error", "warning")){
     system2("docker", c("rm", "-f", "sel_con"), stdout = F, stderr = F)
@@ -206,7 +219,7 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   if(tryCatch({system2("docker", args=c("run", "-d", "--name", "sel_con", "-p", "4445:4444", "--shm-size", "2g", "selenium/standalone-chrome:latest"),stdout = T, stderr = F)
     "no_error"},
     error=function(e){"error"},
-    warning=function(w){"warning"}) %in% c("error", "warning")){
+   warning=function(w){"warning"}) %in% c("error", "warning")){
     stop('Error. Unable to start Selenium container. Check that port 4445 is not already allocated.')
   }else{
     if(messages){message("Selenium container successfully started.\n")}
@@ -231,9 +244,10 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
 
   #go to mycoportal website
   if(messages){message("Navigating to mycoportal website...\n")}
-  dr$navigate("http://mycoportal.org/portal/collections/harvestparams.php")
+  dr$navigate("https://mycoportal.org/portal/collections/index.php")
+  dr$screenshot(display = T)
   k <- 1
-  while(tryCatch({webElem <- dr$findElement(using = "xpath", value='//*[@id="harvestparams"]/div[1]/div[2]/div[3]/button')
+  while(tryCatch({webElem <- dr$findElement(using = "xpath", value='//*[@id="specobsdiv"]/form/div[2]/div[1]/button')#check if webpage can load successfully
   "no_error"},
   error=function(e){"error"},
   warning=function(w){"warning"},
@@ -242,17 +256,44 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
     k <- k + 1
   }
   if(k>=10){stop("MyCoPortal website currently unavailable.")}
+
+  #make collection selection
+  if(T%in%(collection%in%"all")){
+    webElem$clickElement()
+  }else{#select collections
+    webElem <- dr$findElement(using = "xpath", value='//*[@id="dballcb"]')#deselect "all collections" box
+    webElem$clickElement()
+    mp_colls <- mp_collections()
+    coll_order <- mp_colls[mp_colls$coll_code%in%collection,]$order
+    webElem <- dr$findElements(using = "name", value = "db[]")
+    webElem <- webElem[coll_order+1]
+    for (i in 1:length(webElem)){
+      webElem[[i]]$clickElement()
+    }
+    #submit collection selection
+    webElem <- dr$findElement(using = "xpath", '//*[@id="specobsdiv"]/form/div[2]/div[1]/button')
+    webElem$clickElement()
+  }
+  dr$screenshot(display = T)
+
+
+  #enter query parameters
+  webElem <- dr$findElement(using = "xpath", '//*[@id="harvestparams"]/div[1]/div[2]/div[3]/button')#reset query form
   webElem$clickElement()
+  dr$screenshot(display = T)
   if(synonyms==FALSE){#uncheck synonym box
-    webElem <- dr$findElement(using = "xpath", value='/html/body/table/tbody/tr[2]/td/div[2]/form/div[3]/span/input')
+    webElem <- dr$findElement(using = "xpath", value='//*[@id="harvestparams"]/div[1]/div[1]/div[1]/div[2]/input')
     webElem$clickElement()
   }
   webElem <- dr$findElement(using = "xpath", paste("//*[@id='taxontype']/option[",
                                                     taxon_type, "]"))
   webElem$clickElement()
+  dr$screenshot(display = T)
   if(messages){message("Entering query parameters...\n")}
   if(!is.null(taxon)){
-    webElem <- dr$findElement("id", "taxa")
+    #webElem <- dr$findElement("id", "taxa")
+    webElem <- dr$findElement(using = "xpath", value='//*[@id="taxa"]')
+    dr$screenshot(display = T)
     webElem$sendKeysToElement(list(taxon))}
   if(!is.null(country)){
     webElem <- dr$findElement("id", "country")
@@ -389,12 +430,16 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
       Sys.sleep(2)
     }
     webElem$clickElement()
+
     #select tab file option
     webElem <- dr$findElement(using = "xpath", value = '/html/body/div[1]/div[2]/form/fieldset/div[3]/div[2]/input[2]')
     webElem$clickElement()
     dload_url <- dr$getCurrentUrl()[[1]]
     webElem <- dr$findElement("name", "submitaction")
     if(messages){message("Attempting download...\n")}
+    webElem$setTimeout(type = "page load", milliseconds = 10000000)
+
+    #download file
     webElem$clickElement()
     dload_post_url <- dr$getCurrentUrl()[[1]]
     if(dload_post_url != dload_url){
@@ -405,12 +450,11 @@ mycoportal_tab <- function (download_dir, taxon, country = NULL, state = NULL,
   #Transfer file from selenium container to download_dir
   tryCatch(tab_file <- system2("docker", c("exec", "sel_con", "ls", "/home/seluser/Downloads"), stdout = T))
   while(length(grep(".+\\.tab$",tab_file))==0){
-    Sys.sleep(3)
+    Sys.sleep(1+(as.numeric(recs)/10000))
     tab_file <- system2("docker", c("exec", "sel_con", "ls", "/home/seluser/Downloads"), stdout = T)
   }
-
   system2("docker", c("cp", paste("sel_con:/home/seluser/Downloads/", tab_file, sep=""), download_dir), stdout = F, stderr = F)
-  if(messages){message(paste("File successfully downloaded. ", Sys.time(), "\n", sep = ""))}
+  if(messages){message(paste("File ", tab_file ," successfully downloaded. ", Sys.time(), "\n", sep = ""))}
 
   #Read file into R
   if(read_files ==T){
