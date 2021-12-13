@@ -6,12 +6,13 @@
 \usage{
 trait_clado(
   data,
-  formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name,
+ 
+    formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_species,
   node_color = TRUE,
   filter = NULL,
   node_all = TRUE,
   ladderize = TRUE,
-  continuous = TRUE,
+  continuous = "color",
   layout = "circular",
   ...
 )
@@ -19,9 +20,9 @@ trait_clado(
 \arguments{
 \item{data}{Enrichment table from \code{fungarium::enrichment} (i.e., data.frame containing taxonomic classification variables and enrichment values).}
 
-\item{formula}{Formula describing how the taxonomic variables (e.g. kingdom, phylum, class, etc.) in your enrichment table should be nested (e.g ~V1/V2/.../Vn). Default: ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_name.}
+\item{formula}{Formula describing how the taxonomic variables (e.g. kingdom, phylum, class, etc.) in your enrichment table should be nested (e.g ~V1/V2/.../Vn). Default: ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_species.}
 
-\item{node_color}{Logical. If TRUE (the default), nodes are colored based on the values in trait_col.}
+\item{node_color}{Logical. If TRUE (the default), nodes are colored based on the values in trait_ratio.}
 
 \item{filter}{Character vector specifying data set filtering parameters. Default is NULL. To select taxa with the highest or lowest values for a certain variable (e.g., trait_ratio, trait_freq, freq) use "high-100-trait_ratio", "high-150-trait_freq", "low-200-freq", etc. To set a value threshold filter (i.e., filter out taxa with less than or more than a certain value for trait_ratio, trait_freq, etc.) use "trait_freq>=5", "freq>20", etc. Full vector example: c("freq>=10","high-150-trait_ratio"). This example will filter out all taxa with less than 10 trait_freq and then select the top 150 taxa with the highest trait_ratio values. Note that inequality filters are used prior to selecting "high" or "low" taxa.}
 
@@ -29,7 +30,7 @@ trait_clado(
 
 \item{ladderize}{Logical. Should the cladogram be ladderized? Default is TRUE. See \code{ape::ladderize}.}
 
-\item{continuous}{Logical. Should tree coloring be continuous between nodes? Default is TRUE. See \code{ggtree::ggtree}.}
+\item{continuous}{Logical. Type of node annotation? Default is "color". See \code{ggtree::ggtree}.}
 
 \item{layout}{Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.}
 
@@ -62,32 +63,32 @@ prior to using \code{trait_clado}, so that these biased taxa are not used in the
 }
 \examples{
 library(fungarium)
-
-#load sample enrichment data set for global Agaricales records
-data(agaricales_enrich)
-
-#make circle cladogram
 library(ggtree)
 library(ggplot2)
 
-#filter out taxa with high collector bias
+#load sample enrichment data set
+data(agaricales_enrich)
+
+#filter out taxa with high collector bias (optional)
 agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias<=0.75,]
 agaricales_enrich <- agaricales_enrich[agaricales_enrich$max_bias_t<=0.75,]
 
+#filter out taxa with low total records ("freq")
+agaricales_enrich <- agaricales_enrich[agaricales_enrich$freq>=3,]
+
 #make cladogram
-trait_clado(data=agaricales_enrich, continuous=TRUE,
+trait_clado(data=agaricales_enrich, continuous="color",
             ladderize=TRUE, layout="circular", size=0.8,
-            formula = ~new_order/new_family/new_genus/new_name,
-            filter=c("high-300-trait_ratio", "freq>=5"))+#make tree
+            formula = ~new_order/new_family/new_genus/new_species,
+            filter="high-300-trait_ratio", node_all = TRUE)+
   geom_tiplab2(color = "black", hjust = 0, offset = 0.1,
-               size = 1.3, fontface = "italic") + #add species labels
+               size = 1.4, fontface = "italic") + #add species labels
   geom_tippoint(shape=20,
                 aes(color=trait_ratio, size=trait_freq),
                 alpha=0.75)+#add tree tips
   scale_color_gradientn(colours= c("cyan", "blue", "purple", "red", "orange"),
                         name = "Fire-associated records enrichment",
-                        limits = c(0, max(agaricales_enrich$trait_ratio)+
-                                     (0.01*max(agaricales_enrich$trait_ratio))),
+                        limits = c(0, round(max(agaricales_enrich$trait_ratio),2)),
                         guide = guide_colourbar(label.vjust = 0.6,
                                                 label.theme = element_text(size = 10,
                                                                            colour = "black",
@@ -114,12 +115,12 @@ trait_clado(data=agaricales_enrich, continuous=TRUE,
         legend.justification = "center",
         legend.margin = margin(0,0,0,0),
         plot.title = element_text(hjust = 0.5, margin=margin(0,0,0,0)))+
-  xlim(-1,4)#move root away from center;can help improve appearance of circle plot
-
+  xlim(c(-1, 4))
 }
 \references{
 \enumerate{
-\item Simpson, H.J., Schilling, J.S. 2021. Using aggregated field collections data
-and the novel R package fungarium to investigate fungal fire association. \emph{Mycologia}. \bold{IN PRESS}
+\item Hunter J. Simpson & Jonathan S. Schilling (2021) Using aggregated field
+collection data and the novel r package fungarium to investigate fungal fire
+association, Mycologia, 113:4, 842-855, DOI: 10.1080/00275514.2021.1884816
 }
 }
