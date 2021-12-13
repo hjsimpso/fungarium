@@ -29,13 +29,10 @@ dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 }
 \examples{
 library(fungarium)
-data(strophariaceae) #import sample dataset
-
-#update taxon names
-data <- taxon_update(strophariaceae, show_status=FALSE)
+data(agaricales_updated) #import sample dataset with updated taxon names
 
 #get funguild assignments
-trait_w_funguild <- fg_assign(data)
+agaricales_fg <- fg_assign(agaricales_updated)
 
 }
 \references{

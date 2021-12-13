@@ -17,13 +17,10 @@
 #'
 #' @examples
 #' library(fungarium)
-#' data(strophariaceae) #import sample dataset
-#'
-#' #update taxon names
-#' data <- taxon_update(strophariaceae, show_status=FALSE)
+#' data(agaricales_updated) #import sample dataset with updated taxon names
 #'
 #' #get funguild assignments
-#' trait_w_funguild <- fg_assign(data)
+#' agaricales_fg <- fg_assign(agaricales_updated)
 #'
 fg_assign <- function(tax_table,
                       url = "http://www.stbates.org/funguild_db.php",
@@ -37,7 +34,10 @@ fg_assign <- function(tax_table,
     stop("Please install the \"jsonlite\" package",
          call. = FALSE)
   }
-
+  if (!requireNamespace("xml2", quietly = TRUE)) {
+    stop("Please install the \"xml2\" package",
+         call. = FALSE)
+  }
   #check input data format
   if (!is.data.frame(tax_table)){
     stop("Input data must be a data.frame.")
@@ -85,7 +85,7 @@ fg_assign <- function(tax_table,
       tax_table_u$comb <- paste0(tax_table_u$comb, tax_table_u[,tax_cols[i]])
     }
   }
-  tax_table <- dplyr::inner_join(tax_table, tax_table_u[,tail(colnames(tax_table_u),8)], by="comb")
+  tax_table <- dplyr::inner_join(tax_table, tax_table_u[,utils::tail(colnames(tax_table_u),8)], by="comb")
   tax_table <- tax_table[,!colnames(tax_table)%in%"comb"]
   return(tax_table)
 }
