@@ -2,7 +2,7 @@
 fungarium.Rproj
 .Rhistory
 inst/doc
-^Example_fire_association
+^Example_fire_association*
 README_old.*
 ^.vscode$
 mycoportal_tab.*
@@ -10,3 +10,4 @@ mp_collections.*
 Example_fire_association.*
 Introduction.Rmd
 ^data-raw$
+^vignettes$
