@@ -14,9 +14,9 @@ get_fips(
 \arguments{
 \item{data}{Data.frame containing a column with state names and (optionally) a column of county names.}
 
-\item{state_col}{Character string specifying state column name. Defaults to "stateProvince" (name used by MyCoPortal).}
+\item{state_col}{Character string specifying state column name. Defaults to "stateProvince" (Darwin Core standard).}
 
-\item{county_col}{Character string specifying county column name. Defaults to "county" (name used by MyCoPortal).}
+\item{county_col}{Character string specifying county column name. Defaults to "county" (Darwin Core standard).}
 
 \item{assign_counties}{Logical. If TRUE, fips codes are assigned for states AND counties. If FALSE, only state fips codes are assigned.}
 }
@@ -65,7 +65,14 @@ reference dataset, which currently has not been done.
 }
 \examples{
 library(fungarium)
-data(strophariaceae) #import sample data set
-data <- get_fips(strophariaceae) #fix misspelled counties and assign fips codes
+
+#import sample data set
+data(agaricales)
+
+#filter records for specific state
+agaricales_mn <- agaricales[agaricales$stateProvince=="Minnesota",]
+
+#fix misspelled counties and assign fips codes
+agaricales_fips <- get_fips(agaricales_mn)
 
 }

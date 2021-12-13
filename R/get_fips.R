@@ -5,8 +5,8 @@
 #' name matching algorithms.
 #'
 #' @param data  Data.frame containing a column with state names and (optionally) a column of county names.
-#' @param state_col Character string specifying state column name. Defaults to "stateProvince" (name used by MyCoPortal).
-#' @param county_col Character string specifying county column name. Defaults to "county" (name used by MyCoPortal).
+#' @param state_col Character string specifying state column name. Defaults to "stateProvince" (Darwin Core standard).
+#' @param county_col Character string specifying county column name. Defaults to "county" (Darwin Core standard).
 #' @param assign_counties Logical. If TRUE, fips codes are assigned for states AND counties. If FALSE, only state fips codes are assigned.
 #'
 #' @return Returns input data.frame with the following output fields appended:
@@ -49,8 +49,15 @@
 #'
 #' @examples
 #' library(fungarium)
-#' data(strophariaceae) #import sample data set
-#' data <- get_fips(strophariaceae) #fix misspelled counties and assign fips codes
+#'
+#' #import sample data set
+#' data(agaricales)
+#'
+#' #filter records for specific state
+#' agaricales_mn <- agaricales[agaricales$stateProvince=="Minnesota",]
+#'
+#' #fix misspelled counties and assign fips codes
+#' agaricales_fips <- get_fips(agaricales_mn)
 #'
 get_fips <- function(data, state_col="stateProvince", county_col="county", assign_counties=TRUE){
   #check that the input is formatted correctly
