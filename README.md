@@ -12,7 +12,7 @@ commits](https://img.shields.io/github/commits-since/hjsimpso/fungarium/latest)
 
 <!-- badges: end -->
 
-An R package for enabling the use of fungaria collections data in
+An R package for enabling the use of fungarium collection data in
 comprehensive trait analyses.
 
 ## Installing fungarium
@@ -23,17 +23,6 @@ remotes::install_github("hjsimpso/fungarium@*release") #install the latest funga
 #to install the latest development version use:
 remotes::install_github("hjsimpso/fungarium@main")
 ```
-
-## Installing Docker
-
-[Docker](https://docs.docker.com/get-started/overview/) needs to be
-installed on your system in order to utilize the `mycoportal_tab`
-function. All other functions in the **fungarium** package do not
-require Docker, so if you do not wish to utilize `mycoportal_tab` you do
-not need to install Docker.
-
-Instructions for installing Docker (available for Linux platforms,
-macOS, and Windows 10): <https://docs.docker.com/engine/install/>
 
 ## Examples and detailed guidance on package usage
 
