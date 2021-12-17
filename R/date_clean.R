@@ -1,6 +1,8 @@
 #' Clean dates in occurrence data sets
 #'
-#' Parses dates with varying format into a consistent format of specified resolution (e.g., year, month, day) and removes problematic dates that cannot be parsed.
+#' Parses dates with varying format into a consistent format of specified resolution
+#' (e.g., year, month, day) and removes problematic dates that cannot be parsed or
+#' do not match the specified resolution.
 #'
 #'
 #' @param data Data.frame of occurrence data set (e.g. MyCoPortal, GBIF)
@@ -8,22 +10,23 @@
 #' @param date_res Character string specifying the desired resolution for parsed dates (i.e., "year", "month", "day"). Default is "year".
 #'
 #' @return Data.frame containing the input data set with the following output fields appended.
-#' Records with dates that could not be parsed are removed.
+#' Records with dates that could not be parsed or do not match the specified resolution are removed.
 #' \describe{
-#' \item{\code{date_fixed}}{Variabe date formats are transformed into standard YYYY-MM-DD format. Dates limited to year or month resolution (e.g., 1990-00-00 or 1990-01-00), are transformed to YYYY or YYYY-MM format respectively.}
+#' \item{\code{date_fixed}}{Variabe date formats are transformed into standard YYYY-MM-DD format. Dates limited to year or month resolution (e.g., 1990-00-00 or 1990-01-00), are transformed to YYYY (e.g., 1990) or YYYY-MM (e.g., 1990-01) format respectively.}
+#' \item{\code{parsed_format}}{Detected date format (e.g., "Y", "Ym", or "Ymd").}
 #' \item{\code{parsed_date}}{"date_fixed" values are parsed into standard POSIXct date-time objects using \code{lubridate::parse_date_time}}
-#' \item{\code{parsed_format}}{Detected date format (e.g., "Y", "Ym", or "Ymd"). Used for parsing dates correctly.}
 #' \item{\code{year_fixed}}{The collection year value after cleaning and parsing dates.}
 #' \item{\code{month_fixed}}{The collection month value after cleaning and parsing dates.}
 #' \item{\code{day_fixed}}{The collection day value after cleaning and parsing dates.}
 #' }
-#' @note Full dates other than the "Ymd" format are all assumed to be in the "dmY" format, not "mdY". Ex: 01/10/1990 is assumed to be October 10, 1990, not January 10, 1990.
+#' @note Full dates other than the "Ymd" format are all assumed to be in the "dmY"
+#' format, not "mdY". Ex: 01/10/1990 is assumed to be October 10, 1990, not January 10, 1990.
 #' @export
 #'
 #' @examples
 #' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean <- date_clean(agaricales) #clean dates
+#' data(agaricales_updated) #import sample data set
+#' clean <- date_clean(agaricales_updated) #clean dates
 #'
 
 
@@ -79,6 +82,7 @@ date_clean <- function(data, date_col="eventDate", date_res="year"){
     data$month_fixed <- lubridate::month(data$parsed_date)
     data$day_fixed <- lubridate::day(data$parsed_date)
   }
-  print(paste0("null_rows=", null_rows,"; error1_rows=", error1_rows,"; res_rows=",res_rows, "; error2_rows=", error2_rows, "; total_removed=", rows1-nrow(data)))
+  #print(paste0("null_rows=", null_rows,"; error1_rows=", error1_rows,"; res_rows=",res_rows, "; error2_rows=", error2_rows, "; total_removed=", rows1-nrow(data)))
+  message(paste0("Total records removed: ", rows1-nrow(data)))
   return(data)
 }
