@@ -4,23 +4,24 @@
 \alias{hex_grid}
 \title{Overlay grid on map}
 \usage{
-hex_grid(size, map)
+hex_grid(size)
 }
 \arguments{
 \item{size}{Integer specifying grid cell area (in square kilometers).}
-
-\item{map}{Map shapefile (sf object). Must use an equal area projection (e.g., "cea")}
 }
 \value{
 sf object containing:
 \describe{
-\item{\code{x}}{grid cell geometry}
-\item{\code{hex}}{hex number. Each grid cell has a unique number}
+\item{\code{geometry}}{grid cell geometry}
+\item{\code{hex}}{hex number ID. Each grid cell has a unique number}
 \item{\code{size}}{the area (in sqauare kilometers) of each grid cell}
 }
 }
 \description{
-Overlays hexagonal grid cells of specified area onto map.
+Overlays hexagonal grid cells of specified area onto equal area world map.
+}
+\details{
+World map projection is cylindrical equal area.
 }
 \examples{
 library(fungarium)
@@ -32,5 +33,5 @@ shp <- rnaturalearth::ne_countries('large', returnclass = "sf")
 shp <- sf::st_transform(shp, crs = "+proj=cea +ellps=WGS84 +datum=WGS84")
 
 #get grid
-grid <- hex_grid(80000, shp)
+grid <- hex_grid(80000)
 }

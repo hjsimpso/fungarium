@@ -1,18 +1,16 @@
 #' Overlay grid on map
 #'
-#' Overlays hexagonal grid cells of specified area onto map.
+#' Overlays hexagonal grid cells of specified area onto equal area world map.
 #'
 #' @param size Integer specifying grid cell area (in square kilometers).
-#' @param map Map shapefile (sf object). Must use an equal area projection (e.g., "cea")
-
 #' @return sf object containing:
 #' \describe{
-#' \item{\code{x}}{grid cell geometry}
-#' \item{\code{hex}}{hex number. Each grid cell has a unique number}
+#' \item{\code{geometry}}{grid cell geometry}
+#' \item{\code{hex}}{hex number ID. Each grid cell has a unique number}
 #' \item{\code{size}}{the area (in sqauare kilometers) of each grid cell}
 #' }
 #' @export
-#'
+#' @details World map projection is cylindrical equal area.
 #' @examples
 #' library(fungarium)
 #'
@@ -23,10 +21,13 @@
 #' shp <- sf::st_transform(shp, crs = "+proj=cea +ellps=WGS84 +datum=WGS84")
 #'
 #' #get grid
-#' grid <- hex_grid(80000, shp)
+#' grid <- hex_grid(80000)
 
 
-hex_grid <- function(size, map){
+hex_grid <- function(size){
+  ###import world map
+  map <- rnaturalearth::ne_countries('large', returnclass = "sf")#import world shp file
+  map <- sf::st_transform(map, crs = "+proj=cea +ellps=WGS84 +datum=WGS84") #transform to cylindrical projection
   ##area to cellsize calc
   conv <- 10^6 #km2 to m2
   area <-  size*conv
@@ -44,5 +45,7 @@ hex_grid <- function(size, map){
 
   grid$hex <- seq.int(nrow(grid))
   grid$size <- size
+  colnames(grid)[colnames(grid)=="x"] <- "geometry"
+  sf::st_geometry(grid) <- "geometry"
   return(grid)
 }
