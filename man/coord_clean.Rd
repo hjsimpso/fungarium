@@ -9,7 +9,7 @@ coord_clean(
   lat = "decimalLatitude",
   lon = "decimalLongitude",
   country = "country",
-  tests = c("all"),
+  tests = "all",
   centroid_dis = 100,
   round_digits = 4
 )
@@ -23,7 +23,7 @@ coord_clean(
 
 \item{country}{Character string specifying the name of the country column. Default is "country" (i.e., the Darwin Core standard).}
 
-\item{tests}{Character vector specifying the coordinate cleaning tests to perform. Options include: "zero", "equal", "countries", "centroids". Default is c("zero", "equal", "countries", "centroids").}
+\item{tests}{Character vector specifying the coordinate cleaning tests to perform. Options include: "zero", "equal", "countries", "centroids", "all". Default is "all".}
 
 \item{centroid_dis}{Numeric specifying the distance threshold (in meters) to use for the centroid test. Default is 100.}
 
@@ -51,7 +51,7 @@ The following tests can be selected:
 }
 \examples{
 library(fungarium)
-data(agaricales) #import sample data set
-clean <- coord_clean(agaricales) #clean dates
+data(agaricales_updated) #import sample data set
+clean <- coord_clean(agaricales_updated) #clean coordinates
 
 }
