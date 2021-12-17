@@ -10,3 +10,5 @@ mycoportal_tab.*
 mp_collections.*
 data-raw
 vignettes
+^.*\.Rproj$
+^\.Rproj\.user$
