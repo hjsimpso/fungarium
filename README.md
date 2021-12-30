@@ -30,8 +30,10 @@ See [fungarium book](https://hjsimpso.github.io/fungarium_book/).
 
 ## Meta
 
--   Get citation information for fungarium in R via
-    `citation(package = 'fungarium')`
+-   Please cite: Simpson, H., Schilling, J. 2021. Using aggregated field
+    collection data and the novel R package FUNGARIUM to investigate
+    fungal fire-association. Mycologia 113(4):842-855. DOI:
+    10.1080/00275514.2021.1884816
 -   This package is released with a [Contributor Code of
     Conduct](https://github.com/hjsimpso/fungarium/blob/main/CODE_OF_CONDUCT.md).
     By contributing to this project, you agree to abide by its terms.
