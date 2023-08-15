@@ -12,6 +12,7 @@
 #' @param filter         Character vector specifying data set filtering parameters. Default is NULL. To select taxa with the highest or lowest values for a certain variable (e.g., trait_ratio, trait_freq, freq) use "high-100-trait_ratio", "high-150-trait_freq", "low-200-freq", etc. To set a value threshold filter (i.e., filter out taxa with less than or more than a certain value for trait_ratio, trait_freq, etc.) use "trait_freq>=5", "freq>20", etc. Full vector example: c("freq>=10","high-150-trait_ratio"). This example will filter out all taxa with less than 10 trait_freq and then select the top 150 taxa with the highest trait_ratio values. Note that inequality filters are used prior to selecting "high" or "low" taxa.
 #' @param node_color     Logical. If TRUE (the default), nodes are colored based on the values in trait_ratio.
 #' @param node_all       Logical. If TRUE (the default), all taxa in the original input data (before filtering via the \code{filtering} parameter) are used for calculating node enrichment values. This becomes important if \code{filter} is non NULL.
+#' @param node_calc      Character string defining method for calculating trait enrichment for nodes. If "mean" (the default) is selected, nodes values are calculated based on the mean trait enrichment value for all of the lowest level taxa in that group. If "add" (the default) is selected, nodes values are calculated by dividing the sum of all trait-relevant records by the sum of all records for the lowest level taxa in that group.
 #' @param ...            Additional args passed to ggtree. See \code{ggtree::ggtree}.
 #' @return           Returns a ggtree object.
 #'
@@ -93,7 +94,7 @@
 
 trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_species,
                         node_color=TRUE, filter=NULL, node_all=TRUE,
-                        ladderize=TRUE, continuous="color", layout="circular",
+                        ladderize=TRUE, continuous="color", layout="circular", node_calc = "mean",
                         ...){
   #check for deprecated arguments
   if(exists("show", inherits = FALSE)){
@@ -114,6 +115,10 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
   #check that input is enrichment table
   if (T%in%(!c("freq", "trait_freq", "trait_ratio")%in%colnames(data))){
     stop('Input data must be an enrichment table containing the fields "freq", "trait_freq", "trait_ratio". See fungarium::enrichment')
+  }
+  #check node_calc
+  if (!node_calc %in% c("mean", "sum")){
+    stop("Invalid value for 'node_calc'")
   }
   #convert trait numeric data from characters to numeric
   data$freq <- as.numeric(data$freq)
@@ -204,9 +209,16 @@ trait_clado <- function(data, formula=~new_kingdom/new_phylum/new_class/new_orde
         }
         j <- j+1
       }
-      label_data$trait_ratio[i] <- as.character(sum(as.numeric(hi_tax_rows$trait_freq))/sum(as.numeric(hi_tax_rows$freq)))
-      label_data$trait_freq[i] <- as.character(sum(as.numeric(hi_tax_rows$trait_freq)))
-      label_data$freq[i] <- as.character(sum(as.numeric(hi_tax_rows$freq)))
+      if (node_calc == "mean") { # trait ratio calculation for nodes based on mean
+        label_data$trait_freq[i] <- as.character(sum(as.numeric(hi_tax_rows$trait_freq)))
+        label_data$freq[i] <- as.character(sum(as.numeric(hi_tax_rows$freq)))
+        label_data$trait_ratio[i] <- as.character(mean(as.numeric(hi_tax_rows$trait_ratio)))
+      }else{ # trait ratio calculation for nodes based on sums
+        label_data$trait_ratio[i] <- as.character(sum(as.numeric(hi_tax_rows$trait_freq))/sum(as.numeric(hi_tax_rows$freq)))
+        label_data$trait_freq[i] <- as.character(sum(as.numeric(hi_tax_rows$trait_freq)))
+        label_data$freq[i] <- as.character(sum(as.numeric(hi_tax_rows$freq)))
+      }
+
     }else{
       label_data$tax_level[i] <- vars[length(vars)]
     }

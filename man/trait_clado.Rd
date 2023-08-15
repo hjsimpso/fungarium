@@ -6,14 +6,14 @@
 \usage{
 trait_clado(
   data,
- 
-    formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_species,
+  formula = ~new_kingdom/new_phylum/new_class/new_order/new_family/new_genus/new_species,
   node_color = TRUE,
   filter = NULL,
   node_all = TRUE,
   ladderize = TRUE,
   continuous = "color",
   layout = "circular",
+  node_calc = "mean",
   ...
 )
 }
@@ -34,11 +34,13 @@ trait_clado(
 
 \item{layout}{Character string specifying the type of tree layout. Default is "circular". See \code{ggtree::ggtree}.}
 
+\item{node_calc}{Character string defining method for calculating trait enrichment for nodes. If "mean" (the default) is selected, nodes values are calculated based on the mean trait enrichment value for all of the lowest level taxa in that group. If "add" (the default) is selected, nodes values are calculated by dividing the sum of all trait-relevant records by the sum of all records for the lowest level taxa in that group.}
+
 \item{...}{Additional args passed to ggtree. See \code{ggtree::ggtree}.}
 }
 \value{
-\preformatted{      Returns a ggtree object.
-}
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      Returns a ggtree object.
+}\if{html}{\out{</div>}}
 }
 \description{
 Taxonomic classification data is used to create a cladogram, which is then annotated with
