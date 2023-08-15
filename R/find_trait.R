@@ -46,18 +46,27 @@ find_trait <- function(data, metadata_cols=c("habitat", "occurrenceRemarks", "as
   }
 
   #Search for records with positive keywords/phrases
+  rows_comb <- integer()
   for (i in 1:length(metadata_cols)){
-    string <- paste(ifelse(exists("string", inherits = FALSE),paste(string,"| ", sep=" "), ""), "data[[metadata_cols[",i,"]]] ", "%in% ", "grep(pos_string,data[[metadata_cols[",i,"]]], value=TRUE)", sep="")
+    #string <- paste(ifelse(exists("string", inherits = FALSE),paste(string,"| ", sep=" "), ""), "data[[metadata_cols[",i,"]]] ", "%in% ", "grep(pos_string,data[[metadata_cols[",i,"]]], value=TRUE)", sep="")
+    rows <- stringr::str_which(data[[metadata_cols[i]]], pos_string)
+    rows_comb <- append(rows_comb, rows)
   }
-  data <- data[eval(parse(text=string)),]
-  remove(string)
+  #data <- data[eval(parse(text=string)),]
+  data <- data[unique(rows_comb),]
+  remove(rows_comb)
 
   #Remove records that have negative keywords/phrases
   if(!is.null(neg_string)){
+    rows_comb <- integer()
     for (i in 1:length(metadata_cols)){
-      string <- paste(ifelse(exists("string", inherits = FALSE),paste(string,"| ", sep=" "), ""), "data[[metadata_cols[",i,"]]] ", "%in% ", "grep(neg_string,data[[metadata_cols[",i,"]]], value=TRUE)", sep="")
+      #string <- paste(ifelse(exists("string", inherits = FALSE),paste(string,"| ", sep=" "), ""), "data[[metadata_cols[",i,"]]] ", "%in% ", "grep(neg_string,data[[metadata_cols[",i,"]]], value=TRUE)", sep="")
+      rows <- stringr::str_which(data[[metadata_cols[i]]], neg_string)
+      rows_comb <- append(rows_comb, rows)
     }
-    data <- data[!eval(parse(text=string)),]
+    #data <- data[!eval(parse(text=string)),]
+    data <- data[unique(rows_comb),]
+    remove(rows_comb)
   }
   return(data)
 }
