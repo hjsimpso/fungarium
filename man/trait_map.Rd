@@ -30,8 +30,8 @@ trait_map(
 \item{...}{Additional aesthetics passed to geometries (see example).}
 }
 \value{
-\preformatted{      Returns a gg object.
-}
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      Returns a gg object.
+}\if{html}{\out{</div>}}
 }
 \description{
 Annotate custom geometries on an equal area world map with trait data. World map contains country boundaries.

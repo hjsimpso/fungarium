@@ -20,8 +20,8 @@ fg_assign(
 Default is c("new_phylum", "new_class", "new_order", "new_family", "new_genus", "new_species").}
 }
 \value{
-\preformatted{      Returns the input data.frame with FUNGuild assignments appended.
-}
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      Returns the input data.frame with FUNGuild assignments appended.
+}\if{html}{\out{</div>}}
 }
 \description{
 Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed in a
