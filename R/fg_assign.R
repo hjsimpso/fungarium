@@ -49,7 +49,7 @@ fg_assign <- function(tax_table,
   #download FUNGuild database
   fg <- xml2::read_html(url)
   fg <- rvest::html_text(fg)
-  fg <- jsonlite::fromJSON(gsub("funguild_db_2", "", fg))
+  fg <- jsonlite::fromJSON(gsub("funguild_db", "", fg))
 
   #add columns to tax table for fg output.
   out <- data.frame(matrix(nrow=nrow(tax_table_u),ncol = 7))
