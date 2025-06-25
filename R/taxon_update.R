@@ -108,10 +108,10 @@ taxon_update <- function(data, taxon_col="scientificName",
       tmp[i] <- gsub(paste0("\\s\\Q", data[[authorship_col]][i], "\\E"), "",  data[[taxon_col]][i])
     }
   }
-  data[[taxon_col]] <- tmp
+  data$scientific_name_fixed <- tmp
   rm(tmp)
   #Create new data frame with only name and authorship info
-  data_cond <- data.frame(query_name=data[[taxon_col]], query_authorship=data[[authorship_col]])
+  data_cond <- data.frame(query_name=data$scientific_name_fixed, query_authorship=data[[authorship_col]])
   #Fix erroneous capitalization of specific epithet
   data_cond$query_name <- tolower(data_cond$query_name)
   data_cond$query_name <- gsub("([a-z])(.*)", "\\U\\1\\L\\2", data_cond$query_name, perl=T)
@@ -154,9 +154,6 @@ taxon_update <- function(data, taxon_col="scientificName",
   data <- cbind(data, data_cond)
   if (species_only){
     data <- data[data$error!=""|data$rank=="species",]#post-update species removal; pre-update species removal not always 100% effective, but still useful to remove species before name updating - saves processing time
-  }
-  if (is.data.table(data)){
-    data <- setDF(data)
   }
   return(data)
 }
