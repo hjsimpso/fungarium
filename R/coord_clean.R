@@ -52,10 +52,12 @@ coord_clean <- function(data, lat="decimalLatitude", lon="decimalLongitude", cou
 
   #round lat and long - make numeric
   if (!is.null(round_digits)){
-    data[[lon]] <- round(as.numeric(data[[lon]]), digits = round_digits)
-    data[[lat]] <- round(as.numeric(data[[lat]]), digits = round_digits)
-    data$x <- data[[lon]]
-    data$y <- data[[lat]]
+    # data[[lon]] <- round(as.numeric(data[[lon]]), digits = round_digits)
+    # data[[lat]] <- round(as.numeric(data[[lat]]), digits = round_digits)
+    # data$x <- data[[lon]]
+    # data$y <- data[[lat]]
+    data$x <- round(as.numeric(data[[lon]]), digits = round_digits)
+    data$y <- round(as.numeric(data[[lat]]), digits = round_digits)
   }else{
     data$x <- as.numeric(data[[lon]])
     data$y <- as.numeric(data[[lat]])
@@ -88,9 +90,8 @@ coord_clean <- function(data, lat="decimalLatitude", lon="decimalLongitude", cou
   #convert lat long points to sf geometry in cea coordinate space
   if (T%in%(c("countries","centroids" ) %in% tests)){
     shp <- rnaturalearth::ne_countries('large', returnclass = "sf")#import world shp file
+    shp <- sf::st_make_valid(shp) # Fix invalid geometries
     data <- sf::st_as_sf(data, coords = c("x", "y"), crs = sf::st_crs(shp)) #convert points to sf points
-    shp <- sf::st_transform(shp, crs = "+proj=cea +ellps=WGS84 +datum=WGS84")
-    data <- sf::st_transform(data, crs = sf::st_crs(shp))
   }
 
   #perform countries test
@@ -131,11 +132,20 @@ coord_clean <- function(data, lat="decimalLatitude", lon="decimalLongitude", cou
   }
   message(paste("Total records removed:", row0-nrow(data)))
 
-  #remove unwanted fields from output
-  data <- as.data.frame(data)[,!colnames(data)%in%c("geometry", "row_numb")]
+  # Extract coordinates from geometry
+  coords <- sf::st_coordinates(data)
+
+  # Add coordinates as separate lat/long columns
+  data <- cbind(data, coords)
+
+  # Drop geometry column:
+  data <- sf::st_drop_geometry(data)
+
+  # rename the coordinate columns
+  colnames(data)[(ncol(data)-1):ncol(data)] <- c("longitude_fixed", "latitude_fixed")
 
   #return cleaned output
-  return(data)
+  return(data[,!colnames(data)=="row_numb"])
 }
 
 
