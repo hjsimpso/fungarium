@@ -6,12 +6,19 @@
 #include <boost/regex.hpp>
 #include <string>
 #include <vector>
-#include <sstream>
+#include <iostream>    // For output
+#include <sstream>     // For std::istringstream
 #include <optional> // For std::optional
 #include <typeinfo> // Required for typeid
 #include <unordered_set> // For std::unordered_set
 #include <charconv>
+#include "date/date.h"
 
+//======================================================================
+// Macros
+//======================================================================
+// #define DEBUG_PRINT(x) Rcpp::Rcout << x << std::endl
+#define DEBUG_PRINT(x)
 
 //======================================================================
 // ENUM
@@ -27,6 +34,8 @@ enum class DateFormatType {
     monthdY,   // MonthName-Day-Year
     Ymonthd,   // Year-MonthName-Day
     Ydmonth,   // Year-Day-MonthName
+    Ymonth,   // Year-MonthName
+    monthY,   // MonthName-Year
     YmdT,      // Year-Month-Day Time
     YmdTz      // Year-Month-Day Time Zone
 };
@@ -42,6 +51,8 @@ const std::map<DateFormatType, std::string> DateFormatMap = {
     {DateFormatType::monthdY, "monthdY"},
     {DateFormatType::Ymonthd, "Ymonthd"},
     {DateFormatType::Ydmonth, "Ydmonth"},
+    {DateFormatType::Ymonth, "Ymonth"},
+    {DateFormatType::monthY, "monthY"},
     {DateFormatType::YmdT, "YmdT"},
     {DateFormatType::YmdTz, "YmdTz"}
 };
@@ -50,7 +61,7 @@ const std::map<DateFormatType, std::string> DateFormatMap = {
 //======================================================================
 
 int get_month_from_name(const std::string& month_raw) {
-    std::map<std::string, int> month_name_map = {
+    static std::map<std::string, int> month_name_map = {
         {"jan", 1}, {"january", 1}, {"feb", 2}, {"february", 2},
         {"mar", 3}, {"march", 3}, {"apr", 4}, {"april", 4},
         {"may", 5}, {"jun", 6}, {"june", 6}, {"jul", 7}, {"july", 7},
@@ -63,25 +74,12 @@ int get_month_from_name(const std::string& month_raw) {
     transform(m.begin(), m.end(), m.begin(), ::tolower);
     if (month_name_map.find(m) != month_name_map.end()) {
         return month_name_map[m];
+    } else {
+        throw std::runtime_error("Invalid month name. Could not be mapped to integer value.");
     }
-    return -1;
 };
 
-int isTwoDatesIdentical(const boost::regex& pattern, std::string& cleaned_date, std::string& error) {
-    boost::smatch match;
-    if (boost::regex_match(cleaned_date, match, pattern)) {
-        std::string d1 = match[1];
-        std::string d2 = match[6];
-        if (d1 == d2) {
-            cleaned_date = d1;
-            return 1;
-        } else {
-            error = "two_dates";
-            return -1;
-        }
-    }
-    return 0;
-}
+
 
 std::vector<std::string> convert_r_vec_to_cpp_vec(Rcpp::CharacterVector input) {
     std::vector<std::string> result;
@@ -113,6 +111,29 @@ void print_progress_bar(int current, int total, int bar_width = 50) {
     Rcpp::Rcout.flush();
 }
 
+std::string to_utc_date(std::string_view s) {
+    DEBUG_PRINT(s.data());
+    if (boost::regex_match(s.data(),boost::regex("^.+Z$", boost::regex_constants::icase | boost::regex_constants::optimize))){ // check for tailing Z (aka UTC time)
+        s.remove_suffix(1); // Remove the 'Z' character
+        return s.data();
+    }
+
+    date::sys_time<std::chrono::seconds> utc_time;
+    std::istringstream in(s.data());
+
+    // Parse ISO 8601 with offset (e.g., -05:00)
+    in >> date::parse("%FT%T%Ez", utc_time);
+    if (in.fail()) {
+        throw std::runtime_error("Failed to parse datetime: " + std::string(s.data()));
+    }
+
+    // Extract just the date in UTC
+    std::ostringstream out;
+    out << date::format("%F", utc_time);
+    DEBUG_PRINT(out.str());
+    return out.str();
+}
+
 //======================================================================
 // Regex strings
 //======================================================================
@@ -120,7 +141,7 @@ struct DateTimeFormats{
     std::string Y_fmt = "[0-9]{4}";
     std::string m_fmt = "(?:0?[1-9]|1[0-2])";
     std::string d_fmt = "(?:0?[1-9]|1[0-9]|2[0-9]|3[0-1])";
-    std::string T_fmt = "[T\\s][0-9]{2}:[0-9]{2}:[0-9]{2}";
+    std::string T_fmt = "[0-9]{2}:[0-9]{2}:[0-9]{2}";
     std::string z_fmt = "(?:Z|[\\+-][0-9]{2}:?[0-9]{2})";
     std::string month_fmt = "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)";
 };
@@ -137,32 +158,37 @@ struct DatetimeRegex {
     boost::regex monthdY = boost::regex("^" + fmts.month_fmt + "-" + fmts.d_fmt + "-" + fmts.Y_fmt + "$", boost::regex_constants::icase | boost::regex_constants::optimize);
     boost::regex Ymonthd = boost::regex("^" + fmts.Y_fmt + "-" + fmts.month_fmt + "-" + fmts.d_fmt + "$", boost::regex_constants::icase | boost::regex_constants::optimize);
     boost::regex Ydmonth = boost::regex("^" + fmts.Y_fmt + "-" + fmts.d_fmt + "-" + fmts.month_fmt + "$", boost::regex_constants::icase | boost::regex_constants::optimize);
-    boost::regex YmdT = boost::regex("^" + fmts.Y_fmt + "-" + fmts.m_fmt + "-" + fmts.d_fmt + fmts.T_fmt  +"$", boost::regex_constants::optimize);
-    boost::regex YmdTz = boost::regex("^" + fmts.Y_fmt + "-" + fmts.m_fmt + "-" + fmts.d_fmt + fmts.T_fmt + fmts.z_fmt + "$", boost::regex_constants::optimize);
+    boost::regex monthY = boost::regex("^" + fmts.month_fmt + "-" + fmts.Y_fmt + "$", boost::regex_constants::icase | boost::regex_constants::optimize);
+    boost::regex Ymonth = boost::regex("^" + fmts.Y_fmt + "-" + fmts.month_fmt + "$", boost::regex_constants::icase | boost::regex_constants::optimize);
+    boost::regex YmdT = boost::regex("^" + fmts.Y_fmt + "-" + fmts.m_fmt + "-" + fmts.d_fmt + "[T\\s]" + fmts.T_fmt  +"$", boost::regex_constants::optimize);
+    boost::regex YmdTz = boost::regex("^" + fmts.Y_fmt + "-" + fmts.m_fmt + "-" + fmts.d_fmt + "[T\\s]" + fmts.T_fmt + fmts.z_fmt + "$", boost::regex_constants::optimize);
 
-    boost::regex two_dates_regex = boost::regex("^(" + fmts.Y_fmt + "(?:-" + fmts.m_fmt + "(?:-" + fmts.d_fmt + "(?:" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?)?)?)\\s(" + fmts.Y_fmt + "(?:-" + fmts.m_fmt + "(?:-" + fmts.d_fmt + "(?:" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?)?)?)$", boost::regex_constants::optimize);
+    // finds double date strings
+    boost::regex two_dates_regex = boost::regex("^(" + fmts.Y_fmt + "(?:-" + fmts.m_fmt + "(?:-" + fmts.d_fmt + "(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?)?)?)[\\s-](" + fmts.Y_fmt + "(?:-" + fmts.m_fmt + "(?:-" + fmts.d_fmt + "(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?)?)?)$", boost::regex_constants::icase | boost::regex_constants::optimize);
 
-    // Handles Y, Y-m, Y-m-d, and also supports month names TODO: clean this up
-    boost::regex harmonize_fmt3 = boost::regex("^([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|(?:" + fmts.month_fmt + "))\\s([0-9]+|(?:" + fmts.month_fmt + "))$", boost::regex_constants::icase | boost::regex_constants::optimize);
-    boost::regex harmonize_fmt2 = boost::regex("^([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|(?:" + fmts.month_fmt + "))$", boost::regex_constants::icase | boost::regex_constants::optimize);
-    boost::regex harmonize_fmt1 = boost::regex("^([0-9]+|" + fmts.month_fmt + ")$", boost::regex_constants::icase | boost::regex_constants::optimize);
+    // Finds spaces in date format - used to harmonize with dash separator in dates and T separator in time
+    boost::regex harmonize_ymd = boost::regex("^([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|" + fmts.month_fmt + ")$", boost::regex_constants::icase | boost::regex_constants::optimize); // for Ymd etc.
+    boost::regex harmonize_ym = boost::regex("^([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|" + fmts.month_fmt + ")$", boost::regex_constants::icase | boost::regex_constants::optimize); // for Ym etc.
+    boost::regex harmonize_ymdt = boost::regex("^([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|" + fmts.month_fmt + ")\\s([0-9]+|" + fmts.month_fmt + ")[T\\s](" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)$", boost::regex_constants::icase | boost::regex_constants::optimize); // for YmdT or YmdTz
 
-    // null regex
-    boost::regex null_1 = boost::regex("^(" + fmts.Y_fmt + ")-(?:0{1,2})-(?:0{1,2}|" + fmts.d_fmt + ")(?:" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::optimize);
-    boost::regex null_2 = boost::regex("^(?:0{1,2}|" + fmts.d_fmt + ")-(?:0{1,2})-(" + fmts.Y_fmt + ")(?:" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::optimize);
-    boost::regex null_3 = boost::regex("^(" + fmts.Y_fmt + "-" + fmts.m_fmt + ")-(?:0{1,2})(?:" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::optimize);
-    boost::regex null_4 = boost::regex("^(?:0{1,2})-(" + fmts.m_fmt + "-" + fmts.Y_fmt + ")(?:" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::optimize);
-    boost::regex null_5 = boost::regex("^00(?:00)?(?:-00(?:00)?)?$", boost::regex_constants::optimize);
+    // for cleaning dull date values
+    boost::regex null_1 = boost::regex("^(" + fmts.Y_fmt + ")-(?:0{1,2})-(?:0{1,2}|" + fmts.d_fmt + ")(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::icase | boost::regex_constants::optimize); // null month, capture year
+    boost::regex null_2 = boost::regex("^(?:0{1,2}|" + fmts.d_fmt + ")-(?:0{1,2})-(" + fmts.Y_fmt + ")(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::icase | boost::regex_constants::optimize); // null month, capture year
+    boost::regex null_3 = boost::regex("^(" + fmts.Y_fmt + "-" + fmts.m_fmt + ")-(?:0{1,2})(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::icase | boost::regex_constants::optimize); // null day, capture year-month
+    boost::regex null_4 = boost::regex("^(?:0{1,2})-(" + fmts.m_fmt + "-" + fmts.Y_fmt + ")(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::icase | boost::regex_constants::optimize); // null day, capture year-month
+    boost::regex null_5 = boost::regex("^00(?:00)?(?:-00(?:00)?)?$", boost::regex_constants::optimize); // null year or year-month or month-year, capture nothing ('useless' date)
+    boost::regex null_6 = boost::regex("^0000-" + fmts.m_fmt + "-" + fmts.d_fmt + "(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::icase | boost::regex_constants::optimize); // null year, capture nothing
+    boost::regex null_7 = boost::regex("^" + fmts.d_fmt + "-" + fmts.m_fmt + "-0000(?:[T\\s]" + fmts.T_fmt + "(?:" + fmts.z_fmt + ")?)?$", boost::regex_constants::icase | boost::regex_constants::optimize); // null year, capture nothing
 
-    // date clean 
-    boost::regex date_clean_1 = boost::regex("[,./\\\\]", boost::regex_constants::optimize);
-    boost::regex date_clean_2 = boost::regex(" {2,}", boost::regex_constants::optimize);
-    boost::regex date_clean_3 = boost::regex("^\\s+|\\s+$", boost::regex_constants::optimize);
+    // for cleaning spec character and whitespace
+    boost::regex spec_char = boost::regex("[,./\\\\]", boost::regex_constants::optimize); // finds spec chars
+    boost::regex double_space = boost::regex(" {2,}", boost::regex_constants::optimize); // finds 2+ spaces
+    boost::regex extra_whitespace = boost::regex("^\\s+|\\s+$", boost::regex_constants::optimize); // finds leading and tailing whitespace
 };
 
 struct ErrorRegex  {
-    boost::regex null_date = boost::regex("^(?:-|(?:0(?:0(?:00)?)?)-(?:0(?:0)?)-(?:0(?:0(?:00)?)?))$", boost::regex_constants::optimize);
-    boost::regex bad_month = boost::regex("^(?:[0-9]{4}-(?:1[3-9]|[2-9][0-9])(?:$|-))|(?:^[0-9]{1,2}-(?:1[3-9]|[2-9][0-9])-[0-9]{4})", boost::regex_constants::optimize);
+    // boost::regex null_date = boost::regex("^(?:-|(?:0(?:0(?:00)?)?)-(?:0(?:0)?)-(?:0(?:0(?:00)?)?))$", boost::regex_constants::optimize);
+    boost::regex bad_month = boost::regex("^(?:[0-9]{4}-(?:1[3-9]|[2-9][0-9])(?:$|-.*))|(?:^(?:[0-9]{1,2}-)?(?:1[3-9]|[2-9][0-9])-[0-9]{4}).*$", boost::regex_constants::optimize);
 };
 
 
@@ -179,7 +205,7 @@ struct DateResult {
     int day_parsed = 0;
     std::string date_parsed;
 
-    DateResult(std::string& input_date) : date_raw(input_date), date_cleaned(""), detected_format(""), parsing_error(""), year_parsed(0), month_parsed(0), day_parsed(0), date_parsed("") {}
+    DateResult(const std::string& input_date) : date_raw(input_date), date_cleaned(""), detected_format(""), parsing_error(""), year_parsed(0), month_parsed(0), day_parsed(0), date_parsed("") {}
     
     // create date string (YYYY-MM-DD) from year, month, day integers
     void format_date() {
@@ -210,243 +236,236 @@ struct DateResult {
         result += "  year_parsed: " + (year_parsed>0 ? std::to_string(year_parsed) : "NA") + "\n";
         result += "  month_parsed: " + (month_parsed>0 ? std::to_string(month_parsed) : "NA") + "\n";
         result += "  day_parsed: " + (day_parsed>0 ? std::to_string(day_parsed) : "NA") + "\n";
-        result += "  date_parsed: " + date_cleaned + "\n";
+        result += "  date_parsed: " + (!date_parsed.empty() ? parsing_error : "NA") + "\n";
         return result;
     }
-    void split_dates(DateFormatType detected_format){
+
+    int check_dup_dates(const boost::regex& dup_date_pattern) {
+        if (boost::regex_match(date_cleaned, dup_date_pattern)) {
+            std::string d1;
+            std::string d2;
+            d1 = boost::regex_replace(date_cleaned, dup_date_pattern, "$1");
+            DEBUG_PRINT(d1);
+            d2 = boost::regex_replace(date_cleaned, dup_date_pattern, "$2");
+            DEBUG_PRINT(d2);
+            if (d1 == d2) {
+                date_cleaned = d1;
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+        return 0;
+    }
+
+    void parse_date(DateFormatType detected_format){
         // Faster parsing using std::string_view and manual indexing (no vector allocation)
-        std::string_view sv(date_cleaned);
+        this->detected_format = DateFormatMap.at(detected_format);
+
+        std::string_view date_str(date_cleaned);
+        static std::size_t first_dash = std::string_view::npos;
+        static std::size_t second_dash = std::string_view::npos;
+        static std::size_t time_delimter = std::string_view::npos;
+        std::string_view year_substr;
+        std::string_view month_substr;
+        std::string_view day_substr;
 
         switch (detected_format) {
             case DateFormatType::Y:
-                this->detected_format = DateFormatMap.at(DateFormatType::Y);
-                year_parsed = std::stoi(date_cleaned);                    
+                year_substr = date_cleaned;        
                 break;
             case DateFormatType::Ym:
                 // year, month (1996-01)
-                std::size_t first_dash = sv.find('-');
+                first_dash = date_str.find('-');
 
                 if (first_dash != std::string_view::npos) {
-                    std::string_view year_sv = sv.substr(0, first_dash);
-                    std::string_view month_sv = sv.substr(first_dash + 1);
-
-                    int m = 0, int y = 0;
-                    std::from_chars(month_sv.data(), month_sv.data() + month_sv.size(), m);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                    } else {
-                        parsing_error = "undefined_error";
-                    } 
+                    year_substr = date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1);
                 }                     
                 break;
             case DateFormatType::mY:
                 // month, year (01-1996)
-                std::size_t first_dash = sv.find('-');
+                first_dash = date_str.find('-');
 
                 if (first_dash != std::string_view::npos) {
-                    std::string_view month_sv = sv.substr(0, first_dash);
-                    std::string_view year_sv = sv.substr(first_dash + 1);
-
-                    int m = 0, int y = 0;
-                    std::from_chars(month_sv.data(), month_sv.data() + month_sv.size(), m);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                    } else {
-                        parsing_error = "undefined_error";
-                    } 
+                    month_substr = date_str.substr(0, first_dash);
+                    year_substr = date_str.substr(first_dash + 1);
                 }                   
                 break;
             case DateFormatType::Ymd:
                 // year, month, day (1996-01-05)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
 
                 if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) {
-                    std::string_view year_sv = sv.substr(0, first_dash);
-                    std::string_view month_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view day_sv = sv.substr(second_dash + 1);
-
-                    int m = 0, int d = 0, y = 0;
-                    std::from_chars(month_sv.data(), month_sv.data() + month_sv.size(), m);
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
-                        parsing_error = "undefined_error";
-                    }    
+                    year_substr = date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    day_substr = date_str.substr(second_dash + 1);
                 }                
                 break;
             case DateFormatType::dmY:
                 // day, month, year (05-01-1996)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
 
                 if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) { 
-                    std::string_view day_sv = sv.substr(0, first_dash);
-                    std::string_view month_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view year_sv = sv.substr(second_dash + 1);
-
-                    int m = 0, int d = 0, y = 0;
-                    std::from_chars(month_sv.data(), month_sv.data() + month_sv.size(), m);
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
-                        parsing_error = "undefined_error";
-                    }   
+                    day_substr = date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    year_substr = date_str.substr(second_dash + 1);
                 }                  
                 break;
             case DateFormatType::Ydmonth:
                 // year, month, day (1996-05-Jan)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
 
                 if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) {
-                    std::string_view year_sv= sv.substr(0, first_dash);
-                    std::string_view day_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view month_sv = sv.substr(second_dash + 1);
+                    year_substr = date_str.substr(0, first_dash);
+                    day_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    month_substr = date_str.substr(second_dash + 1);
 
-                    int m = get_month_from_name(std::string(month_sv));
-                    int d = 0, y = 0;
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
+                    try {
+                        month_parsed = get_month_from_name(std::string(month_substr));
+                    } catch (std::exception &ex){
                         parsing_error = "undefined_error";
-                    }  
+                        return;
+                    }
                 }                  
                 break;
             case DateFormatType::dmonthY:
                 // day, month, year (05-Jan-1996)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
 
                 if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) {     
-                    std::string_view day_sv = sv.substr(0, first_dash);
-                    std::string_view month_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view year_sv = sv.substr(second_dash + 1);
+                    day_substr = date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    year_substr = date_str.substr(second_dash + 1);
 
-                    int m = get_month_from_name(std::string(month_sv));
-                    int d = 0, y = 0;
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
+                    try {
+                        month_parsed = get_month_from_name(std::string(month_substr));
+                    } catch (std::exception &ex){
                         parsing_error = "undefined_error";
-                    }     
+                        return;
+                    } 
                 }               
                 break;
             case DateFormatType::monthdY:
                 // month, day, year (Jan-05-1996)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
 
                 if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) {
-                    std::string_view month_sv = sv.substr(0, first_dash);
-                    std::string_view day_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view year_sv = sv.substr(second_dash + 1);
+                    month_substr = date_str.substr(0, first_dash);
+                    day_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    year_substr = date_str.substr(second_dash + 1);
 
-                    int m = get_month_from_name(std::string(month_sv));
-                    int d = 0, y = 0;
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
+                    try {
+                        month_parsed = get_month_from_name(std::string(month_substr));
+                    } catch (std::exception &ex){
                         parsing_error = "undefined_error";
+                        return;
                     }
                 }
                 break;
             case DateFormatType::Ymonthd:
                 // year, month, day (1996-Jan-05)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
 
                 if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) { 
-                    std::string_view year_sv= sv.substr(0, first_dash);
-                    std::string_view month_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view day_sv = sv.substr(second_dash + 1);
-
-                    int m = get_month_from_name(std::string(month_sv));
-                    int d = 0, y = 0;
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
+                    year_substr= date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    day_substr = date_str.substr(second_dash + 1);
+                    try {
+                        month_parsed = get_month_from_name(std::string(month_substr));
+                    } catch (std::exception &ex){
                         parsing_error = "undefined_error";
+                        return;
                     }
                 }
                 break;
+            case DateFormatType::Ymonth:
+                // year, month (1996-Jan)
+                first_dash = date_str.find('-');
+
+                if (first_dash != std::string_view::npos) {
+                    year_substr = date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1);
+
+                    try {
+                        month_parsed = get_month_from_name(std::string(month_substr));
+                    } catch (std::exception &ex){
+                        parsing_error = "undefined_error";
+                        return;
+                    }
+                }                 
+                break;
+            case DateFormatType::monthY:
+                // month, year (Jan-1996)
+                first_dash = date_str.find('-');
+
+                if (first_dash != std::string_view::npos) {
+                    month_substr = date_str.substr(0, first_dash);
+                    year_substr = date_str.substr(first_dash + 1);
+
+                    try {
+                        month_parsed = get_month_from_name(std::string(month_substr));
+                    } catch (std::exception &ex){
+                        parsing_error = "undefined_error";
+                        return;
+                    }
+                }                 
+                break;
             case DateFormatType::YmdT:
                 // year, month, day, time (1996-01-05T00:00:00)
-                std::size_t first_dash = sv.find('-');
-                std::size_t second_dash = sv.find('-', first_dash + 1);
-                std::size_t time_delimter = sv.find('T');
-                if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) {
-                    std::string_view year_sv = sv.substr(0, first_dash);
-                    std::string_view month_sv = sv.substr(first_dash + 1, second_dash - first_dash - 1);
-                    std::string_view day_sv = sv.substr(second_dash + 1);
+                first_dash = date_str.find('-');
+                second_dash = date_str.find('-', first_dash + 1);
+                time_delimter = date_str.find('T');
 
-                    int m = 0, int d = 0, y = 0;
-                    std::from_chars(month_sv.data(), month_sv.data() + month_sv.size(), m);
-                    std::from_chars(day_sv.data(), day_sv.data() + day_sv.size(), d);
-                    std::from_chars(year_sv.data(), year_sv.data() + year_sv.size(), y);
-
-                    if (m > 0) {
-                        this->detected_format = DateFormatMap.at(detected_format);
-                        year_parsed = y;
-                        month_parsed = m;
-                        day_parsed = d;
-                    } else {
-                        parsing_error = "undefined_error";
-                    }    
+                if (first_dash != std::string_view::npos && second_dash != std::string_view::npos && time_delimter != std::string_view::npos) {
+                    year_substr = date_str.substr(0, first_dash);
+                    month_substr = date_str.substr(first_dash + 1, second_dash - first_dash - 1);
+                    day_substr = date_str.substr(second_dash + 1, time_delimter - second_dash - 1);
                 }                 
                 break;
             case DateFormatType::YmdTz:
-                // Code to be executed if expression equals value2
+                // year, month, day, time, zone (1996-01-05T00:00:00-00:00)
+                try {
+                    std::string_view harmonized_utc = to_utc_date(date_str);
+                    first_dash = harmonized_utc.find('-');
+                    second_dash = harmonized_utc.find('-', first_dash + 1);
+
+                    if (first_dash != std::string_view::npos && second_dash != std::string_view::npos) {
+                        year_substr = harmonized_utc.substr(0, first_dash);
+                        month_substr = harmonized_utc.substr(first_dash + 1, second_dash - first_dash - 1);
+                        day_substr = harmonized_utc.substr(second_dash + 1, time_delimter - second_dash - 1);
+                    } 
+                } catch (std::exception &ex){
+                    parsing_error = "undefined_error";
+                    return;
+                }
                 break;
-            // ... more case statements
             default:
                 parsing_error = "undefined_error";
                 break; // Optional for the default case if it's the last statement
         }
+        // parse year month day to results container
+        if (!year_substr.empty()){
+            std::from_chars(year_substr.data(), year_substr.data() + year_substr.size(), year_parsed);
+        }
+        if (month_parsed == 0) { // if month was text then month has already been parsed to int, so this section can be skipped
+            if (!month_substr.empty()){
+                std::from_chars(month_substr.data(), month_substr.data() + month_substr.size(), month_parsed);
+            }
+        }
+
+        if (!day_substr.empty()){ // check that day_subtr is not empty and that month is not null
+            std::from_chars(day_substr.data(), day_substr.data() + day_substr.size(), day_parsed);
+        }
+        // create date string from year, month, day ints
+        format_date();
+
     }
 };
 
@@ -461,8 +480,8 @@ class DateResults {
         std::vector<int> day_parsed;
         std::vector<std::string> date_parsed;
 
-        std::unordered_map<std::string, std::size_t> date_raw_index;
-
+        // Map from unique date string to all indices in date_raw where it occurs
+        std::unordered_map<std::string, std::vector<std::size_t>> date_raw_indices;
 
         DateResults(std::vector<std::string>& input_dates)
             : detected_format(input_dates.size()), 
@@ -473,13 +492,32 @@ class DateResults {
             date_parsed(input_dates.size()){
 
             date_raw = input_dates;
-
-            std::unordered_set<std::optional<std::string>> seen;
-            for (const auto& str : input_dates) {
-                if (seen.insert(str).second) {
-                    date_raw_u.push_back(str);
-                }
+            
+            // make list of unique dates for faster processing
+            std::unordered_set<std::string> seen;
+            for (std::size_t i = 0; i < input_dates.size(); ++i) {
+            const auto& str = input_dates[i];
+            if (seen.insert(str).second) {
+                date_raw_u.push_back(str);
             }
+            date_raw_indices[str].push_back(i);
+            }
+        }
+
+        // Modified add_result: assign to all occurrences of the date in date_raw
+        int add_result(DateResult& date_result){
+            auto it = date_raw_indices.find(date_result.date_raw);
+            if (it == date_raw_indices.end()) return -1;
+
+            for (std::size_t i : it->second) {
+                detected_format[i] = date_result.detected_format;
+                parsing_error[i] = date_result.parsing_error;
+                year_parsed[i] = date_result.year_parsed;
+                month_parsed[i] = date_result.month_parsed;
+                day_parsed[i] = date_result.day_parsed;
+                date_parsed[i] = date_result.date_parsed;
+            }
+            return 0;
         }
 
         Rcpp::DataFrame to_data_frame(){
@@ -513,267 +551,93 @@ class DateResults {
         };
 
 
-        void build_index() {
-            date_raw_index.clear();
-            for (std::size_t i = 0; i < date_raw.size(); ++i) {
-                date_raw_index[date_raw[i]] = i;
-            }
-        }
-
-        int add_result(DateResult& date_result){
-            auto it = date_raw_index.find(date_result.date_raw);
-            if (it == date_raw_index.end()) return -1;
-
-            std::size_t i = it->second;
-            detected_format[i] = date_result.detected_format;
-            parsing_error[i] = date_result.parsing_error;
-            year_parsed[i] = date_result.year_parsed;
-            month_parsed[i] = date_result.month_parsed;
-            day_parsed[i] = date_result.day_parsed;
-            date_parsed[i] = date_result.date_parsed;
-
-            return static_cast<int>(i);
-        }
-
-
         int clean_dates(){
-            DatetimeRegex datetime_regex;
-            ErrorRegex error_regex;
-            
-            // iterate through each raw date
-            for (unsigned long i = 0; i < date_raw_u.size(); i++) {
-                // status bar
-                // print_progress_bar(i, date_raw_u.size());
-                Rcpp::Rcout << date_raw_u[i] <<std::endl;
-                // create parsing results container for this date
-                DateResult res(date_raw_u[i]);
+            // Optimization: Move regex and string allocations outside the loop
+            static DatetimeRegex datetime_regex;
+            static ErrorRegex error_regex;
 
-                // check if date is NA
+            // Use references to avoid repeated lookups
+            auto& date_raw_u_ref = date_raw_u;
+
+            // Iterate through each unique raw date
+            for (unsigned long i = 0; i < date_raw_u_ref.size(); i++) {
+                const std::string& raw = date_raw_u_ref[i];
+                DateResult res(raw);
+
+                // Check if date is NA
                 if (res.date_raw.empty()) {
                     res.parsing_error = "null_date";
                 } else {
+                    // Clean up date strings (minimize string copies)
+                    std::string tmp = boost::regex_replace(res.date_raw, datetime_regex.spec_char, " "); // sub special chars with spaces
+                    tmp = boost::regex_replace(tmp, datetime_regex.double_space, " "); // sub special chars with spaces
+                    tmp = boost::regex_replace(tmp, datetime_regex.extra_whitespace, ""); // remove leading or trailing white space
+                    res.date_cleaned = std::move(tmp);
+                    DEBUG_PRINT(res.date_cleaned);
 
-                    // clean up date strings
-                    res.date_cleaned = boost::regex_replace(res.date_raw, datetime_regex.date_clean_1, " "); // sub special chars with spaces
-                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.date_clean_2, " "); // sub 2+ spaces with one space
-                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.date_clean_3, ""); // remove leading or trailing white space
-
-                    // Harmonize separator: replace space-separated date parts with dashes
-
-                    // Try 3-part (Y m d)
-                    if (boost::regex_match(res.date_cleaned, datetime_regex.harmonize_fmt3)) {
-                        res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.harmonize_fmt3, "$1-$2-$3");
-                    } else {
-                        // Try 2-part (Y m)
-                        if (boost::regex_match(res.date_cleaned, datetime_regex.harmonize_fmt2)) {
-                            res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.harmonize_fmt2, "$1-$2");
-                        } else {
-                            // Try 1-part (Y)
-                            if (boost::regex_match(res.date_cleaned, datetime_regex.harmonize_fmt1)) {
-                                res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.harmonize_fmt1, "$1");
-                            }
-                        }
+                    // Harmonize separator: replace space-separated date parts with dashes and space separated time parts with T
+                    if (boost::regex_match(res.date_cleaned, datetime_regex.harmonize_ymd)) {
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.harmonize_ymd, "$1-$2-$3"); // Ymd
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.harmonize_ymdt)) {
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.harmonize_ymdt, "$1-$2-$3T$4"); // YmdT
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.harmonize_ym)) {
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.harmonize_ym, "$1-$2"); // Ym
                     }
+                    DEBUG_PRINT(res.date_cleaned);
 
-                    // handle null values
-                    // Remove 00 month or 00-00 month-day (Ymd) - save Y
-                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_1, "$1");
-                    // Remove 00 month or 00-00 day-month (dmY) - save Y
-                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_2, "$1");
-                    // Remove 00 day (Ymd) - save Ym
-                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_3, "$1");
-                    // Remove 00 day (dmY) - save mY
-                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_4, "$1");
-                    // Remove null Y or Ym or mY
-                    if (boost::regex_match(res.date_cleaned, datetime_regex.null_5)) {
+                    // Handle null values
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_1, "$1"); // Remove 00 month or 00-00 month-day (Ymd) - save Y
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_2, "$1"); // Remove 00 month or 00-00 day-month (dmY) - save Y
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_3, "$1"); // Remove 00 day (Ymd) - save Ym
+                    res.date_cleaned = boost::regex_replace(res.date_cleaned, datetime_regex.null_4, "$1"); // Remove 00 day (dmY) - save mY
+                    if (boost::regex_match(res.date_cleaned, datetime_regex.null_5) ||
+                        boost::regex_match(res.date_cleaned, datetime_regex.null_6) ||
+                        boost::regex_match(res.date_cleaned, datetime_regex.null_7)) {
                         res.date_cleaned = "";
                     }
+                    DEBUG_PRINT(res.date_cleaned);
 
-                    // handle double dates
-                    if(isTwoDatesIdentical(datetime_regex.two_dates_regex, res.date_cleaned, res.parsing_error)<0){
-                        continue;
-                    };
-
-                    // regex search for predefined date formats
-                    if (res.date_cleaned.empty()) { // no date
+                    // Regex search for predefined date formats (order by expected frequency for faster matching)
+                    if (res.date_cleaned.empty()) {
                         res.parsing_error = "null_date";
-                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ymd)) { // Y-m-d (ISO 8601 standard) - likely most common fmt
-                        res.detected_format = "Ymd";
-                        std::string_view sv(res.date_cleaned);
-                        std::vector<std::string_view> parts;
-                        std::size_t start = 0;
-                        while (true) {
-                            std::size_t end = sv.find('-', start);
-                            if (end == std::string_view::npos) {
-                                parts.emplace_back(sv.substr(start));
-                                break;
-                            }
-                            parts.emplace_back(sv.substr(start, end - start));
-                            start = end + 1;
-                        }
-                        std::from_chars(parts[0].data(), parts[0].data() + parts[0].size(), res.year_parsed);
-                        std::from_chars(parts[1].data(), parts[1].data() + parts[1].size(), res.month_parsed);
-                        std::from_chars(parts[2].data(), parts[2].data() + parts[2].size(), res.day_parsed);
-                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Y)) { // Y
-                        res.detected_format = "Y";
-                        res.year_parsed = std::stoi(res.date_cleaned);
-                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ym)) { // Y-m
-                        res.detected_format = "Ym";
-                        std::string_view sv(res.date_cleaned);
-                        std::vector<std::string_view> parts;
-                        std::size_t start = 0;
-                        while (true) {
-                            std::size_t end = sv.find('-', start);
-                            if (end == std::string_view::npos) {
-                                parts.emplace_back(sv.substr(start));
-                                break;
-                            }
-                            parts.emplace_back(sv.substr(start, end - start));
-                            start = end + 1;
-                        }
-                        std::from_chars(parts[0].data(), parts[0].data() + parts[0].size(), res.year_parsed);
-                        std::from_chars(parts[1].data(), parts[1].data() + parts[1].size(), res.month_parsed);
-                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.mY)) { // m-Y
-                        res.detected_format = "mY";
-                        std::string_view sv(res.date_cleaned);
-                        std::vector<std::string_view> parts;
-                        std::size_t start = 0;
-                        while (true) {
-                            std::size_t end = sv.find('-', start);
-                            if (end == std::string_view::npos) {
-                                parts.emplace_back(sv.substr(start));
-                                break;
-                            }
-                            parts.emplace_back(sv.substr(start, end - start));
-                            start = end + 1;
-                        }
-                        std::from_chars(parts[0].data(), parts[0].data() + parts[0].size(), res.month_parsed);
-                        std::from_chars(parts[1].data(), parts[1].data() + parts[1].size(), res.year_parsed);
-                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.dmY)) { // d-m-Y
-                        res.detected_format = "dmY";
-                        std::string_view sv(res.date_cleaned);
-                        std::vector<std::string_view> parts;
-                        std::size_t start = 0;
-                        while (true) {
-                            std::size_t end = sv.find('-', start);
-                            if (end == std::string_view::npos) {
-                                parts.emplace_back(sv.substr(start));
-                                break;
-                            }
-                            parts.emplace_back(sv.substr(start, end - start));
-                            start = end + 1;
-                        }
-                        std::from_chars(parts[0].data(), parts[0].data() + parts[0].size(), res.day_parsed);
-                        std::from_chars(parts[1].data(), parts[1].data() + parts[1].size(), res.month_parsed);
-                        std::from_chars(parts[2].data(), parts[2].data() + parts[2].size(), res.year_parsed);
-                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.dmonthY)) { // d-month-Y
-                        // dmonthY: 13-Jan-2024
-                        std::string_view sv(res.date_cleaned);
-                        std::vector<std::string_view> parts;
-                        std::size_t start = 0;
-                        while (true) {
-                            std::size_t end = sv.find('-', start);
-                            if (end == std::string_view::npos) {
-                                parts.emplace_back(sv.substr(start));
-                                break;
-                            }
-                            parts.emplace_back(sv.substr(start, end - start));
-                            start = end + 1;
-                        }
-                        // Convert parts to int
-                        int m = get_month_from_name(std::string(parts[1]));
-                        if (m > 0) {
-                            res.detected_format = "dmonthY";
-                            std::from_chars(parts[0].data(), parts[0].data() + parts[0].size(), res.day_parsed);
-                            std::from_chars(parts[2].data(), parts[2].data() + parts[2].size(), res.year_parsed);
-                            res.month_parsed = m;
-                        } else {
-                            res.parsing_error = "undefined_error";
-                        }
-                    }
-                    else if (boost::regex_match(res.date_cleaned, datetime_regex.monthdY)) { // month-d-Y
-                        // monthdY: Jan 13 2024
-                        res.split_dates(DateFormatType::monthdY);
-                        // std::string_view sv(res.date_cleaned);
-                        // std::vector<std::string_view> parts;
-                        // std::size_t start = 0;
-                        // while (true) {
-                        //     std::size_t end = sv.find('-', start);
-                        //     if (end == std::string_view::npos) {
-                        //         parts.emplace_back(sv.substr(start));
-                        //         break;
-                        //     }
-                        //     parts.emplace_back(sv.substr(start, end - start));
-                        //     start = end + 1;
-                        // }
-                        // // Convert parts to int
-                        // int y = 0;
-                        // int d = 0;
-
-                        // int m = get_month_from_name(std::string(parts[0]));
-                        // std::from_chars(parts[1].data(), parts[1].data() + parts[1].size(), d);
-                        // std::from_chars(parts[2].data(), parts[2].data() + parts[2].size(), y);
-
-                        // if (m > 0) {
-                        //     res.detected_format = "monthdY";
-                        //     res.year_parsed = y;
-                        //     res.month_parsed = m;
-                        //     res.day_parsed = d;
-                        // } else {
-                        //     res.parsing_error = "undefined_error";
-                        // }
-                    }
-                    else if (boost::regex_match(res.date_cleaned, datetime_regex.Ymonthd)) { // Y-month-d
-                        // Ymonthd: 2024 January 13
-                        std::string_view sv(res.date_cleaned);
-                        std::vector<std::string_view> parts;
-                        std::size_t start = 0;
-                        while (true) {
-                            std::size_t end = sv.find('-', start);
-                            if (end == std::string_view::npos) {
-                                parts.emplace_back(sv.substr(start));
-                                break;
-                            }
-                            parts.emplace_back(sv.substr(start, end - start));
-                            start = end + 1;
-                        }
-                        // Convert parts to int
-                        int y = 0;
-                        int d = 0;
-                        std::from_chars(parts[0].data(), parts[0].data() + parts[0].size(), y);
-                        int m = get_month_from_name(std::string(parts[1])); // if needed, use std::string(parts[1])
-                        std::from_chars(parts[2].data(), parts[2].data() + parts[2].size(), d);
-                        if (m > 0) {
-                            res.detected_format = "Ymonthd";
-                            res.year_parsed = y;
-                            res.month_parsed = m;
-                            res.day_parsed = d;
-                        } else {
-                            res.parsing_error = "undefined_error";
-                        }
-                    }
-                    else if (boost::regex_match(res.date_cleaned, datetime_regex.YmdT)) { // Y-m-d T
-                        // ISO w/o time zone
-                        res.detected_format = "YmdT";
-                        res.year_parsed = std::stoi(res.date_cleaned.substr(0, 4));
-                        res.month_parsed = std::stoi(res.date_cleaned.substr(5, 2));
-                        res.day_parsed = std::stoi(res.date_cleaned.substr(8, 2));
-                    }
-                    else if (boost::regex_match(res.date_cleaned, datetime_regex.YmdTz)) { // Y-m-d T z
-                        // ISO with time zone
-                        res.detected_format = "YmdTz";
-                        res.year_parsed = std::stoi(res.date_cleaned.substr(0, 4));
-                        res.month_parsed = std::stoi(res.date_cleaned.substr(5, 2));
-                        res.day_parsed = std::stoi(res.date_cleaned.substr(8, 2));
-                    }
-                    else {
+                    } else if(res.check_dup_dates(datetime_regex.two_dates_regex)<0){                     // Handle double dates
+                        res.parsing_error = "two_dates";
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.YmdTz)) {
+                    res.parse_date(DateFormatType::YmdTz);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ymd)) {
+                    res.parse_date(DateFormatType::Ymd);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.dmonthY)) {
+                    res.parse_date(DateFormatType::dmonthY);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ym)) {
+                    res.parse_date(DateFormatType::Ym);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ymonthd)) {
+                    res.parse_date(DateFormatType::Ymonthd);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Y)) {
+                    res.parse_date(DateFormatType::Y);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.dmY)) {
+                    res.parse_date(DateFormatType::dmY);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ymonth)) {
+                    res.parse_date(DateFormatType::Ymonth);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.monthY)) {
+                    res.parse_date(DateFormatType::monthY);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.YmdT)) {
+                    res.parse_date(DateFormatType::YmdT);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.monthdY)) {
+                    res.parse_date(DateFormatType::monthdY);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.mY)) {
+                    res.parse_date(DateFormatType::mY);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ymonthd)) {
+                    res.parse_date(DateFormatType::Ymonthd);
+                    } else if (boost::regex_match(res.date_cleaned, datetime_regex.Ydmonth)) {
+                    res.parse_date(DateFormatType::Ydmonth);
+                    } else if (boost::regex_match(res.date_cleaned, error_regex.bad_month)) {
+                        res.parsing_error = "bad_month";
+                    } else {
                         res.parsing_error = "undefined_error";
                     }
-
-                    // create date string from year, month, day ints
-                    res.format_date();
                 }
-                // add single date result back to list of dates results
+                // Add single date result back to list of dates results
+                DEBUG_PRINT(res.to_string());
                 add_result(res);
             }
             return 0;
@@ -788,11 +652,11 @@ class DateResults {
 // [[Rcpp::export]]
 Rcpp::DataFrame clean_dates_cpp(const Rcpp::CharacterVector& input_dates) {
     try{
-        Rcpp::Rcout << "Cleaning dates..." << std::endl;
+        DEBUG_PRINT("Cleaning dates...");
         std::vector<std::string> input_dates_cpp = convert_r_vec_to_cpp_vec(input_dates);
         DateResults date_results(input_dates_cpp);
         date_results.clean_dates();
-        Rcpp::Rcout << "Dates cleaned." << std::endl;
+        DEBUG_PRINT("Dates cleaned.");
         return date_results.to_data_frame();
     } catch (std::exception &ex) {
         Rcpp::stop("C++ exception: %s", ex.what());
