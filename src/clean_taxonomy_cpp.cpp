@@ -196,39 +196,61 @@ struct TaxonResult {
 
 
     COLTaxonID get_exact_match(){
-        std::vector<COLRecord> full_name_matches;
-        std::vector<COLRecord> partial_name_matches;
-        for (long unsigned i = 0; i < col_data["dwc:scientificName"].size(); i++) {
-            std::string col_taxon_name = col_data["dwc:scientificName"][i];
+        DEBUG_PRINT("Searching for exact match...");
+        std::vector<COLRecord> col_name_matches;
+
+        //------------------------------------------------------------------------------------
+        // Full name matching  (genus + species + authority)
+        //------------------------------------------------------------------------------------
+        std::string col_taxon_name;
+        for (long unsigned i = 0; i < static_cast<long unsigned>(col_data["dwc:scientificName"].size()); i++) {
+            col_taxon_name = col_data["dwc:scientificName"][i];
             // in dwca file, input taxon name may or not include the authority, but authority may still be listed in scientificNameAuthorship
             // chek if taxon name (or taxon name with authority appended) matches the col namne (which already has authority appended)
             if (taxon_raw == col_taxon_name || (taxon_raw + " " + authority_raw) == col_taxon_name) { // exact match: taxon + authority (FULL NAME MATCH)
-                full_name_matches.push_back(COLRecord(col_data, i));
+                col_name_matches.push_back(COLRecord(col_data, i));
             }
         }
-        if (full_name_matches.size()==0){ // no full name matches
-
+        //------------------------------------------------------------------------------------
+        // Partial name match (genus + species) - NO AUTHORITY
+        //------------------------------------------------------------------------------------
+        if (col_name_matches.size()==0){ // no full name matches (taxon + authority)
+            std::string col_genus;
+            std::string col_spec_epithet;
+            std::string col_infraspec_epithet;
+            for (long unsigned i = 0; i < static_cast<long unsigned>(col_data["dwc:scientificName"].size()); i++) {
+                col_genus = col_data["dwc:genericName"][i];
+                col_spec_epithet = col_data["dwc:specificEpithet"][i];
+                col_infraspec_epithet = col_data["dwc:infraspecificEpithet"][i];
+                col_taxon_name = col_spec_epithet !="" ? col_genus + " " + col_spec_epithet : col_genus; // concatonate genus and species epithet names
+                col_taxon_name = col_infraspec_epithet !="" ? col_taxon_name + " " + col_infraspec_epithet : col_taxon_name; // concatonate genus, spec epithet, AND infrspecies epithet names
+                if (taxon_raw == col_taxon_name) { // exact match: taxon name only, no authority (PARTIAL NAME MATCH)
+                    col_name_matches.push_back(COLRecord(col_data, i));
+                }
+            }
         }
-        if (full_name_matches.size()==1){ // one exact match
-            std::string tax_status = full_name_matches[0].taxonomicStatus;
+        //------------------------------------------------------------------------------------
+        // Parse exact matches and return accepted TaxonID
+        //------------------------------------------------------------------------------------
+        if (col_name_matches.size()==1){ // one exact match
+            std::string tax_status = col_name_matches[0].taxonomicStatus;
             if (tax_status=="accepted"){ // match has accepted status, return ID
-                return full_name_matches[0].taxonID;
+                return col_name_matches[0].taxonID;
             } else if (tax_status=="synonym"){ // match has synonym status, return accepted taxon ID
-                return full_name_matches[0].acceptedNameUsageID;
-            } else { // match has doubtful ststus, no valid ID to return
+                return col_name_matches[0].acceptedNameUsageID;
+            } else { // match has doubtful status, no valid ID to return
                 return "";
             }
-        } else { // multiple matches 
-            std::unordered_set<std::string> unique_accepted_ids;
-            for (int i = 0; i < full_name_matches.size(); i++){ // check if any have accepted status
-                if (full_name_matches[i].taxonomicStatus=="accepted"){ // TODO what if they are multiple matches with accepted status?
-                    return full_name_matches[i].taxonID;
+        } else if (col_name_matches.size()>1) { // multiple matches
+            for (int i = 0; i < static_cast<int>(col_name_matches.size()); i++){ // check if any have accepted status
+                if (col_name_matches[i].taxonomicStatus=="accepted"){ // TODO what if they are multiple matches with accepted status?
+                    return col_name_matches[i].taxonID;
                 }
             }
             std::unordered_set<std::string> accepted_taxon_ids;
-            for (int i = 0; i < full_name_matches.size(); i++){ // if none have accepted status, then see if all are synonyms of the same accepted taxon
-                if (full_name_matches[i].taxonomicStatus=="synonym"){
-                    accepted_taxon_ids.insert(full_name_matches[i].acceptedNameUsageID);
+            for (int i = 0; i < static_cast<int>(col_name_matches.size()); i++){ // if none have accepted status, then see if all are synonyms of the same accepted taxon
+                if (col_name_matches[i].taxonomicStatus=="synonym"){
+                    accepted_taxon_ids.insert(col_name_matches[i].acceptedNameUsageID);
                 }
             }
             if (accepted_taxon_ids.size()==1){ // all synonym matches had same accepted taxon ID
