@@ -236,23 +236,61 @@ struct TaxonResult {
             } else { // either all matches have doubtful status or synonym matches had different accepted taxon IDs
                 return "";
             }
+        } else{ // zero matches
+            return "";
         }
     }
 
 
-    std::pair<std::string, double> get_best_fuzzy_match() {
+    FuzzyMatch get_best_fuzzy_match() {
+        DEBUG_PRINT("Searching for fuzzy match...");
         
-        std::string best_match;
-        double best_score = -1.0;
+        std::string best_match_id;
+        double best_match_score = -1.0;
+        std::string best_match_type;
 
-        for (const auto& candidate : col_data["dwc:scientificName"]) {
-            double score = rapidfuzz::fuzz::ratio(taxon_raw, candidate);
-            if (score > best_score) {
-            best_score = score;
-            best_match = candidate;
+        double local_match_score;
+        std::string local_match_type;
+
+        double score_full_name;
+        double score_partial_name;
+        std::string partial_name;
+        std::string col_genus;
+        std::string col_spec_epithet;
+        std::string col_infraspec_epithet;
+
+
+        for (long unsigned i = 0; i < static_cast<long unsigned>(col_data["dwc:scientificName"].size()); i++) {
+            // Test full scientific names (taxon + authority)
+            score_full_name = rapidfuzz::fuzz::ratio(taxon_raw, col_data["dwc:scientificName"][i]);
+            
+            // Test partial scientific names (no authority)
+            col_genus = col_data["dwc:genericName"][i];
+            col_spec_epithet = col_data["dwc:specificEpithet"][i];
+            col_infraspec_epithet = col_data["dwc:infraspecificEpithet"][i];
+            partial_name = col_spec_epithet !="" ? col_genus + " " + col_spec_epithet : col_genus; // concatonate genus and species epithet names
+            partial_name = col_infraspec_epithet !="" ? partial_name + " " + col_infraspec_epithet : partial_name; // concatonate genus, spec epithet, AND infrspecies epithet names
+
+            score_partial_name = rapidfuzz::fuzz::ratio(taxon_raw, partial_name);
+
+            // pick best score
+            if (score_full_name >= score_partial_name){
+                local_match_score = score_full_name;
+                local_match_type = "FUZZY-FULL"; // matched taxon + authority
+            }else{
+                local_match_score = score_partial_name;
+                local_match_type = "FUZZY-PARTIAL"; // matched taxon (without authority)
+            }
+
+            if (local_match_score > best_match_score) { // TODO - Account for condition where scores are equal but taxon names arte different?
+                best_match_score = local_match_score;
+                best_match_id = col_data["dwc:taxonomicStatus"][i] == "accepted" ? col_data["dwc:taxonID"][i]: col_data["dwc:acceptedNameUsageID"][i]; // TODO - error handling for if taxon is 'doubtful' status
+                best_match_type = local_match_type;
+                DEBUG_PRINT("Best match so far: " + best_match_id + "(" + col_data["dwc:scientificName"][i] + ") with score: " + std::to_string(best_match_score));
             }
         }
-        std::pair<std::string, double> out {best_match, best_score};
+        DEBUG_PRINT("Best match: " + best_match_id + " with score: " + std::to_string(best_match_score) + " with match type: " + best_match_type);
+        std::tuple<std::string, double, std::string> out {best_match_id, best_match_score, best_match_type};
         return out;
     };
 
