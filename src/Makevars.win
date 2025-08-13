@@ -1,0 +1,1 @@
+PKG_CPPFLAGS += -I"$(R_PACKAGE_DIR)/inst/include"
