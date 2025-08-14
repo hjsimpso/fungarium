@@ -1,25 +1,25 @@
 Package: fungarium
-Title: An R package for enabling the use of fungaria collection data in comprehensive trait analyses
-Version: 2.0.0
+Title: An R package for enabling the use of fungal collection/observation data in comprehensive trait analyses
+Version: 3.0.0
 Authors@R: 
     person(given = "Hunter",
            family = "Simpson",
            role = c("aut", "cre"),
            email = "hjsimpso6058@gmail.com",
            comment = c(ORCID = "0000-0003-1377-5916"))
-Description: Fungarium enables the use of digitized fungal collections (i.e. fungarium specimens) or observations (e.g. iNaturalist, MushroomObserver) for taxonomic, geographic, and temporal analyses of ecological traits in fungi (e.g. habitat, host, substrate associations). This is accomplished through a variety of features including mispelled taxon or location name correction, thorough trait searching capabilities, and trait visualization tools.
+Description: Fungarium facilitates the use of digitized fungal collections (i.e. fungarium specimens) or observations (e.g. iNaturalist, MushroomObserver) for taxonomic, geographic, and temporal analyses of ecological traits in fungi (e.g. habitat, host, substrate associations).
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Depends: R (>= 4.0.0)
-Imports: 
-    dplyr, 
-    taxize (>= 0.9.97), 
-    NameNeedle, 
-    data.table, 
-    tm, 
+Imports:
+    dplyr,
+    taxize (>= 0.9.97),
+    NameNeedle,
+    data.table,
+    tm,
     plyr,
     lubridate,
     knitr,
@@ -31,7 +31,10 @@ Imports:
     ggplot2,
     ape,
     ggtree (>= 3.3.0),
-    units
+    units,
+    checkmate,
+    Rcpp,
+    BH
 Suggests:
     rvest,
     jsonlite,
@@ -40,3 +43,8 @@ Remotes:
     ropensci/rnaturalearthhires,
     YuLab-SMU/ggtree
 VignetteBuilder: knitr
+LinkingTo: Rcpp
+SystemRequirements: C++17
+Collate:
+    'clean_date.R'
+    'clean_geo.R'
