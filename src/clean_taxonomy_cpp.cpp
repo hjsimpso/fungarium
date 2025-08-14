@@ -2,70 +2,182 @@
 // Imports
 //======================================================================
 
-#include <Rcpp.h>
-#include <boost/regex.hpp>
+// STL
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <map>
+#include <unordered_map>
+#include <sstream>
+
+//Rcpp
+#include <Rcpp.h>
+
+// Vendor
+#include <boost/regex.hpp>
 #include <rapidfuzz/fuzz.hpp>
+
+// fungarium
+#include "helpers.h"
 
 //======================================================================
 // Macros
 //======================================================================
-// #define DEBUG_PRINT(x) Rcpp::Rcout << x << std::endl
-#define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x) Rcpp::Rcout << x << std::endl
+// #define DEBUG_PRINT(x)
 
 //======================================================================
 // Types
 //======================================================================
 typedef std::map<std::string, std::vector<std::string>> ColData;
-typedef std::string COLTaxonID;
+typedef std::string COLAcceptedTaxonID;
+typedef std::string COLScientificNameMatch;
+typedef std::string MatchType;
+// typedef std::tuple<COLAcceptedTaxonID, MatchType, COLScientificNameMatch> COLExactMatch;
+// typedef std::tuple<COLAcceptedTaxonID, double, MatchType, COLScientificNameMatch> FuzzyMatch;
+
+//======================================================================
+// Matching structs
+//======================================================================
+struct COLExactMatch{
+    std::string accepted_taxon_id;
+    std::string match_type;
+    std::string sci_name;
+};
+struct COLFuzzyMatch{
+    std::string accepted_taxon_id;
+    double match_score;
+    std::string match_type;
+    std::string sci_name;
+};
+
 //======================================================================
 // Helpers
 //======================================================================
 
-std::vector<std::string> convert_r_vec_to_cpp_vec(Rcpp::CharacterVector input) {
-    std::vector<std::string> result;
-    result.reserve(input.size());
 
-    for (unsigned long i = 0; i < input.size(); ++i) {
-        if (Rcpp::CharacterVector::is_na(input[i])) {
-            result.push_back("");  // NA becomes ""
-        } else {
-            result.push_back(Rcpp::as<std::string>(input[i]));  // Convert to std::string
+
+
+ColData read_col_data_file(const std::string& filename) {
+    ColData dataMap;
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        // Handle error: file could not be opened
+        return dataMap;
+    }
+
+    std::string header_line;
+    if (!std::getline(file, header_line)) {
+        // Handle error: empty file
+        return dataMap;
+    }
+
+    // Parse header to get field names
+    std::vector<std::string> field_names;
+    std::stringstream header_ss(header_line);
+    std::string field;
+    while (std::getline(header_ss, field, '\t')) {
+        field_names.push_back(field);
+        dataMap[field] = std::vector<std::string>();
+    }
+
+    // Read data lines
+    std::string line;
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string value;
+        std::size_t col_idx = 0;
+        while (std::getline(ss, value, '\t')) {
+            if (col_idx < field_names.size()) {
+                dataMap[field_names[col_idx]].push_back(value);
+            }
+            ++col_idx;
+        }
+        // Fill missing columns with empty string if line is short
+        while (col_idx < field_names.size()) {
+            dataMap[field_names[col_idx]].push_back("");
+            ++col_idx;
         }
     }
 
-    return result;
+    file.close();
+    return dataMap;
 }
 
-ColData convert_r_df_to_cpp_map(Rcpp::DataFrame input) {
-    ColData result;
 
-    Rcpp::CharacterVector names = input.names();
-    for (int i = 0; i < names.size(); ++i) {
-        std::string col_name = Rcpp::as<std::string>(names[i]);
-        Rcpp::CharacterVector col_data = input[col_name];
-        std::vector<std::string> col_data_cpp = convert_r_vec_to_cpp_vec(col_data);
-        result[col_name] = col_data_cpp;
-    }
+class COLIndex {
+    public:
+        std::unordered_map<std::string, std::vector<size_t>> sci_full_to_idx;
+        std::unordered_map<std::string, std::vector<size_t>> sci_partial_to_idx;
+        std::unordered_map<std::string, size_t> taxon_id_to_idx;
 
-    return result;
-}
+        std::vector<std::string> full_names;
+        std::vector<std::string> partial_names;
 
-void print_progress_bar(int current, int total, int bar_width = 50) {
-    float progress = static_cast<float>(current) / total;
-    int pos = static_cast<int>(bar_width * progress);
+        COLIndex(const ColData& col_data) {
+            // Check required columns exist
+            std::vector<std::string> required_cols = {
+                "dwc:scientificName", "dwc:genericName", "dwc:specificEpithet", "dwc:infraspecificEpithet", "dwc:taxonID"
+            };
+            for (const auto& col : required_cols) {
+                if (col_data.find(col) == col_data.end()) {
+                    throw std::runtime_error("Missing required column in COL data: " + col);
+                }
+            }
+        
+            const auto& sci_names = col_data.at("dwc:scientificName");
+            const auto& genus     = col_data.at("dwc:genericName");
+            const auto& species   = col_data.at("dwc:specificEpithet");
+            const auto& infra     = col_data.at("dwc:infraspecificEpithet");
+            const auto& taxon_ids = col_data.at("dwc:taxonID");
+        
+            size_t n = sci_names.size();
+            full_names.reserve(n);
+            partial_names.reserve(n);
+        
+            for (size_t i = 0; i < n; ++i) {
+                const std::string& full = sci_names[i];
+                std::string partial = !species[i].empty() ? genus[i] + " " + species[i] : genus[i];
+                if (!infra[i].empty()) partial += " " + infra[i];
+                addRecord(full, partial, taxon_ids[i], i);
+            }
+        }
 
-    Rcpp::Rcout  << "[";
-    for (int i = 0; i < bar_width; ++i) {
-        if (i < pos) Rcpp::Rcout  << "=";
-        else if (i == pos) Rcpp::Rcout << ">";
-        else Rcpp::Rcout << " ";
-    }
+        void addRecord(const std::string& full_name,
+               const std::string& partial_name, const std::string& taxon_id,
+               size_t record_index)
+        {
+            sci_full_to_idx[full_name].push_back(record_index);
+            sci_partial_to_idx[partial_name].push_back(record_index);
+            taxon_id_to_idx.emplace(taxon_id, record_index);
 
-    Rcpp::Rcout << "] " << int(progress * 100.0) << "%\r";
-    Rcpp::Rcout.flush();
-}
+            full_names.push_back(full_name);
+            partial_names.push_back(partial_name);
+        }
+
+        std::vector<size_t> find_by_full_name(const std::string& name) {
+            auto it = sci_full_to_idx.find(name);
+            if (it != sci_full_to_idx.end()) {
+                return it->second; // return all matches (all indices where name occurs in COL data)
+            }
+            return {}; // empty vector if not found
+        }
+
+        std::vector<size_t> find_by_partial_name(const std::string& name){
+            auto it = sci_partial_to_idx.find(name);
+            if (it != sci_partial_to_idx.end()) {
+                return it->second; // return all matches (all indices where name occurs in COL data)
+            }
+            return {}; // empty vector if not found
+        }
+
+
+};
+
+
 
 //======================================================================
 // COL Record Class
@@ -74,84 +186,52 @@ struct COLRecord{
     std::string taxonID;
     std::string parentNameUsageID;
     std::string acceptedNameUsageID;
-    std::string originalNameUsageID;
     std::string scientificNameID;
-    std::string datasetID;
     std::string taxonomicStatus;
     std::string taxonRank;
     std::string scientificName;
     std::string scientificNameAuthorship;
-    std::string notho;
     std::string genericName;
-    std::string infragenericEpithet;
     std::string specificEpithet;
     std::string infraspecificEpithet;
-    std::string cultivarEpithet;
-    std::string nameAccordingTo;
-    std::string namePublishedIn;
-    std::string nomenclaturalCode;
-    std::string nomenclaturalStatus;
-    std::string taxonRemarks;
-    std::string references;
 
-    // COLRecord(const std::string& taxon_id = "", const std::string& parent_name_usage_id = "", const std::string& accepted_name_usage_id = "", 
-    //           const std::string& original_name_usage_id = "", const std::string& scientific_name_id = "", 
-    //           const std::string& dataset_id = "", const std::string& taxonomic_status = "", 
-    //           const std::string& taxon_rank = "", const std::string& scientific_name = "", 
-    //           const std::string& scientific_name_authorship = "", const std::string& notho = "", 
-    //           const std::string& generic_name = "", const std::string& infrageneric_epithet = "", 
-    //           const std::string& specific_epithet = "", const std::string& infraspecific_epithet = "", 
-    //           const std::string& cultivar_epithet = "", const std::string& name_according_to = "",
-    //           const std::string& name_published_in = "", const std::string& nomenclatural_code = "",
-    //           const std::string& nomenclatural_status = "", const std::string& taxon_remarks = "",
-    //           const std::string& references = "") : 
-    // taxonID(taxon_id),  
-    // parentNameUsageID(parent_name_usage_id), 
-    // acceptedNameUsageID(accepted_name_usage_id),
-    // originalNameUsageID(original_name_usage_id),        
-    // scientificNameID(scientific_name_id),
-    // datasetID(dataset_id),
-    // taxonomicStatus(taxonomic_status),
-    // taxonRank(taxon_rank),
-    // scientificName(scientific_name),
-    // scientificNameAuthorship(scientific_name_authorship),
-    // notho(notho),   
-    // genericName(generic_name),
-    // infragenericEpithet(infrageneric_epithet),  
-    // specificEpithet(specific_epithet),
-    // infraspecificEpithet(infraspecific_epithet),
-    // cultivarEpithet(cultivar_epithet),
-    // nameAccordingTo(name_according_to),
-    // namePublishedIn(name_published_in),
-    // nomenclaturalCode(nomenclatural_code),
-    // nomenclaturalStatus(nomenclatural_status),
-    // taxonRemarks(taxon_remarks),
-    // references(references)
-    // {};
+    std::string species;
+    std::string genus;
+    std::string family;
+    std::string order;
+    std::string class_;
+    std::string phylum;
+    std::string kingdom;
 
     COLRecord(ColData& col_data, long index){
-        taxonID = col_data["dwc:taxonID"][index];
-        parentNameUsageID = col_data["dwc:parentNameUsageID"][index];
-        acceptedNameUsageID = col_data["dwc:acceptedNameUsageID"][index];
-        originalNameUsageID = col_data["dwc:originalNameUsageID"][index];
-        scientificNameID = col_data["dwc:scientificNameID"][index];
-        datasetID = col_data["dwc:datasetID"][index];
-        taxonomicStatus = col_data["dwc:taxonomicStatus"][index];
-        taxonRank = col_data["dwc:taxonRank"][index];
-        scientificName = col_data["dwc:scientificName"][index];
-        scientificNameAuthorship = col_data["dwc:scientificNameAuthorship"][index];
-        notho = col_data["col:notho"][index];
-        genericName = col_data["dwc:genericName"][index];
-        infragenericEpithet = col_data["dwc:infragenericEpithet"][index];
-        specificEpithet = col_data["dwc:specificEpithet"][index];
-        infraspecificEpithet = col_data["dwc:infraspecificEpithet"][index];
-        cultivarEpithet = col_data["dwc:cultivarEpithet"][index];
-        nameAccordingTo = col_data["dwc:nameAccordingTo"][index];
-        namePublishedIn = col_data["dwc:namePublishedIn"][index];
-        nomenclaturalCode = col_data["dwc:nomenclaturalCode"][index];
-        nomenclaturalStatus = col_data["dwc:nomenclaturalStatus"][index];
-        taxonRemarks = col_data["dwc:taxonRemarks"][index];
-        references = col_data["dcterms:references"][index];
+        // Defensive: check keys exist before accessing
+        auto get_val = [&](const std::string& key) -> std::string {
+            auto it = col_data.find(key);
+            if (it != col_data.end() && index < static_cast<long>(it->second.size())) {
+                return it->second[index];
+            }
+            return "";
+        };
+    
+        taxonID = get_val("dwc:taxonID");
+        parentNameUsageID = get_val("dwc:parentNameUsageID");
+        acceptedNameUsageID = get_val("dwc:acceptedNameUsageID");
+        scientificNameID = get_val("dwc:scientificNameID");
+        taxonomicStatus = get_val("dwc:taxonomicStatus");
+        taxonRank = get_val("dwc:taxonRank");
+        scientificName = get_val("dwc:scientificName");
+        scientificNameAuthorship = get_val("dwc:scientificNameAuthorship");
+        genericName = get_val("dwc:genericName");
+        specificEpithet = get_val("dwc:specificEpithet");
+        infraspecificEpithet = get_val("dwc:infraspecificEpithet");
+
+        species = get_val("species");
+        genus = get_val("genus");
+        family = get_val("family");
+        order = get_val("order");
+        class_ = get_val("class");
+        phylum = get_val("phylum");
+        kingdom = get_val("kingdom");
     }
 };
 
@@ -162,7 +242,9 @@ struct COLRecord{
 struct TaxonResult {
     std::string taxon_raw;
     std::string authority_raw;
+    std::string col_sci_name_match; // name of the column in col_data that matched the taxon
     std::string kingdom_pres;
+    std::string phylum_pres;
     std::string class_pres;
     std::string order_pres;
     std::string family_pres;
@@ -170,13 +252,19 @@ struct TaxonResult {
     std::string specific_epithet_pres;
     std::string species_pres;
     std::string authority_pres;
+    std::string taxon_rank;
+    std::string match_type;
+    std::string match_score;
 
     ColData& col_data;
+    COLIndex& col_idx;
 
-    TaxonResult(const std::string& input_taxon, const std::string& input_authority, ColData& col_data) : 
+    TaxonResult(const std::string& input_taxon, const std::string& input_authority, ColData& col_data, COLIndex& col_idx) : 
     taxon_raw(input_taxon), 
-    authority_raw(input_authority), 
+    authority_raw(input_authority),
+    col_sci_name_match(""),
     kingdom_pres(""), 
+    phylum_pres(""),
     class_pres(""), 
     order_pres(""), 
     family_pres(""),
@@ -184,148 +272,182 @@ struct TaxonResult {
     specific_epithet_pres(""),
     species_pres(""),
     authority_pres(""),
-    col_data(col_data) {}
+    taxon_rank(""),
+    match_type(""), 
+    match_score(""),
+    col_data(col_data),
+    col_idx(col_idx)
+    {}
 
 
     void clean_taxonomy(){
-        if (get_exact_match().empty()){
-            get_best_fuzzy_match();
+        if (taxon_raw.empty()){
+            return;
+        }
+
+        COLExactMatch exact_match = get_exact_match();
+        if (!exact_match.accepted_taxon_id.empty()){
+            match_type = exact_match.match_type;
+            match_score = "100";
+            col_sci_name_match = exact_match.sci_name;
+            get_tax_hier(exact_match.accepted_taxon_id);
+        } else{
+            COLFuzzyMatch fuzzy_match = get_best_fuzzy_match();
+            if (!fuzzy_match.accepted_taxon_id.empty()){
+                match_type = fuzzy_match.match_type;
+                match_score = std::to_string(fuzzy_match.match_score);
+                col_sci_name_match = fuzzy_match.sci_name;
+                get_tax_hier(fuzzy_match.accepted_taxon_id);
+            }
         }
         return;
     };
 
 
-    COLTaxonID get_exact_match(){
+    COLExactMatch get_exact_match(){
         DEBUG_PRINT("Searching for exact match...");
-        std::vector<COLRecord> col_name_matches;
+        std::string match_type;
 
         //------------------------------------------------------------------------------------
         // Full name matching  (genus + species + authority)
         //------------------------------------------------------------------------------------
-        std::string col_taxon_name;
-        for (long unsigned i = 0; i < static_cast<long unsigned>(col_data["dwc:scientificName"].size()); i++) {
-            col_taxon_name = col_data["dwc:scientificName"][i];
-            // in dwca file, input taxon name may or not include the authority, but authority may still be listed in scientificNameAuthorship
-            // chek if taxon name (or taxon name with authority appended) matches the col namne (which already has authority appended)
-            if (taxon_raw == col_taxon_name || (taxon_raw + " " + authority_raw) == col_taxon_name) { // exact match: taxon + authority (FULL NAME MATCH)
-                col_name_matches.push_back(COLRecord(col_data, i));
-            }
+        // search for input taxon name first (may already include authority)
+        std::string query_taxon_name = taxon_raw; 
+        DEBUG_PRINT("Query: " + query_taxon_name);
+        auto match_ind = col_idx.find_by_full_name(query_taxon_name);
+
+
+        // search for input taxon name + authority (taxon name may not have already included authority)
+        if (match_ind.size()==0 && authority_raw != ""){
+            query_taxon_name = taxon_raw + " " + authority_raw;
+            DEBUG_PRINT("Query: " + query_taxon_name);
+            match_ind = col_idx.find_by_full_name(query_taxon_name);
+        }
+
+        if (match_ind.size()>0){
+            match_type = "EXACT-FULL";
         }
         //------------------------------------------------------------------------------------
         // Partial name match (genus + species) - NO AUTHORITY
         //------------------------------------------------------------------------------------
-        if (col_name_matches.size()==0){ // no full name matches (taxon + authority)
-            std::string col_genus;
-            std::string col_spec_epithet;
-            std::string col_infraspec_epithet;
-            for (long unsigned i = 0; i < static_cast<long unsigned>(col_data["dwc:scientificName"].size()); i++) {
-                col_genus = col_data["dwc:genericName"][i];
-                col_spec_epithet = col_data["dwc:specificEpithet"][i];
-                col_infraspec_epithet = col_data["dwc:infraspecificEpithet"][i];
-                col_taxon_name = col_spec_epithet !="" ? col_genus + " " + col_spec_epithet : col_genus; // concatonate genus and species epithet names
-                col_taxon_name = col_infraspec_epithet !="" ? col_taxon_name + " " + col_infraspec_epithet : col_taxon_name; // concatonate genus, spec epithet, AND infrspecies epithet names
-                if (taxon_raw == col_taxon_name) { // exact match: taxon name only, no authority (PARTIAL NAME MATCH)
-                    col_name_matches.push_back(COLRecord(col_data, i));
-                }
+        if (match_ind.size()==0){ // no full name matches (taxon + authority)
+            query_taxon_name = taxon_raw; // without input authority appended
+            DEBUG_PRINT("Query: " + query_taxon_name);
+            match_ind = col_idx.find_by_partial_name(query_taxon_name);
+            if (match_ind.size()>0){
+                match_type = "EXACT-PARTIAL";
             }
         }
+
         //------------------------------------------------------------------------------------
         // Parse exact matches and return accepted TaxonID
         //------------------------------------------------------------------------------------
-        if (col_name_matches.size()==1){ // one exact match
-            std::string tax_status = col_name_matches[0].taxonomicStatus;
+        if (match_ind.size()==1){ // one exact match
+            DEBUG_PRINT("Found one exact match: " + col_data["dwc:scientificName"][match_ind[0]]);
+            std::string tax_status = col_data["dwc:taxonomicStatus"][match_ind[0]];
+            DEBUG_PRINT("Tax status: " + tax_status);
             if (tax_status=="accepted"){ // match has accepted status, return ID
-                return col_name_matches[0].taxonID;
+                return {col_data["dwc:taxonID"][match_ind[0]], match_type, col_data["dwc:scientificName"][match_ind[0]]};
             } else if (tax_status=="synonym"){ // match has synonym status, return accepted taxon ID
-                return col_name_matches[0].acceptedNameUsageID;
+                return {col_data["dwc:acceptedNameUsageID"][match_ind[0]], match_type, col_data["dwc:scientificName"][match_ind[0]]};
             } else { // match has doubtful status, no valid ID to return
-                return "";
+                return {"", match_type, col_data["dwc:scientificName"][match_ind[0]]};
             }
-        } else if (col_name_matches.size()>1) { // multiple matches
-            for (int i = 0; i < static_cast<int>(col_name_matches.size()); i++){ // check if any have accepted status
-                if (col_name_matches[i].taxonomicStatus=="accepted"){ // TODO what if they are multiple matches with accepted status?
-                    return col_name_matches[i].taxonID;
+        } else if (match_ind.size()>1) { // multiple matches
+            DEBUG_PRINT("Found " + std::to_string(match_ind.size()) + " exact matches.");
+            for (int i = 0; i < static_cast<int>(match_ind.size()); i++){ // check if any have accepted status
+                if (col_data["dwc:taxonomicStatus"][match_ind[i]]=="accepted"){ // TODO what if they are multiple matches with accepted status?
+                    return {col_data["dwc:taxonID"][match_ind[i]], match_type, col_data["dwc:scientificName"][match_ind[i]]}; // return accepted taxon ID and COL scientific name match
                 }
             }
-            std::unordered_set<std::string> accepted_taxon_ids;
-            for (int i = 0; i < static_cast<int>(col_name_matches.size()); i++){ // if none have accepted status, then see if all are synonyms of the same accepted taxon
-                if (col_name_matches[i].taxonomicStatus=="synonym"){
-                    accepted_taxon_ids.insert(col_name_matches[i].acceptedNameUsageID);
+            std::unordered_map<std::string, std::pair<MatchType, COLScientificNameMatch>> accepted_taxon_ids;
+            for (int i = 0; i < static_cast<int>(match_ind.size()); i++){ // if none have accepted status, then see if all are synonyms of the same accepted taxon
+                DEBUG_PRINT("Match " + std::to_string(i) + ": " + col_data["dwc:scientificName"][match_ind[i]] + " with status: " + col_data["dwc:taxonomicStatus"][match_ind[i]]);
+                if (col_data["dwc:taxonomicStatus"][match_ind[i]]=="synonym"){
+                    accepted_taxon_ids.emplace(col_data["dwc:acceptedNameUsageID"][match_ind[i]], std::make_pair(match_type, col_data["dwc:scientificName"][match_ind[i]]));
                 }
             }
             if (accepted_taxon_ids.size()==1){ // all synonym matches had same accepted taxon ID
-                return *accepted_taxon_ids.begin();
+                return {accepted_taxon_ids.begin()->first, accepted_taxon_ids.begin()->second.first, accepted_taxon_ids.begin()->second.second}; // return accepted taxon ID, match_type and COL scientific name match
             } else { // either all matches have doubtful status or synonym matches had different accepted taxon IDs
-                return "";
+                return {"", "", ""}; // no valid match found
             }
         } else{ // zero matches
-            return "";
+            return {"", "", ""}; // no valid match found
         }
     }
 
 
-    FuzzyMatch get_best_fuzzy_match() {
+    COLFuzzyMatch get_best_fuzzy_match() {
         DEBUG_PRINT("Searching for fuzzy match...");
-        
-        std::string best_match_id;
-        double best_match_score = -1.0;
+
+        double best_score = -1.0;
+        std::string best_match_accepted_id;
         std::string best_match_type;
+        std::string best_match_name;
 
-        double local_match_score;
-        std::string local_match_type;
+        for (size_t i = 0; i < col_idx.full_names.size(); ++i) {
+            const auto& full   = col_idx.full_names[i];
+            const auto& partial = col_idx.partial_names[i];
 
-        double score_full_name;
-        double score_partial_name;
-        std::string partial_name;
-        std::string col_genus;
-        std::string col_spec_epithet;
-        std::string col_infraspec_epithet;
+            double score_full   = rapidfuzz::fuzz::ratio(taxon_raw, full);
+            double score_partial = rapidfuzz::fuzz::ratio(taxon_raw, partial);
 
+            double score;
+            std::string match_type;
 
-        for (long unsigned i = 0; i < static_cast<long unsigned>(col_data["dwc:scientificName"].size()); i++) {
-            // Test full scientific names (taxon + authority)
-            score_full_name = rapidfuzz::fuzz::ratio(taxon_raw, col_data["dwc:scientificName"][i]);
-            
-            // Test partial scientific names (no authority)
-            col_genus = col_data["dwc:genericName"][i];
-            col_spec_epithet = col_data["dwc:specificEpithet"][i];
-            col_infraspec_epithet = col_data["dwc:infraspecificEpithet"][i];
-            partial_name = col_spec_epithet !="" ? col_genus + " " + col_spec_epithet : col_genus; // concatonate genus and species epithet names
-            partial_name = col_infraspec_epithet !="" ? partial_name + " " + col_infraspec_epithet : partial_name; // concatonate genus, spec epithet, AND infrspecies epithet names
-
-            score_partial_name = rapidfuzz::fuzz::ratio(taxon_raw, partial_name);
-
-            // pick best score
-            if (score_full_name >= score_partial_name){
-                local_match_score = score_full_name;
-                local_match_type = "FUZZY-FULL"; // matched taxon + authority
-            }else{
-                local_match_score = score_partial_name;
-                local_match_type = "FUZZY-PARTIAL"; // matched taxon (without authority)
+            if (score_full >= score_partial) {
+                score = score_full;
+                match_type = "FUZZY-FULL";
+            } else {
+                score = score_partial;
+                match_type = "FUZZY-PARTIAL";
             }
 
-            if (local_match_score > best_match_score) { // TODO - Account for condition where scores are equal but taxon names arte different?
-                best_match_score = local_match_score;
-                best_match_id = col_data["dwc:taxonomicStatus"][i] == "accepted" ? col_data["dwc:taxonID"][i]: col_data["dwc:acceptedNameUsageID"][i]; // TODO - error handling for if taxon is 'doubtful' status
-                best_match_type = local_match_type;
-                DEBUG_PRINT("Best match so far: " + best_match_id + "(" + col_data["dwc:scientificName"][i] + ") with score: " + std::to_string(best_match_score));
+            if (score > best_score) {
+                best_score = score;
+                best_match_accepted_id = col_data.at("dwc:taxonomicStatus")[i] == "accepted"
+                            ? col_data.at("dwc:taxonID")[i]
+                            : col_data.at("dwc:acceptedNameUsageID")[i];
+                best_match_type = match_type;
+                best_match_name = full;
+                DEBUG_PRINT("Best match so far: " + best_match_accepted_id + "(" + col_data["dwc:scientificName"][i] + ") with score: " + std::to_string(best_score));
             }
         }
-        DEBUG_PRINT("Best match: " + best_match_id + " with score: " + std::to_string(best_match_score) + " with match type: " + best_match_type);
-        std::tuple<std::string, double, std::string> out {best_match_id, best_match_score, best_match_type};
+        DEBUG_PRINT("Best match: " + best_match_accepted_id + " with score: " + std::to_string(best_score) + " with match type: " + best_match_type);
+        COLFuzzyMatch out {best_match_accepted_id, best_score, best_match_type, best_match_name};
         return out;
     };
 
 
-    void get_accepted_taxonomy(){
+    void get_tax_hier(COLAcceptedTaxonID col_taxon_id){
+        DEBUG_PRINT("Getting tax hieracrhy...");
 
+        COLRecord col_record = get_record_by_taxon_id(col_idx, col_taxon_id);
+        
+        specific_epithet_pres = col_record.specificEpithet;
+        species_pres = col_record.species;
+        authority_pres = col_record.scientificNameAuthorship;
+        genus_pres = col_record.genus;
+        family_pres = col_record.family;
+        order_pres = col_record.order;
+        class_pres = col_record.class_;
+        phylum_pres = col_record.phylum;
+        kingdom_pres = col_record.kingdom;
+        taxon_rank = col_record.taxonRank;
     };
 
-    void get_tax_hier(){
-
-    };
-
+    COLRecord get_record_by_taxon_id(const COLIndex& idx,
+                                    const std::string& col_taxon_id)
+    {
+        auto it = idx.taxon_id_to_idx.find(col_taxon_id);
+        if (it == idx.taxon_id_to_idx.end()) {
+            throw std::runtime_error("Failed to find COL taxon ID: " + col_taxon_id);
+        }
+        return COLRecord(const_cast<ColData&>(col_data), it->second);
+    }
 };
+
 
 
 
@@ -333,9 +455,12 @@ struct TaxonResult {
 
 class TaxonResults {
     public:
-        std::vector<std::string> taxon_raw_u; // unique
+        std::vector<std::pair<std::string, std::string>> taxon_raw_u; // unique taxon name + authority
         std::vector<std::string> taxon_raw; // not unique
+        std::vector<std::string> authority_raw; // not unique
+        std::vector<std::string> col_sci_name_match;
         std::vector<std::string> kingdom_pres;
+        std::vector<std::string> phylum_pres;
         std::vector<std::string> class_pres;
         std::vector<std::string> order_pres;
         std::vector<std::string> family_pres;
@@ -343,7 +468,147 @@ class TaxonResults {
         std::vector<std::string> specific_epithet_pres;
         std::vector<std::string> species_pres;
         std::vector<std::string> authority_pres;
+        std::vector<std::string> taxon_rank;
+        std::vector<std::string> match_type;
+        std::vector<std::string> match_score;
+        
+        ColData& col_data;
+        COLIndex& col_idx;
 
+        // Map from unique date string to all indices in date_raw where it occurs
+        std::unordered_map<std::string, std::vector<std::size_t>> taxon_raw_indices;
+
+        TaxonResults(std::vector<std::string>& input_taxon_names, std::vector<std::string>& input_authority, ColData& col_data, COLIndex& col_idx)
+            : taxon_raw_u(), 
+            taxon_raw(input_taxon_names),
+            authority_raw(input_authority),
+            col_sci_name_match(input_taxon_names.size()),
+            kingdom_pres(input_taxon_names.size()), 
+            phylum_pres(input_taxon_names.size()),
+            class_pres(input_taxon_names.size()),
+            order_pres(input_taxon_names.size()),
+            family_pres(input_taxon_names.size()),
+            genus_pres(input_taxon_names.size()),
+            specific_epithet_pres(input_taxon_names.size()),
+            species_pres(input_taxon_names.size()),
+            authority_pres(input_taxon_names.size()),
+            taxon_rank(input_taxon_names.size()),
+            match_type(input_taxon_names.size()),
+            match_score(input_taxon_names.size()),
+            col_data(col_data),
+            col_idx(col_idx)
+            {
+                // make list of unique taxon names for faster processing
+                std::unordered_map<std::string, std::pair<std::string, std::string>> seen;
+                for (long unsigned i = 0; i < static_cast<long unsigned>(input_taxon_names.size()); ++i) {
+                    std::string concat_name = input_authority[i] != "" ? input_taxon_names[i] + " " + input_authority[i] : input_taxon_names[i];
+                    if (seen.emplace(concat_name, std::make_pair(input_taxon_names[i], input_authority[i])).second) {
+                        taxon_raw_u.push_back(std::make_pair(input_taxon_names[i], input_authority[i]));
+                        DEBUG_PRINT("Taxon name: " + input_taxon_names[i] + "; Authority: " + input_authority[i]);
+                    }
+                    DEBUG_PRINT("concat name: "+ concat_name);
+                    taxon_raw_indices[concat_name].push_back(i);
+                }
+            }
+
+        // add_result: assign to all occurrences of the taxon name in taxon_raw vector
+        int add_result(TaxonResult& taxon_result){
+            std::string concat_name = taxon_result.authority_raw != "" ? taxon_result.taxon_raw + " " + taxon_result.authority_raw : taxon_result.taxon_raw;
+            DEBUG_PRINT("concat name: "+ concat_name);
+            auto it = taxon_raw_indices.find(concat_name);
+            if (it == taxon_raw_indices.end()) return -1;
+
+            for (std::size_t i : it->second) {
+                col_sci_name_match[i] = taxon_result.col_sci_name_match;
+                kingdom_pres[i] = taxon_result.kingdom_pres;
+                phylum_pres[i] = taxon_result.phylum_pres;
+                class_pres[i] = taxon_result.class_pres;    
+                order_pres[i] = taxon_result.order_pres;
+                family_pres[i] = taxon_result.family_pres;
+                genus_pres[i] = taxon_result.genus_pres;
+                specific_epithet_pres[i] = taxon_result.specific_epithet_pres;
+                species_pres[i] = taxon_result.species_pres;
+                authority_pres[i] = taxon_result.authority_pres;
+                taxon_rank[i] = taxon_result.taxon_rank;
+                match_type[i] = taxon_result.match_type;
+                match_score[i] = taxon_result.match_score;
+            }
+            return 0;
+        }
+
+        Rcpp::DataFrame to_data_frame(){
+            unsigned long n = taxon_raw.size();
+            Rcpp::CharacterVector r_taxon_raw_vec(n);
+            Rcpp::CharacterVector r_authority_raw_vec(n);
+            Rcpp::CharacterVector r_col_sci_name_match(n);
+            Rcpp::CharacterVector r_kingdom_pres(n);
+            Rcpp::CharacterVector r_phylum_pres(n);
+            Rcpp::CharacterVector r_class_pres(n);
+            Rcpp::CharacterVector r_order_pres(n);
+            Rcpp::CharacterVector r_family_pres(n);
+            Rcpp::CharacterVector r_genus_pres(n);
+            Rcpp::CharacterVector r_specific_epithet_pres(n);
+            Rcpp::CharacterVector r_species_pres(n);
+            Rcpp::CharacterVector r_authority_pres(n);
+            Rcpp::CharacterVector r_taxon_rank(n);
+            Rcpp::CharacterVector r_match_type(n);
+            Rcpp::CharacterVector r_match_score(n);
+
+            for (unsigned long i = 0; i < n; ++i) {
+                r_taxon_raw_vec[i] = !taxon_raw[i].empty() ? Rcpp::String(taxon_raw[i]) : NA_STRING;
+                r_authority_raw_vec[i] = !authority_raw[i].empty() ? Rcpp::String(authority_raw[i]) : NA_STRING;
+                r_col_sci_name_match[i] = !col_sci_name_match[i].empty() ? Rcpp::String(col_sci_name_match[i]) : NA_STRING;
+                r_kingdom_pres[i] = !kingdom_pres[i].empty() ? Rcpp::String(kingdom_pres[i]) : NA_STRING;
+                r_phylum_pres[i] = !phylum_pres[i].empty() ? Rcpp::String(phylum_pres[i]) : NA_STRING;
+                r_class_pres[i] = !class_pres[i].empty() ? Rcpp::String(class_pres[i]) : NA_STRING;
+                r_order_pres[i] = !order_pres[i].empty() ? Rcpp::String(order_pres[i]) : NA_STRING;
+                r_family_pres[i] = !family_pres[i].empty() ? Rcpp::String(family_pres[i]) : NA_STRING;
+                r_genus_pres[i] = !genus_pres[i].empty() ? Rcpp::String(genus_pres[i]) : NA_STRING;
+                r_specific_epithet_pres[i] = !specific_epithet_pres[i].empty() ? Rcpp::String(specific_epithet_pres[i]) : NA_STRING;
+                r_species_pres[i] = !species_pres[i].empty() ? Rcpp::String(species_pres[i]) : NA_STRING;
+                r_authority_pres[i] = !authority_pres[i].empty() ? Rcpp::String(authority_pres[i]) : NA_STRING;
+                r_taxon_rank[i] = !taxon_rank[i].empty() ? Rcpp::String(taxon_rank[i]) : NA_STRING;
+                r_match_type[i] = !match_type[i].empty() ? Rcpp::String(match_type[i]) : NA_STRING;
+                r_match_score[i] = !match_score[i].empty() ? Rcpp::String(match_score[i]) : NA_STRING;
+            }
+            return Rcpp::DataFrame::create(
+                Rcpp::Named("taxon_raw") = r_taxon_raw_vec,
+                Rcpp::Named("authority_raw") = r_authority_raw_vec,
+                Rcpp::Named("sci_name_match") = r_col_sci_name_match,
+                Rcpp::Named("kingdom_pres") = r_kingdom_pres,
+                Rcpp::Named("phylum_pres") = r_phylum_pres,
+                Rcpp::Named("class_pres") = r_class_pres,
+                Rcpp::Named("order_pres") = r_order_pres,
+                Rcpp::Named("family_pres") = r_family_pres,
+                Rcpp::Named("genus_pres") = r_genus_pres,
+                Rcpp::Named("specific_epithet_pres") = r_specific_epithet_pres,
+                Rcpp::Named("species_pres") = r_species_pres,
+                Rcpp::Named("authority_pres") = r_authority_pres,
+                Rcpp::Named("taxon_rank") = r_taxon_rank,
+                Rcpp::Named("match_type") = r_match_type,
+                Rcpp::Named("match_score") = r_match_score
+            );
+        };
+
+        int clean_taxonomy(){
+            unsigned long n = taxon_raw_u.size();
+            for (unsigned long i = 0; i < n; ++i) {
+                DEBUG_PRINT("Cleaning taxon " + std::to_string(i+1) + " of " + std::to_string(n) + ": " + taxon_raw_u[i].first + " ...");
+                TaxonResult taxon_result(taxon_raw_u[i].first, taxon_raw_u[i].second, col_data, col_idx);
+                taxon_result.clean_taxonomy();
+                add_result(taxon_result);
+                DEBUG_PRINT(" Done.");
+
+                // progress
+                unsigned long print_freq = taxon_raw_u.size()*0.01 < 50 ? 50 : taxon_raw_u.size()*0.01;
+                if ((i+1)%print_freq==0 || (i+1)==n){
+                    DEBUG_PRINT(i%print_freq);
+                    print_progress_bar(i+1,n);
+                    DEBUG_PRINT(i%print_freq);
+                }
+            }
+            return 0;
+        };
 };
 
 
@@ -354,15 +619,17 @@ class TaxonResults {
 //======================================================================
 // [[Rcpp::depends(BH)]]
 // [[Rcpp::export]]
-Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, Rcpp::DataFrame& col_data) {
+Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data) {
     try{
-        DEBUG_PRINT("Cleaning dates...");
-        std::vector<std::string> input_dates_cpp = convert_r_vec_to_cpp_vec(input_taxon_names);
-        std::vector<std::string> input_dates_cpp = convert_r_vec_to_cpp_vec(input_authority);
-        // clean func here...
-
-        DEBUG_PRINT("Dates cleaned.");
-        return Rcpp::DataFrame(); // TODO
+        DEBUG_PRINT("Cleaning taxonomy...");
+        std::vector<std::string> input_taxon_names_cpp = convert_r_vec_to_cpp_vec(input_taxon_names);
+        std::vector<std::string> input_authority_cpp = convert_r_vec_to_cpp_vec(input_authority);
+        ColData col_data = convert_r_df_to_cpp_map(input_col_data);
+        COLIndex col_idx(col_data);
+        TaxonResults taxon_results(input_taxon_names_cpp, input_authority_cpp, col_data, col_idx);
+        taxon_results.clean_taxonomy();
+        DEBUG_PRINT("Taxonomy cleaned.");
+        return taxon_results.to_data_frame();
     } catch (std::exception &ex) {
         Rcpp::stop("C++ exception: %s", ex.what());
     } catch (...) {
