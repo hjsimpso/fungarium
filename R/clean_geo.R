@@ -4,11 +4,7 @@
 #' Parse varying formats/spellings for geographic data into a consistent formats
 #' and check the validity of lat/lon coordinates using various tests
 #'
-#'
-#' @param lat Character. Latitude.
-#' @param lon Character. Longitude.
-#' @param country Character. Name of the country.
-#' @param state_province Character. Name of the state/province.
+#' @param data `dwca` object.
 #' @param tests Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "countries", "centroids", "all". Default is "all".
 #' @param centroid_dis Integer. Distance threshold (in meters) to use for the centroid test. Default is 100.
 #' @param round_digits Integer. Number of decimal places to use for rounding coordinates. Default is 4. If NULL, no rounding is performed.
@@ -48,21 +44,17 @@
 #' @examples
 #' library(fungarium)
 #' data(agaricales_updated) #import sample data set
-#' clean_coordinates <- clean_coordinates(agaricales_updated) #clean coordinates
+#' agaricales_geo_clean <- clean_geo(agaricales_updated) #clean coordinates
 #'
 
-clean_geo <- function(lat,
-                      lon,
-                      country,
-                      state_province,
+clean_geo <- function(data,
                       tests="all",
                       centroid_dis=100L){
 
   # check args
-  checkmate::assert_character(lat)
-  checkmate::assert_character(lon, len = length(lat))
-  checkmate::assert_character(country, len = length(lat))
-  checkmate::assert_character(state_province, len = length(lat))
+  if (!inherits(data, "dwca")) {
+    stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
+  }
   checkmate::assertCharacter(tests)
   lapply(tests, checkmate::assert_choice, choices=c("all", "zero", "equal", "countries", "centroids"), .var.name='tests')
   checkmate::assert_choice(tests, c("all", "zero", "equal", "countries", "centroids"))
@@ -81,7 +73,7 @@ clean_geo <- function(lat,
   countries_shp <- sf::st_make_valid(countries_shp) # Fix invalid geometries
 
   # make ouput data frame
-  out <- data.frame(lat_raw = lat, lon_raw = lon, country_raw = country, state_province_raw = state_province)
+  out <- data.frame(lat_raw = data$decimalLatitude, lon_raw = data$decimalLongitude, country_raw = data$country, state_province_raw = data$stateProvince)
   out$lat_parsed <- as.numeric(NA)
   out$lon_parsed <- as.numeric(NA)
   # out$country_parsed <- as.character(NA)
@@ -164,7 +156,7 @@ clean_geo <- function(lat,
     countries_shp2 <- countries_shp2[,!colnames(countries_shp2)%in%"geometry"]
     countries_shp2$row_numb <- 0:(nrow(countries_shp2)-1) #shapefile row labels start at 0
     data2 <- as.data.frame(data)
-    data2 <- data2[,c("row_numb",country)]
+    data2 <- data2[,c("row_numb", data$country)]
     data2 <- dplyr::left_join(data2, countries_shp2, by="row_numb")
     check <- lapply(as.list(as.data.frame(t(data2))),
                     country_check)
