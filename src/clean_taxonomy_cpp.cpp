@@ -34,9 +34,7 @@
 typedef std::map<std::string, std::vector<std::string>> ColData;
 typedef std::string COLAcceptedTaxonID;
 typedef std::string COLScientificNameMatch;
-typedef std::string MatchType;
-// typedef std::tuple<COLAcceptedTaxonID, MatchType, COLScientificNameMatch> COLExactMatch;
-// typedef std::tuple<COLAcceptedTaxonID, double, MatchType, COLScientificNameMatch> FuzzyMatch;
+typedef std::string COLMatchType;
 
 //======================================================================
 // Matching structs
@@ -45,6 +43,7 @@ struct COLExactMatch{
     std::string accepted_taxon_id;
     std::string match_type;
     std::string sci_name;
+    std::string error = "";
 };
 struct COLFuzzyMatch{
     std::string accepted_taxon_id;
@@ -54,12 +53,13 @@ struct COLFuzzyMatch{
 };
 
 //======================================================================
+// Constants
+//======================================================================
+const boost::regex species_hypothesis_regex = boost::regex("^SH[0-9]+\\.[0-9]+FU$",boost::regex_constants::optimize);
+
+//======================================================================
 // Helpers
 //======================================================================
-
-
-
-
 ColData read_col_data_file(const std::string& filename) {
     ColData dataMap;
     std::ifstream file(filename);
@@ -255,6 +255,7 @@ struct TaxonResult {
     std::string taxon_rank;
     std::string match_type;
     std::string match_score;
+    std::string match_error;
 
     ColData& col_data;
     COLIndex& col_idx;
@@ -275,24 +276,35 @@ struct TaxonResult {
     taxon_rank(""),
     match_type(""), 
     match_score(""),
+    match_error(""),
     col_data(col_data),
     col_idx(col_idx)
     {}
 
 
     void clean_taxonomy(){
-        if (taxon_raw.empty()){
+        if (taxon_raw.empty()){ // is input taxon blank?
             return;
         }
-
+        if (boost::regex_match(taxon_raw, species_hypothesis_regex)){ // is input taxon a species hypothesis? (e.g., SH1125882.09FU)
+            return;
+        }
         COLExactMatch exact_match = get_exact_match();
-        if (!exact_match.accepted_taxon_id.empty()){
+        if (!exact_match.accepted_taxon_id.empty()){ // exact match found with accepted taxon id; do not proceed to fuzzy matching 
             match_type = exact_match.match_type;
             match_score = "100";
             col_sci_name_match = exact_match.sci_name;
+            match_error = exact_match.error;
             get_tax_hier(exact_match.accepted_taxon_id);
-        } else{
-            COLFuzzyMatch fuzzy_match = get_best_fuzzy_match();
+        } else if (!exact_match.error.empty()){ // error detected during exact match; do not proceed to fuzzy match
+            if (!exact_match.sci_name.empty()){
+                match_type = exact_match.match_type;
+                match_score = "100";
+                col_sci_name_match = exact_match.sci_name;
+            }
+            match_error = exact_match.error;
+        } else { // if no accpted taxon id found and there are no errors, proceed to fuzzy matching
+            COLFuzzyMatch fuzzy_match = get_best_fuzzy_match(); // TODO integrate error reporting like with exact match
             if (!fuzzy_match.accepted_taxon_id.empty()){
                 match_type = fuzzy_match.match_type;
                 match_score = std::to_string(fuzzy_match.match_score);
@@ -342,49 +354,54 @@ struct TaxonResult {
         //------------------------------------------------------------------------------------
         // Parse exact matches and return accepted TaxonID
         //------------------------------------------------------------------------------------
+        std::string tax_status;
         if (match_ind.size()==1){ // one exact match
             DEBUG_PRINT("Found one exact match: " + col_data["dwc:scientificName"][match_ind[0]]);
-            std::string tax_status = col_data["dwc:taxonomicStatus"][match_ind[0]];
+            tax_status = col_data["dwc:taxonomicStatus"][match_ind[0]];
             DEBUG_PRINT("Tax status: " + tax_status);
-            if (tax_status=="accepted"){ // match has accepted status, return ID
+            if (tax_status=="accepted"||tax_status=="provisionally accepted"){ // match has accepted status, return ID
                 return {col_data["dwc:taxonID"][match_ind[0]], match_type, col_data["dwc:scientificName"][match_ind[0]]};
-            } else if (tax_status=="synonym"){ // match has synonym status, return accepted taxon ID
+            } else if (!col_data["dwc:acceptedNameUsageID"][match_ind[0]].empty()){ // match has synonym status, return accepted taxon ID
                 return {col_data["dwc:acceptedNameUsageID"][match_ind[0]], match_type, col_data["dwc:scientificName"][match_ind[0]]};
             } else { // match has doubtful status, no valid ID to return
-                return {"", match_type, col_data["dwc:scientificName"][match_ind[0]]};
+                return {"", match_type, col_data["dwc:scientificName"][match_ind[0]], "exact match found, but has no accepted name"};
             }
         } else if (match_ind.size()>1) { // multiple matches
             DEBUG_PRINT("Found " + std::to_string(match_ind.size()) + " exact matches.");
             for (int i = 0; i < static_cast<int>(match_ind.size()); i++){ // check if any have accepted status
-                if (col_data["dwc:taxonomicStatus"][match_ind[i]]=="accepted"){ // TODO what if they are multiple matches with accepted status?
+                tax_status = col_data["dwc:taxonomicStatus"][match_ind[i]];
+                if (tax_status=="accepted"||tax_status=="provisionally accepted"){ // TODO what if they are multiple matches with accepted status?
                     return {col_data["dwc:taxonID"][match_ind[i]], match_type, col_data["dwc:scientificName"][match_ind[i]]}; // return accepted taxon ID and COL scientific name match
                 }
             }
-            std::unordered_map<std::string, std::pair<MatchType, COLScientificNameMatch>> accepted_taxon_ids;
+            std::unordered_map<std::string, std::pair<COLMatchType, COLScientificNameMatch>> accepted_taxon_ids;
             for (int i = 0; i < static_cast<int>(match_ind.size()); i++){ // if none have accepted status, then see if all are synonyms of the same accepted taxon
+                tax_status = col_data["dwc:taxonomicStatus"][match_ind[i]];
                 DEBUG_PRINT("Match " + std::to_string(i) + ": " + col_data["dwc:scientificName"][match_ind[i]] + " with status: " + col_data["dwc:taxonomicStatus"][match_ind[i]]);
-                if (col_data["dwc:taxonomicStatus"][match_ind[i]]=="synonym"){
+                if (!col_data["dwc:acceptedNameUsageID"][match_ind[i]].empty()){
                     accepted_taxon_ids.emplace(col_data["dwc:acceptedNameUsageID"][match_ind[i]], std::make_pair(match_type, col_data["dwc:scientificName"][match_ind[i]]));
                 }
             }
             if (accepted_taxon_ids.size()==1){ // all synonym matches had same accepted taxon ID
                 return {accepted_taxon_ids.begin()->first, accepted_taxon_ids.begin()->second.first, accepted_taxon_ids.begin()->second.second}; // return accepted taxon ID, match_type and COL scientific name match
             } else { // either all matches have doubtful status or synonym matches had different accepted taxon IDs
-                return {"", "", ""}; // no valid match found
+                return {"", "", "", "multiple exact matches with different accepted names;"}; // no valid match found
             }
         } else{ // zero matches
-            return {"", "", ""}; // no valid match found
+            return {"", "", "", ""}; // no valid match found
         }
     }
 
 
-    COLFuzzyMatch get_best_fuzzy_match() {
+    COLFuzzyMatch get_best_fuzzy_match() { // TODO integrate error reporting like with exact match
         DEBUG_PRINT("Searching for fuzzy match...");
 
         double best_score = -1.0;
         std::string best_match_accepted_id;
         std::string best_match_type;
         std::string best_match_name;
+
+        std::string tax_status;
 
         for (size_t i = 0; i < col_idx.full_names.size(); ++i) {
             const auto& full   = col_idx.full_names[i];
@@ -406,12 +423,13 @@ struct TaxonResult {
 
             if (score > best_score) {
                 best_score = score;
-                best_match_accepted_id = col_data.at("dwc:taxonomicStatus")[i] == "accepted"
+                tax_status = col_data.at("dwc:taxonomicStatus")[i];
+                best_match_accepted_id = tax_status == "accepted" || tax_status == "provisionally accepted"
                             ? col_data.at("dwc:taxonID")[i]
-                            : col_data.at("dwc:acceptedNameUsageID")[i];
+                            : col_data.at("dwc:acceptedNameUsageID")[i]; // TODO error handling for when acceptedNameUsage is empty
                 best_match_type = match_type;
                 best_match_name = full;
-                DEBUG_PRINT("Best match so far: " + best_match_accepted_id + "(" + col_data["dwc:scientificName"][i] + ") with score: " + std::to_string(best_score));
+                // DEBUG_PRINT("Best match so far: " + best_match_accepted_id + "(" + col_data["dwc:scientificName"][i] + ") with score: " + std::to_string(best_score));
             }
         }
         DEBUG_PRINT("Best match: " + best_match_accepted_id + " with score: " + std::to_string(best_score) + " with match type: " + best_match_type);
@@ -453,7 +471,7 @@ struct TaxonResult {
 
 
 
-class TaxonResults {
+class TaxonResults { // TODO add match error
     public:
         std::vector<std::pair<std::string, std::string>> taxon_raw_u; // unique taxon name + authority
         std::vector<std::string> taxon_raw; // not unique
@@ -499,14 +517,12 @@ class TaxonResults {
             col_idx(col_idx)
             {
                 // make list of unique taxon names for faster processing
-                std::unordered_map<std::string, std::pair<std::string, std::string>> seen;
+                std::unordered_set<std::string> seen;
                 for (long unsigned i = 0; i < static_cast<long unsigned>(input_taxon_names.size()); ++i) {
                     std::string concat_name = input_authority[i] != "" ? input_taxon_names[i] + " " + input_authority[i] : input_taxon_names[i];
-                    if (seen.emplace(concat_name, std::make_pair(input_taxon_names[i], input_authority[i])).second) {
+                    if (seen.emplace(concat_name).second) {
                         taxon_raw_u.push_back(std::make_pair(input_taxon_names[i], input_authority[i]));
-                        DEBUG_PRINT("Taxon name: " + input_taxon_names[i] + "; Authority: " + input_authority[i]);
                     }
-                    DEBUG_PRINT("concat name: "+ concat_name);
                     taxon_raw_indices[concat_name].push_back(i);
                 }
             }
@@ -514,11 +530,10 @@ class TaxonResults {
         // add_result: assign to all occurrences of the taxon name in taxon_raw vector
         int add_result(TaxonResult& taxon_result){
             std::string concat_name = taxon_result.authority_raw != "" ? taxon_result.taxon_raw + " " + taxon_result.authority_raw : taxon_result.taxon_raw;
-            DEBUG_PRINT("concat name: "+ concat_name);
             auto it = taxon_raw_indices.find(concat_name);
             if (it == taxon_raw_indices.end()) return -1;
 
-            for (std::size_t i : it->second) {
+            for (std::size_t i : it->second) { // TODO add match error
                 col_sci_name_match[i] = taxon_result.col_sci_name_match;
                 kingdom_pres[i] = taxon_result.kingdom_pres;
                 phylum_pres[i] = taxon_result.phylum_pres;
@@ -536,7 +551,7 @@ class TaxonResults {
             return 0;
         }
 
-        Rcpp::DataFrame to_data_frame(){
+        Rcpp::DataFrame to_data_frame(){ // TODO add match error
             unsigned long n = taxon_raw.size();
             Rcpp::CharacterVector r_taxon_raw_vec(n);
             Rcpp::CharacterVector r_authority_raw_vec(n);
@@ -554,7 +569,7 @@ class TaxonResults {
             Rcpp::CharacterVector r_match_type(n);
             Rcpp::CharacterVector r_match_score(n);
 
-            for (unsigned long i = 0; i < n; ++i) {
+            for (unsigned long i = 0; i < n; ++i) { // TODO add match error
                 r_taxon_raw_vec[i] = !taxon_raw[i].empty() ? Rcpp::String(taxon_raw[i]) : NA_STRING;
                 r_authority_raw_vec[i] = !authority_raw[i].empty() ? Rcpp::String(authority_raw[i]) : NA_STRING;
                 r_col_sci_name_match[i] = !col_sci_name_match[i].empty() ? Rcpp::String(col_sci_name_match[i]) : NA_STRING;

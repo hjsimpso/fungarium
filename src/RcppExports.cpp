@@ -21,9 +21,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// clean_taxonomy_cpp
+Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data);
+RcppExport SEXP _fungarium_clean_taxonomy_cpp(SEXP input_taxon_namesSEXP, SEXP input_authoritySEXP, SEXP input_col_dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type input_taxon_names(input_taxon_namesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type input_authority(input_authoritySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type input_col_data(input_col_dataSEXP);
+    rcpp_result_gen = Rcpp::wrap(clean_taxonomy_cpp(input_taxon_names, input_authority, input_col_data));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_fungarium_clean_dates_cpp", (DL_FUNC) &_fungarium_clean_dates_cpp, 1},
+    {"_fungarium_clean_taxonomy_cpp", (DL_FUNC) &_fungarium_clean_taxonomy_cpp, 3},
     {NULL, NULL, 0}
 };
 
