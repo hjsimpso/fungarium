@@ -46,7 +46,7 @@ as_dwca <- function(data) {
 #'
 #' Validates and assigns the S3 class 'dwca' to a data.frame.
 #'
-#' @param data A data.frame with required Darwin Core fields. ("scientificName",
+#' @param file A file with required Darwin Core fields. ("scientificName",
 #' "scientificNameAuthorship", "eventDate", "country", "stateProvince",
 #' "decimalLatitude", "decimalLongitude", "habitat", "occurrenceRemarks",
 #' "associatedTaxa")
