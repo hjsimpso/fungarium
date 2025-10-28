@@ -29,7 +29,7 @@ std::map<std::string, std::vector<std::string>> convert_r_df_to_cpp_map(const Rc
     return result;
 }
 
-void print_progress_bar(int current, int total, int bar_width = 50) {
+void print_progress_bar(int current, int total, int bar_width) {
     float progress = static_cast<float>(current) / total;
     int pos = static_cast<int>(bar_width * progress);
 
