@@ -2,8 +2,7 @@
 // Imports
 //======================================================================
 
-#include <Rcpp.h>
-#include <boost/regex.hpp>
+// STL
 #include <string>
 #include <vector>
 #include <iostream>    // For output
@@ -12,7 +11,16 @@
 #include <typeinfo> // Required for typeid
 #include <unordered_set> // For std::unordered_set
 #include <charconv>
-#include "date/date.h"
+
+// Rcpp
+#include <Rcpp.h>
+
+// Vendor
+#include <boost/regex.hpp>
+#include <date/date.h>
+
+// fungarium
+#include "helpers.h"
 
 //======================================================================
 // Macros
@@ -56,6 +64,7 @@ const std::map<DateFormatType, std::string> DateFormatMap = {
     {DateFormatType::YmdT, "YmdT"},
     {DateFormatType::YmdTz, "YmdTz"}
 };
+
 //======================================================================
 // Clean date helpers
 //======================================================================
@@ -79,37 +88,6 @@ int get_month_from_name(const std::string& month_raw) {
     }
 };
 
-
-
-std::vector<std::string> convert_r_vec_to_cpp_vec(Rcpp::CharacterVector input) {
-    std::vector<std::string> result;
-    result.reserve(input.size());
-
-    for (unsigned long i = 0; i < input.size(); ++i) {
-        if (Rcpp::CharacterVector::is_na(input[i])) {
-            result.push_back("");  // NA becomes ""
-        } else {
-            result.push_back(Rcpp::as<std::string>(input[i]));  // Convert to std::string
-        }
-    }
-
-    return result;
-}
-
-void print_progress_bar(int current, int total, int bar_width = 50) {
-    float progress = static_cast<float>(current) / total;
-    int pos = static_cast<int>(bar_width * progress);
-
-    Rcpp::Rcout  << "[";
-    for (int i = 0; i < bar_width; ++i) {
-        if (i < pos) Rcpp::Rcout  << "=";
-        else if (i == pos) Rcpp::Rcout << ">";
-        else Rcpp::Rcout << " ";
-    }
-
-    Rcpp::Rcout << "] " << int(progress * 100.0) << "%\r";
-    Rcpp::Rcout.flush();
-}
 
 std::string to_utc_date(std::string_view s) {
     DEBUG_PRINT(s.data());
@@ -560,7 +538,16 @@ class DateResults {
             auto& date_raw_u_ref = date_raw_u;
 
             // Iterate through each unique raw date
-            for (unsigned long i = 0; i < date_raw_u_ref.size(); i++) {
+            unsigned long total_dates = date_raw_u_ref.size();
+            for (unsigned long i = 0; i < total_dates; i++) {
+                // progress
+                if ((i+1)%100000==0 || (i+1)==total_dates){
+                    DEBUG_PRINT(i%100000);
+                    print_progress_bar(i+1,total_dates);
+                    DEBUG_PRINT(i%100000);
+                }
+
+                // Create result container
                 const std::string& raw = date_raw_u_ref[i];
                 DateResult res(raw);
 
