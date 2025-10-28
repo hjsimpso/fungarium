@@ -5,3 +5,5 @@ README_old.*
 .vscode
 data-raw/
 vignettes/
+r_old/
+col_dwca/
