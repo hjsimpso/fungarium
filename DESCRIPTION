@@ -45,6 +45,3 @@ Remotes:
 VignetteBuilder: knitr
 LinkingTo: Rcpp
 SystemRequirements: C++17
-Collate:
-    'clean_date.R'
-    'clean_geo.R'
