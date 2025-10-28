@@ -1,14 +1,9 @@
 README*
 LICENSE*
 CODE_OF_CONDUCT.md
-get_iso.*
-.Rproj.user
-fungarium.Rproj
-.Rhistory
-.vscode
-mycoportal_tab.*
-mp_collections.*
 data-raw
 vignettes
+^.*\.vscode$
+^.*\.Rhistory$
 ^.*\.Rproj$
 ^\.Rproj\.user$
