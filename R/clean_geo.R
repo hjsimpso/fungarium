@@ -6,8 +6,6 @@
 #'
 #' @param data `dwca` object.
 #' @param tests Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "country", "centroid". Default is all tests.
-#' @param centroid_dis Integer. Distance threshold (in meters) to use for the centroid test. Default is 100.
-#' @param round_digits Integer. Number of decimal places to use for rounding coordinates. Default is 4. If NULL, no rounding is performed.
 #'
 #' @details The following tests are automatically done:
 #' \describe{
@@ -40,12 +38,12 @@
 #' @examples
 #' library(fungarium)
 #' data(agaricales_updated) #import sample data set
+#' agaricales_updated <- as_dwca(agaricales_updated) # convert to dwca object
 #' agaricales_geo_clean <- clean_geo(agaricales_updated) #clean coordinates
 #'
 
 clean_geo <- function(data,
-                      tests=c("zero", "equal", "country", "centroid"),
-                      centroid_dis=100L){
+                      tests=c("zero", "equal", "country", "centroid")){
 
   # check args
   if (!inherits(data, "dwca")) {
@@ -54,10 +52,6 @@ clean_geo <- function(data,
   checkmate::assertCharacter(tests)
   lapply(tests, checkmate::assert_choice, choices=c("zero", "equal", "country", "centroid"), .var.name='tests')
   checkmate::assert_integer(centroid_dis, len=1)
-
-  if(!is.null(centroid_dis)){
-    centroid_dis <- units::as_units(centroid_dis, "m")
-  }
 
   # reference data
   # countries_shp <- rnaturalearth::ne_countries('large', returnclass = "sf") # import world countries_shp file

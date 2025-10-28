@@ -4,20 +4,12 @@
 \alias{clean_geo}
 \title{Clean and harmonize heterogeneous geographic data (lat/lon/country)}
 \usage{
-clean_geo(
-  data,
-  tests = c("zero", "equal", "country", "centroid"),
-  centroid_dis = 100L
-)
+clean_geo(data, tests = c("zero", "equal", "country", "centroid"))
 }
 \arguments{
 \item{data}{\code{dwca} object.}
 
 \item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "country", "centroid". Default is all tests.}
-
-\item{centroid_dis}{Integer. Distance threshold (in meters) to use for the centroid test. Default is 100.}
-
-\item{round_digits}{Integer. Number of decimal places to use for rounding coordinates. Default is 4. If NULL, no rounding is performed.}
 }
 \value{
 Data.frame with the following output fields.
@@ -56,6 +48,7 @@ Input coordinates are assumed to use WGS84 coordinate reference system.
 \examples{
 library(fungarium)
 data(agaricales_updated) #import sample data set
+agaricales_updated <- as_dwca(agaricales_updated) # convert to dwca object
 agaricales_geo_clean <- clean_geo(agaricales_updated) #clean coordinates
 
 }
