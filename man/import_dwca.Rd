@@ -7,7 +7,7 @@
 import_dwca(file, sep = "\\t", quote = "\\"", select = NULL, drop = NULL)
 }
 \arguments{
-\item{data}{A data.frame with required Darwin Core fields. ("scientificName",
+\item{file}{A file with required Darwin Core fields. ("scientificName",
 "scientificNameAuthorship", "eventDate", "country", "stateProvince",
 "decimalLatitude", "decimalLongitude", "habitat", "occurrenceRemarks",
 "associatedTaxa")}

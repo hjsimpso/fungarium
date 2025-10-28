@@ -2,27 +2,18 @@
 % Please edit documentation in R/clean_geo.R
 \name{clean_geo}
 \alias{clean_geo}
-\title{Clean and harmonize heterogeneous geographic data (lat/lon/country/state/province)}
+\title{Clean and harmonize heterogeneous geographic data (lat/lon/country)}
 \usage{
 clean_geo(
-  lat,
-  lon,
-  country,
-  state_province,
-  tests = "all",
+  data,
+  tests = c("zero", "equal", "country", "centroid"),
   centroid_dis = 100L
 )
 }
 \arguments{
-\item{lat}{Character. Latitude.}
+\item{data}{\code{dwca} object.}
 
-\item{lon}{Character. Longitude.}
-
-\item{country}{Character. Name of the country.}
-
-\item{state_province}{Character. Name of the state/province.}
-
-\item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "countries", "centroids", "all". Default is "all".}
+\item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "country", "centroid". Default is all tests.}
 
 \item{centroid_dis}{Integer. Distance threshold (in meters) to use for the centroid test. Default is 100.}
 
@@ -35,11 +26,9 @@ Data.frame with the following output fields.
 \item{\code{lat_raw}}{Character. Input latitude.}
 \item{\code{lon_raw}}{Character. Input longitude.}
 \item{\code{country_raw}}{Character. Input country.}
-\item{\code{state_province_raw}}{Character. Input state/province.}
 \item{\code{lat_parsed}}{Numeric. Parsed decimal latitude.}
 \item{\code{lon_parsed}}{Numeric. Parsed decimal longitude.}
 \item{\code{country_parsed}}{Character. Parsed country. Synonyms are harmonized.}
-\item{\code{state_province_parsed}}{Character. Parsed state/province. Synonyms are harmonized.}
 \item{\code{lat_res}}{Integer. Latitude resolution based on number of decimal places.}
 \item{\code{lon_res}}{Integer. Longitude resolution based on number of decimal places.}
 \item{\code{coordinate_error}}{Character. First error deteced when cleaning coordinates.}
@@ -59,8 +48,6 @@ The following tests can be selected:
 \describe{
 \item{\code{zero}}{lat and lon are both zero}
 \item{\code{equal}}{lat and lon are equal}
-\item{\code{countries}}{point is outside the bounds of the country listed}
-\item{\code{centroid}}{distance between point and country centroid is less than or equal to the centroid_dis specified}
 }
 }
 \note{
