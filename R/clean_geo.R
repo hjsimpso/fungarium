@@ -144,12 +144,6 @@ parse_geo_names <- function(data){
   countries_ref <- countries_ref[,col_bool]
   countries_ref_clean <- as.data.frame(sapply(countries_ref, str_clean))
 
-  # # clean up state/province reference data
-  # states_ref <- sf::st_drop_geometry(rnaturalearth::ne_states())
-  # col_bool <- !(sapply(states_ref, is.numeric))
-  # states_ref <- states_ref[,col_bool]
-  # states_ref_clean <- as.data.frame(sapply(states_ref, str_clean))
-
   # make unique list of countries from input
   country_u <- unique(data$country_raw)
   country_u_df <- data.frame(country_u = country_u,  country_u_clean=str_clean(country_u, periods = ""))
@@ -177,109 +171,21 @@ parse_geo_names <- function(data){
     }
   }
 
-  # TODO add ROBUST state province parsing
-  # # iterate through countries that couldn't be parsed to check for state_province
-  # non_matched_bool <- is.na(country_u_df$country_parsed)&!is.na(country_u_df$country_u_clean)
-  # non_match_countries <- country_u_df[non_matched_bool,]
-  #
-  # for (i in seq_len(nrow(non_match_countries))){
-  #   for (j in seq_len(ncol(states_ref))){ # iterate through each column in rnaturalearth data frame; start with admin col (col#10)
-  #     match_bool <- non_match_countries$country_u_clean[i] == states_ref_clean[,j]
-  #     match_bool[is.na(match_bool)] <- F
-  #     if (T%in%match_bool){
-  #       # print(paste0(non_match_countries$country_u_clean[i], "...", states_ref$admin[match_bool]))
-  #       country_parsed <- unique(states_ref$admin[match_bool])
-  #       non_match_countries$country_parsed[i] <- ifelse(length(country_parsed)>1, NA, country_parsed)
-  #       sov_parsed <- unique(states_ref$sov_a3[match_bool])
-  #       non_match_countries$sov_parsed[i] <- ifelse(length(sov_parsed)>1, NA, sov_parsed)
-  #       iso3_parsed <- unique(states_ref$adm0_a3[match_bool])
-  #       non_match_countries$iso3_parsed[i] <- ifelse(length(iso3_parsed)>1, NA, iso3_parsed)
-  #       break
-  #     }
-  #   }
-  # }
-  #
-  # country_u_df[non_matched_bool,]$country_parsed <- non_match_countries$country_parsed
-  # country_u_df[non_matched_bool,]$sov_parsed <- non_match_countries$sov_parsed
-  # country_u_df[non_matched_bool,]$iso3_parsed <- non_match_countries$iso3_parsed
-
   # create output df
   out <- dplyr::left_join(data[,c("country_raw", "state_province_raw")], country_u_df, by = dplyr::join_by(country_raw == country_u))
 
-  # parse state/province names
-  out <- parse_state_province(out)
-
   # return output
-  return(out)
+  return(cbind(data,out))
 }
-# TODO add ROBUST state province parsing
-# parse_state_province <- function(data, predict_empty_countries = T){
-#   # check args
-#   checkmate::assert_data_frame(data)
-#   checkmate::assert_true("country_raw"%in%colnames(data))
-#   checkmate::assert_true("state_province_raw"%in%colnames(data))
-#   checkmate::assert_true("country_parsed"%in%colnames(data))
-#   checkmate::assert_true("sov_parsed"%in%colnames(data))
-#   checkmate::assert_true("iso3_parsed"%in%colnames(data))
-#
-#   # clean up state/province reference data
-#   states_ref <- sf::st_drop_geometry(rnaturalearth::ne_states())
-#   col_bool <- !(sapply(states_ref, is.numeric))
-#   states_ref <- states_ref[,col_bool]
-#   states_ref_clean <- as.data.frame(sapply(states_ref, str_clean))
-#
-#   # make unique list of states from input
-#   state_u <- unique(data$state_province_raw)
-#   state_u_df <- data.frame(state_u = state_u,  state_u_clean=str_clean(state_u, periods = ""))
-#   state_u_df$state_province_parsed <- rep(NA, nrow(state_u_df))
-#   state_u_df$iso_3166_2_parsed <- rep(NA, nrow(state_u_df))
-#   state_u_df$country_parsed <- rep(NA, nrow(state_u_df))
-#   state_u_df$iso3_parsed<- rep(NA, nrow(state_u_df))
-#   state_u_df$sov_parsed <- rep(NA, nrow(state_u_df))
-#
-#   # iterate through states/provinces
-#   for (i in seq_len(nrow(state_u_df))){
-#     for (j in seq_len(ncol(states_ref))){ # iterate through each column in rnaturalearth data frame; start with admin col (col#10)
-#       match_bool <- state_u_df$state_u_clean[i] == states_ref_clean[,j]
-#       match_bool[is.na(match_bool)] <- F
-#       if (T%in%match_bool){
-#         # print(paste0(state_u_df$state_u_clean[i], "...", states_ref$name[match_bool]))
-#         state_province_parsed <- unique(states_ref$name[match_bool])
-#         state_u_df$state_province_parsed[i] <- ifelse(length(state_province_parsed)>1, NA, state_province_parsed)
-#         iso_3166_2_parsed <- unique(states_ref$iso_3166_2[match_bool])
-#         state_u_df$iso_3166_2_parsed[i] <- ifelse(length(iso_3166_2_parsed)>1, NA, iso_3166_2_parsed)
-#         if (predict_empty_countries){
-#           country_parsed <- unique(states_ref$admin[match_bool])
-#           state_u_df$country_parsed[i] <- ifelse(length(country_parsed)>1, NA, country_parsed)
-#           iso3_parsed <- unique(states_ref$adm0_a3[match_bool])
-#           state_u_df$iso3_parsed[i] <- ifelse(length(iso3_parsed)>1, NA, iso3_parsed)
-#           sov_parsed <- unique(states_ref$sov_a3[match_bool])
-#           state_u_df$sov_parsed[i] <- ifelse(length(sov_parsed)>1, NA, sov_parsed)
-#         }
-#         break
-#       }
-#     }
-#   }
-#
-#   # create output df
-#   out <- dplyr::left_join(data[,c("country_raw", "state_province_raw")], state_u_df, by = dplyr::join_by(state_province_raw==state_u))
-#   out[!is.na(data$country_parsed),]$country_parsed <- data$country_parsed[!is.na(data$country_parsed)] # add back original country data where it wasn't NA
-#   out[!is.na(data$iso3_parsed),]$iso3_parsed <- data$iso3_parsed[!is.na(data$iso3_parsed)] # add back original country data where it wasn't NA
-#   out[!is.na(data$sov_parsed),]$sov_parsed <- data$sov_parsed[!is.na(data$sov_parsed)] # add back original country data where it wasn't NA
-#
-#   # return parsed output
-#   return(out[,grepl("parsed", colnames(out))])
-# }
+
 
 parse_geo_names_from_coords <- function(data){
   # check args
   checkmate::assert_data_frame(data)
   checkmate::assert_true("country_raw"%in%colnames(data))
-  checkmate::assert_true("state_province_raw"%in%colnames(data))
   checkmate::assert_true("country_parsed"%in%colnames(data))
   checkmate::assert_true("sov_parsed"%in%colnames(data))
   checkmate::assert_true("iso3_parsed"%in%colnames(data))
-  checkmate::assert_true("state_province_parsed"%in%colnames(data))
   checkmate::assert_true("iso_3166_2_parsed"%in%colnames(data))
 
   #-----------------------------------------------------------------------------
@@ -311,52 +217,10 @@ parse_geo_names_from_coords <- function(data){
     data[country_na_bool,]$country_parsed <- out1[country_na_bool,]$country_parsed
     data[country_na_bool,]$iso3_parsed <- out1[country_na_bool,]$iso3_parsed
     data[country_na_bool,]$sov_parsed <- out1[country_na_bool,]$sov_parsed
+    data[country_na_bool,]$continent_parsed <- out1[country_na_bool,]$continent_parsed
+
   }
-  # TODO add ROBUST state province parsing
-  # #-----------------------------------------------------------------------------
-  # # states
-  # #-----------------------------------------------------------------------------
-  # # get records with coords but no state/province
-  # state_na_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&is.na(data$state_province_parsed)
-  #
-  # if (T%in%state_na_bool){
-  #   # get state/province geometry data
-  #   states_shp <- rnaturalearthhires::states10
-  #   states_shp <- sf::st_make_valid(states_shp) # Fix invalid geometries
-  #
-  #   # prep unique set of coords to test
-  #   state_na <- dplyr::distinct(data[state_na_bool, c("lat_parsed", "lon_parsed")])
-  #   state_na <- sf::st_as_sf(state_na, coords = c("lon_parsed", "lat_parsed"), crs = sf::st_crs(countries_shp), remove=F)
-  #
-  #   # join states
-  #   within_state <- as.integer(sf::st_intersects(state_na, states_shp, prepared=T))
-  #   print(within_state)
-  #   state_na$state_province_parsed <- states_shp$name[within_state]
-  #   state_na$iso_3166_2_parsed <- states_shp$iso_3166_2[within_state]
-  #
-  #   # create output df
-  #   out2 <- dplyr::left_join(data[state_na_bool,c("lat_parsed", "lon_parsed")], state_na, by = c("lat_parsed", "lon_parsed"))
-  #   data[state_na_bool,]$state_province_parsed <- out2[state_na_bool,]$state_province_parsed
-  #   data[state_na_bool,]$iso_3166_2_parsed <- out2[state_na_bool,]$iso_3166_2_parsed
-  # }
 
   # return output
   return(data)
 }
-
-
-# TODO before using coords to guess countries/states, uses countries/states to guess if coords are flipped on accident
-# ex: 39.648
-# -77.467
-# NA
-# Maryland
-# 39.648000
-# -77.46700
-# 3
-# 3
-# NA
-# Maryland
-# NA
-# Mexico
-# MEX
-# MEX
