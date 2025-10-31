@@ -148,6 +148,7 @@ parse_geo_names <- function(data){
   country_u_df$country_parsed <- rep(NA, nrow(country_u_df))
   country_u_df$iso3_parsed <- rep(NA, nrow(country_u_df))
   country_u_df$sov_parsed <- rep(NA, nrow(country_u_df))
+  country_u_df$continent_parsed <- rep(NA, nrow(country_u_df))
 
   # iterate through each country and assign standardized name from ref data
   for (i in seq_len(nrow(country_u_df))){
@@ -162,6 +163,8 @@ parse_geo_names <- function(data){
         country_u_df$sov_parsed[i] <- ifelse(length(sov_parsed)>1, NA, sov_parsed)
         iso3_parsed <- unique(countries_ref$adm0_a3[match_bool])
         country_u_df$iso3_parsed[i] <- ifelse(length(iso3_parsed)>1, NA, iso3_parsed)
+        continent_parsed <- unique(countries_ref$continent[match_bool])
+        country_u_df$continent_parsed[i] <- ifelse(length(continent_parsed)>1, NA, continent_parsed)
         break
       }
     }
@@ -207,6 +210,7 @@ parse_geo_names_from_coords <- function(data){
     country_na$country_parsed <- countries_shp$ADMIN[within_country]
     country_na$iso3_parsed <- countries_shp$ADM0_A3[within_country]
     country_na$sov_parsed <- countries_shp$SOV_A3[within_country]
+    country_na$continent_parsed <- countries_shp$CONTINENT[within_country]
 
     # create output
     out1 <- dplyr::left_join(data[country_na_bool,c("lat_parsed", "lon_parsed")], country_na, by = c("lat_parsed", "lon_parsed"))
