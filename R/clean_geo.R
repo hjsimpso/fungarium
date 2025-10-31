@@ -45,20 +45,14 @@
 #'
 
 clean_geo <- function(data,
-                      tests=c("zero", "equal", "country", "centroid")){
+                      tests=c("zero", "equal")){
 
   # check args
   if (!inherits(data, "dwca")) {
     stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
   }
   checkmate::assertCharacter(tests)
-  lapply(tests, checkmate::assert_choice, choices=c("zero", "equal", "country", "centroid"), .var.name='tests')
-  checkmate::assert_integer(centroid_dis, len=1)
-
-  # reference data
-  # countries_shp <- rnaturalearth::ne_countries('large', returnclass = "sf") # import world countries_shp file
-  countries_shp <- rnaturalearthhires::countries10
-  countries_shp <- sf::st_make_valid(countries_shp) # Fix invalid geometries
+  lapply(tests, checkmate::assert_choice, choices=c("zero", "equal"), .var.name='tests')
 
   # make output data frame
   out <- data.frame(lat_raw = data$decimalLatitude, lon_raw = data$decimalLongitude, country_raw = data$country, state_province_raw = data$stateProvince)
