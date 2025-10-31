@@ -2,34 +2,36 @@
 #'
 #' @description
 #' Parse varying formats/spellings for geographic data into a consistent formats
-#' and check the validity of lat/lon coordinates using various tests
+#' and check the validity of lat/lon coordinates using various tests.
 #'
 #' @param data `dwca` object.
-#' @param tests Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "country", "centroid". Default is all tests.
+#' @param tests Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.
 #'
-#' @details The following tests are automatically done:
+#' @details
+#' The following tests are automatically done:
 #' \describe{
-#'  \item{\code{non_numeric}}{lat or lon are not numeric or cannot be converted to numeric}
-#'  \item{\code{out_of_bounds}}{lat or lon are out of bounds (i.e., lat>90, lat<-90, lon>180, lon<-180)}
-#'  \item{\code{null}}{lat or lon are null}
+#'  \item{`non_numeric`}{lat or lon are not numeric or cannot be converted to numeric}
+#'  \item{`out_of_bounds`}{lat or lon are out of bounds (i.e., lat>90, lat<-90, lon>180, lon<-180)}
+#'  \item{`null`}{lat or lon are null}
 #' }
 #' The following tests can be selected:
 #' \describe{
-#'  \item{\code{zero}}{lat and lon are both zero}
-#'  \item{\code{equal}}{lat and lon are equal}
+#'  \item{`zero`}{lat and lon are both zero}
+#'  \item{`equal`}{lat and lon are equal}
 #' }
-#' @return Data.frame with the following output fields.
+#' @return Data.frame with the following output fields:
 #'
 #' \describe{
-#' \item{\code{lat_raw}}{Character. Input latitude.}
-#' \item{\code{lon_raw}}{Character. Input longitude.}
-#' \item{\code{country_raw}}{Character. Input country.}
-#' \item{\code{lat_parsed}}{Numeric. Parsed decimal latitude.}
-#' \item{\code{lon_parsed}}{Numeric. Parsed decimal longitude.}
-#' \item{\code{country_parsed}}{Character. Parsed country. Synonyms are harmonized.}
-#' \item{\code{lat_res}}{Integer. Latitude resolution based on number of decimal places.}
-#' \item{\code{lon_res}}{Integer. Longitude resolution based on number of decimal places.}
-#' \item{\code{coordinate_error}}{Character. First error deteced when cleaning coordinates.}
+#' \item{`lat_raw`}{Character. Input latitude.}
+#' \item{`lon_raw`}{Character. Input longitude.}
+#' \item{`country_raw`}{Character. Input country.}
+#' \item{`lat_parsed`}{Numeric. Parsed decimal latitude.}
+#' \item{`lon_parsed`}{Numeric. Parsed decimal longitude.}
+#' \item{`lat_res`}{Integer. Latitude resolution based on number of decimal places.}
+#' \item{`lon_res`}{Integer. Longitude resolution based on number of decimal places.}
+#' \item{`coordinate_error`}{Character. First error deteced when cleaning coordinates.}
+#' \item{`country_parsed`}{Character. Parsed country. Synonyms are harmonized.}
+#' \item{`continent_parsed`}{Character. Parsed continent. Based on `country_parsed`.}
 #'
 #' @note Input coordinates are assumed to use WGS84 coordinate reference system.
 #'
