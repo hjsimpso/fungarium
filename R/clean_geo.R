@@ -160,22 +160,22 @@ parse_geo_names <- function(data){
   # iterate through each country and assign standardized name from ref data
   for (i in seq_len(nrow(country_u_df))){
     if (!is.na(country_u_df$country_u_clean[i])){
-    for (j in seq_len(ncol(countries_ref))){ # iterate through each column in rnaturalearth data frame; start with admin col (col#10)
-      match_bool <- country_u_df$country_u_clean[i] == countries_ref_clean[,j]
-      match_bool[is.na(match_bool)] <- F
-      if (T%in%match_bool){
-        country_parsed <- unique(countries_ref$admin[match_bool])
-        country_u_df$country_parsed[i] <- ifelse(length(country_parsed)>1, NA, country_parsed)
-        sov_parsed <- unique(countries_ref$sov_a3[match_bool])
-        country_u_df$sov_parsed[i] <- ifelse(length(sov_parsed)>1, NA, sov_parsed)
-        iso3_parsed <- unique(countries_ref$adm0_a3[match_bool])
-        country_u_df$iso3_parsed[i] <- ifelse(length(iso3_parsed)>1, NA, iso3_parsed)
+      for (j in seq_len(ncol(countries_ref))){ # iterate through each column in rnaturalearth data frame; start with admin col (col#10)
+        match_bool <- country_u_df$country_u_clean[i] == countries_ref_clean[,j]
+        match_bool[is.na(match_bool)] <- F
+        if (T%in%match_bool){
+          country_parsed <- unique(countries_ref$admin[match_bool])
+          country_u_df$country_parsed[i] <- ifelse(length(country_parsed)>1, NA, country_parsed)
+          sov_parsed <- unique(countries_ref$sov_a3[match_bool])
+          country_u_df$sov_parsed[i] <- ifelse(length(sov_parsed)>1, NA, sov_parsed)
+          iso3_parsed <- unique(countries_ref$adm0_a3[match_bool])
+          country_u_df$iso3_parsed[i] <- ifelse(length(iso3_parsed)>1, NA, iso3_parsed)
           continent_parsed <- unique(continents[match_bool])
-        country_u_df$continent_parsed[i] <- ifelse(length(continent_parsed)>1, NA, continent_parsed)
-        break
+          country_u_df$continent_parsed[i] <- ifelse(length(continent_parsed)>1, NA, continent_parsed)
+          break
+        }
       }
     }
-  }
   }
 
   # create output df
