@@ -19,20 +19,24 @@
 #'  \item{`zero`}{lat and lon are both zero}
 #'  \item{`equal`}{lat and lon are equal}
 #' }
-#' @return Data.frame with the following output fields:
+#'
+#' Countries are first parsed based on the country name in the record.
+#' If no country name is given, it is guessed using the record's GPS coordinates.
+#'
+#' @return Input Data.frame with the following output fields appended:
 #'
 #' \describe{
-#' \item{`lat_raw`}{Character. Input latitude.}
-#' \item{`lon_raw`}{Character. Input longitude.}
-#' \item{`country_raw`}{Character. Input country.}
 #' \item{`lat_parsed`}{Numeric. Parsed decimal latitude.}
 #' \item{`lon_parsed`}{Numeric. Parsed decimal longitude.}
 #' \item{`lat_res`}{Integer. Latitude resolution based on number of decimal places.}
 #' \item{`lon_res`}{Integer. Longitude resolution based on number of decimal places.}
 #' \item{`coordinate_error`}{Character. First error deteced when cleaning coordinates.}
 #' \item{`country_parsed`}{Character. Parsed country. Synonyms are harmonized.}
+#' \item{`sov_parsed`}{Character. Parsed sovereignty. Based on `country_parsed`.}
+#' \item{`iso3_parsed`}{Character. Parsed iso-3 codes (ISO 3166-1 alpha-3 codes are three-letter country codes). Based on `country_parsed`.}
 #' \item{`continent_parsed`}{Character. Parsed continent. Based on `country_parsed`.}
-#'
+#' \item{`closest_country_distance`}{Numeric. Distance (in meters) between GPS coordinates and closest country. Only assigned if country cannot be parsed from supplied country name, and if record is not within the bounds of any country.}
+#' }
 #' @note Input coordinates are assumed to use WGS84 coordinate reference system.
 #'
 #' @export
