@@ -4,30 +4,32 @@
 \alias{clean_geo}
 \title{Clean and harmonize heterogeneous geographic data (lat/lon/country)}
 \usage{
-clean_geo(data, tests = c("zero", "equal", "country", "centroid"))
+clean_geo(data, tests = c("zero", "equal"))
 }
 \arguments{
 \item{data}{\code{dwca} object.}
 
-\item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal", "country", "centroid". Default is all tests.}
+\item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.}
 }
 \value{
-Data.frame with the following output fields.
+Input Data.frame with the following output fields appended:
 
 \describe{
-\item{\code{lat_raw}}{Character. Input latitude.}
-\item{\code{lon_raw}}{Character. Input longitude.}
-\item{\code{country_raw}}{Character. Input country.}
 \item{\code{lat_parsed}}{Numeric. Parsed decimal latitude.}
 \item{\code{lon_parsed}}{Numeric. Parsed decimal longitude.}
-\item{\code{country_parsed}}{Character. Parsed country. Synonyms are harmonized.}
 \item{\code{lat_res}}{Integer. Latitude resolution based on number of decimal places.}
 \item{\code{lon_res}}{Integer. Longitude resolution based on number of decimal places.}
 \item{\code{coordinate_error}}{Character. First error deteced when cleaning coordinates.}
+\item{\code{country_parsed}}{Character. Parsed country. Synonyms are harmonized.}
+\item{\code{sov_parsed}}{Character. Parsed sovereignty. Based on \code{country_parsed}.}
+\item{\code{iso3_parsed}}{Character. Parsed iso-3 codes (ISO 3166-1 alpha-3 codes are three-letter country codes). Based on \code{country_parsed}.}
+\item{\code{continent_parsed}}{Character. Parsed continent. Based on \code{country_parsed}.}
+\item{\code{closest_country_distance}}{Numeric. Distance (in meters) between GPS coordinates and closest country. Only assigned if country cannot be parsed from supplied country name, and if record is not within the bounds of any country.}
+}
 }
 \description{
 Parse varying formats/spellings for geographic data into a consistent formats
-and check the validity of lat/lon coordinates using various tests
+and check the validity of lat/lon coordinates using various tests.
 }
 \details{
 The following tests are automatically done:
@@ -36,11 +38,15 @@ The following tests are automatically done:
 \item{\code{out_of_bounds}}{lat or lon are out of bounds (i.e., lat>90, lat<-90, lon>180, lon<-180)}
 \item{\code{null}}{lat or lon are null}
 }
+
 The following tests can be selected:
 \describe{
 \item{\code{zero}}{lat and lon are both zero}
 \item{\code{equal}}{lat and lon are equal}
 }
+
+Countries are first parsed based on the country name in the record.
+If no country name is given, it is guessed using the record's GPS coordinates.
 }
 \note{
 Input coordinates are assumed to use WGS84 coordinate reference system.
