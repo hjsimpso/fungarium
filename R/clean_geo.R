@@ -179,21 +179,21 @@ parse_geo_names <- function(data){
   }
 
   # create output df
-  out <- dplyr::left_join(data[,c("country_raw", "state_province_raw")], country_u_df, by = dplyr::join_by(country_raw == country_u))
+  out <- dplyr::left_join(data[,c("country_raw"), drop=FALSE], country_u_df, by = dplyr::join_by(country_raw == country_u))
 
   # return output
-  return(cbind(data,out))
+  return(out[,c("country_parsed", "sov_parsed", "iso3_parsed", "continent_parsed")])
 }
 
 
 parse_geo_names_from_coords <- function(data){
   # check args
   checkmate::assert_data_frame(data)
-  checkmate::assert_true("country_raw"%in%colnames(data))
+  checkmate::assert_true("lat_parsed"%in%colnames(data))
+  checkmate::assert_true("lon_parsed"%in%colnames(data))
   checkmate::assert_true("country_parsed"%in%colnames(data))
   checkmate::assert_true("sov_parsed"%in%colnames(data))
   checkmate::assert_true("iso3_parsed"%in%colnames(data))
-  checkmate::assert_true("iso_3166_2_parsed"%in%colnames(data))
 
   #-----------------------------------------------------------------------------
   # countries
@@ -203,7 +203,7 @@ parse_geo_names_from_coords <- function(data){
 
   if (T%in%country_na_bool){
     # get country geometry data
-    countries_shp <- rnaturalearthhires::countries10
+    countries_shp <- rnaturalearth::ne_countries(scale="large", type = "map_units")
     countries_shp <- sf::st_make_valid(countries_shp) # Fix invalid geometries
 
     # prep unique set of coords to test
@@ -212,16 +212,13 @@ parse_geo_names_from_coords <- function(data){
 
     # join countries
     within_country <- as.integer(sf::st_intersects(country_na, countries_shp, prepared=T))
-    print(within_country)
-    print(length(within_country))
-    print(nrow(country_na))
-    country_na$country_parsed <- countries_shp$ADMIN[within_country]
-    country_na$iso3_parsed <- countries_shp$ADM0_A3[within_country]
-    country_na$sov_parsed <- countries_shp$SOV_A3[within_country]
-    country_na$continent_parsed <- countries_shp$CONTINENT[within_country]
+    country_na$country_parsed <- countries_shp$admin[within_country]
+    country_na$iso3_parsed <- countries_shp$adm0_a3[within_country]
+    country_na$sov_parsed <- countries_shp$sov_a3[within_country]
+    country_na$continent_parsed <- countries_shp$continent[within_country]
 
     # create output
-    out1 <- dplyr::left_join(data[country_na_bool,c("lat_parsed", "lon_parsed")], country_na, by = c("lat_parsed", "lon_parsed"))
+    out1 <- dplyr::left_join(data[,c("lat_parsed", "lon_parsed")], country_na, by = c("lat_parsed", "lon_parsed"))
     data[country_na_bool,]$country_parsed <- out1[country_na_bool,]$country_parsed
     data[country_na_bool,]$iso3_parsed <- out1[country_na_bool,]$iso3_parsed
     data[country_na_bool,]$sov_parsed <- out1[country_na_bool,]$sov_parsed
