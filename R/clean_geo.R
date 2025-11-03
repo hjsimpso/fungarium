@@ -14,6 +14,7 @@
 #'  \item{`out_of_bounds`}{lat or lon are out of bounds (i.e., lat>90, lat<-90, lon>180, lon<-180)}
 #'  \item{`null`}{lat or lon are null}
 #' }
+#'
 #' The following tests can be selected:
 #' \describe{
 #'  \item{`zero`}{lat and lon are both zero}
@@ -111,13 +112,14 @@ clean_geo <- function(data,
   }
 
   # harmonize country names
-  out <- cbind(out, parse_geo_names(out))
+  out <- cbind(out,parse_geo_names(out))
 
-  # predict blank countries and state province based on on lat/lon
-  out <- parse_geo_names_from_coords(out)
+  # predict blank countries based on on lat/lon
+  out <- cbind(out[, c("lat_parsed", "lon_parsed", "lon_res", "lat_res", "coordinate_error")],
+               parse_geo_names_from_coords(out))
 
-
-  return(out)
+  # return results appended to input df
+  return(cbind(data, out))
 }
 
 ##################################
