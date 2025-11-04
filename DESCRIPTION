@@ -16,22 +16,14 @@ RoxygenNote: 7.3.2
 Depends: R (>= 4.0.0)
 Imports:
     dplyr,
-    taxize (>= 0.9.97),
-    NameNeedle,
     data.table,
     tm,
-    plyr,
-    lubridate,
     knitr,
     rmarkdown,
     rnaturalearth,
-    rnaturalearthhires,
     sf,
     stringr,
     ggplot2,
-    ape,
-    ggtree (>= 3.3.0),
-    units,
     checkmate,
     Rcpp,
     BH
@@ -39,9 +31,6 @@ Suggests:
     rvest,
     jsonlite,
     xml2
-Remotes:
-    ropensci/rnaturalearthhires,
-    YuLab-SMU/ggtree
 VignetteBuilder: knitr
 LinkingTo: Rcpp
 SystemRequirements: C++17
