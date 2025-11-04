@@ -6,6 +6,7 @@
 #' "scientificNameAuthorship", "eventDate", "country", "stateProvince",
 #' "decimalLatitude", "decimalLongitude", "habitat", "occurrenceRemarks",
 #' "associatedTaxa")
+#' @param drop_cols Logical. Drop all nonrequired columns. Default: TRUE.
 #'
 #' @return An object of class 'dwca' (and 'data.frame').
 #' @examples
@@ -30,16 +31,25 @@ as_dwca <- function(data) {
   checkmate::reportAssertions(coll)
 
 
-  # ensure all cols are character
-  data <- as.data.frame(sapply(data, as.character))
-
+  # ensure all req cols are character
+  col_check <- lapply(data[,req_cols], is.character)
+  if (F%in%col_check){
+    data[,req_cols] <- as.data.frame(sapply(data[,req_cols], as.character))
+  }
 
   # add NAs to null strings
   data[data==""] <- NA
 
+
+  # add cleaning attributes
+  attr(data, "clean_date") <- FALSE
+  attr(data, "clean_geography") <- FALSE
+  attr(data, "clean_taxonomy") <- FALSE
+
+
   # return dwca class object
   class(data) <- c("dwca", "data.frame")
-  data
+  return(data)
 }
 
 #' Import a DWCA file
@@ -50,6 +60,10 @@ as_dwca <- function(data) {
 #' "scientificNameAuthorship", "eventDate", "country", "stateProvince",
 #' "decimalLatitude", "decimalLongitude", "habitat", "occurrenceRemarks",
 #' "associatedTaxa")
+#' @param sep description
+#' @param quote ...
+#' @param select description
+#' @param drop description
 #'
 #' @return An object of class 'dwca' (and 'data.frame').
 #'
@@ -82,6 +96,11 @@ import_dwca <- function(file, sep='\t', quote = "\"", select=NULL, drop=NULL) {
 
   # add NAs to null strings
   data[data==""] <- NA
+
+  # add cleaning attributes
+  attr(data, "clean_date") <- FALSE
+  attr(data, "clean_geography") <- FALSE
+  attr(data, "clean_taxonomy") <- FALSE
 
   # return dwca class object
   class(data) <- c("dwca", "data.frame")

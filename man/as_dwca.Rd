@@ -11,6 +11,8 @@ as_dwca(data)
 "scientificNameAuthorship", "eventDate", "country", "stateProvince",
 "decimalLatitude", "decimalLongitude", "habitat", "occurrenceRemarks",
 "associatedTaxa")}
+
+\item{drop_cols}{Logical. Drop all nonrequired columns. Default: TRUE.}
 }
 \value{
 An object of class 'dwca' (and 'data.frame').
