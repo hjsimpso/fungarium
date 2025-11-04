@@ -11,6 +11,14 @@ import_dwca(file, sep = "\\t", quote = "\\"", select = NULL, drop = NULL)
 "scientificNameAuthorship", "eventDate", "country", "stateProvince",
 "decimalLatitude", "decimalLongitude", "habitat", "occurrenceRemarks",
 "associatedTaxa")}
+
+\item{sep}{description}
+
+\item{quote}{...}
+
+\item{select}{description}
+
+\item{drop}{description}
 }
 \value{
 An object of class 'dwca' (and 'data.frame').
