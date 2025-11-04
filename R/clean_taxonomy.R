@@ -45,6 +45,9 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
   checkmate::assert_logical(refresh_db, max.len = 1)
   checkmate::assert_character(db_url, max.len = 1)
 
+  # get attributes
+  input_attributes <- attributes(data)
+
   # col files
   fungi_file <- "inst/extdata/Taxon_fungi_w_tax_hier.tsv"
   plant_file <- "inst/extdata/Taxon_plantae_w_tax_hier.tsv"
@@ -96,9 +99,13 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
   cat("Cleaning input taxon names...\n")
   data <- cbind(data, clean_taxonomy_cpp(data$scientificName, data$scientificNameAuthorship, col_data))
 
-  # return dwca class object
-  class(data) <- c("dwca", "data.frame")
-  data
+  # add cleaning attributes
+  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
+  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
+  attr(data, "clean_taxonomy") <- TRUE
+
+  # return output
+  return(data)
 }
 
 

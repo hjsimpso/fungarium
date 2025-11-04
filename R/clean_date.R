@@ -32,14 +32,21 @@
 clean_date <- function(data){
   # check args
   if (!inherits(data, "dwca")) {
-    stop("The 'data' slot must be of class 'dwca'. Use `as_dwca()` first.")
+    stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
   }
+
+  # get attributes
+  input_attributes <- attributes(data)
 
   # Call C++ function internally
   data <- cbind(data, clean_dates_cpp(data$eventDate))
 
+  # add cleaning attributes
+  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
+  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
+  attr(data, "clean_date") <- TRUE
+
   # return dwca class object
-  class(data) <- c("dwca", "data.frame")
-  data
+  return(data)
 }
 
