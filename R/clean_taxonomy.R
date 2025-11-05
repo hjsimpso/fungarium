@@ -31,7 +31,7 @@
 #' @examples
 #' library(fungarium)
 #' data(agaricales) #import sample data set
-#' clean_dates <- clean_date(as_dwca(agaricales)) #clean dates
+#' clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
 #'
 
 clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,

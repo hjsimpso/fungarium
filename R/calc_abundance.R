@@ -21,9 +21,9 @@
 #' @export
 #' @examples
 #' library(fungarium)
-#' data(agaricales_updated) #import sample data set
-#' agaricales_updated <- as_dwca(agaricales_updated) # convert to dwca object
-#' abund <- calc_abundance(agaricales_updated)
+#' data(agaricales) #import sample data set
+#' clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
+#' abund <- calc_abundance(clean_tax)
 
 calc_abundance <- function(data,
                            of="species_pres",
