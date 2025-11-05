@@ -76,6 +76,7 @@ clean_geography <- function(data,
   out$lat_res <- decimal_places(out$lat_parsed)
 
   #perform null test
+  cat("Performing 'null' coordinate test...\n")
   null_bool <- is.na(out$lon_raw)|is.na(out$lat_raw)|out$lon_raw==""|out$lat_raw==""
   if (T %in% null_bool){
     out[null_bool,]$coordinate_error <- "null"
@@ -84,6 +85,7 @@ clean_geography <- function(data,
   }
 
   #perform non-numeric test
+  cat("Performing 'non-numeric' coordinate test...\n")
   non_numeric_bool <- is.na(out$lon_parsed)|is.na(out$lat_parsed)
   non_numeric_bool <- non_numeric_bool&is.na(out$coordinate_error)
   if (T %in% non_numeric_bool){
@@ -92,7 +94,8 @@ clean_geography <- function(data,
     out[non_numeric_bool,]$lon_parsed <- NA
   }
 
-  #perform out_of_bounds coordinate teest
+  #perform out_of_bounds coordinate test
+  cat("Performing 'out_of_bounds' coordinate test...\n")
   out_of_bounds_bool <- out$lat_parsed>90|out$lat_parsed<(-90)|out$lon_parsed>180|out$lon_parsed<(-180)
   out_of_bounds_bool <- out_of_bounds_bool&is.na(out$coordinate_error)
   if (T %in% out_of_bounds_bool){
@@ -104,6 +107,7 @@ clean_geography <- function(data,
 
   #perform zero test
   if ("zero" %in% tests){
+    cat("Performing 'zero' coordinate test...\n")
     zero_bool <- out$lat_parsed==0&out$lon_parsed==0
     zero_bool <- zero_bool&is.na(out$coordinate_error)
     if (T %in% zero_bool){
@@ -115,6 +119,7 @@ clean_geography <- function(data,
 
   #perform equal test
   if ("equal" %in% tests){
+    cat("Performing 'equal' coordinate test...\n")
     equal_bool <- out$lat_parsed==out$lon_parsed
     equal_bool <- equal_bool&is.na(out$coordinate_error)
     if (T %in% zero_bool){
@@ -125,9 +130,11 @@ clean_geography <- function(data,
   }
 
   # harmonize country names
+  cat("Parsing country names...\n")
   out <- cbind(out,parse_geo_names(out))
 
   # predict blank countries based on on lat/lon
+  cat("Predicting country names based on coordinates...\n")
   out <- cbind(out[, c("lat_parsed", "lon_parsed", "lon_res", "lat_res", "coordinate_error")],
                parse_geo_names_from_coords(out))
 
