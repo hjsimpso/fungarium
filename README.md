@@ -12,8 +12,8 @@ commits](https://img.shields.io/github/commits-since/hjsimpso/fungarium/latest)
 
 <!-- badges: end -->
 
-An R package for enabling the use of fungarium collection data in
-comprehensive trait analyses.
+An R package for enhancing the utility of fungarium collections and
+community science observations in ecological analyses of fungi.
 
 ## Installing fungarium
 
@@ -24,17 +24,13 @@ remotes::install_github("hjsimpso/fungarium@*release") #install the latest funga
 remotes::install_github("hjsimpso/fungarium@main")
 ```
 
-## Examples and detailed guidance on package usage
-
-See [fungarium book](https://hjsimpso.github.io/fungarium_book/).
-
 ## Meta
 
--   Please cite: Simpson, H., Schilling, J. 2021. Using aggregated field
-    collection data and the novel R package FUNGARIUM to investigate
-    fungal fire-association. Mycologia 113(4):842-855. DOI:
-    10.1080/00275514.2021.1884816
--   This package is released with a [Contributor Code of
-    Conduct](https://github.com/hjsimpso/fungarium/blob/main/CODE_OF_CONDUCT.md).
-    By contributing to this project, you agree to abide by its terms.
--   Please report any bugs.
+- Please cite: Simpson, H., Schilling, J. 2021. Using aggregated field
+  collection data and the novel R package FUNGARIUM to investigate
+  fungal fire-association. Mycologia 113(4):842-855. DOI:
+  10.1080/00275514.2021.1884816
+- This package is released with a [Contributor Code of
+  Conduct](https://github.com/hjsimpso/fungarium/blob/main/CODE_OF_CONDUCT.md).
+  By contributing to this project, you agree to abide by its terms.
+- Please report any bugs.
