@@ -15,7 +15,7 @@
 #' class(dw)  # c("dwca", "data.frame")
 #' @export
 
-as_dwca <- function(data) {
+as_dwca <- function(data) { #TODO auto detect if input data has already been 'cleaned' - search for column names
   req_cols = c("scientificName", "scientificNameAuthorship", "eventDate",
                "country", "stateProvince", "decimalLatitude",
                "decimalLongitude", "habitat", "occurrenceRemarks",
@@ -69,7 +69,7 @@ as_dwca <- function(data) {
 #'
 #' @export
 
-import_dwca <- function(file, sep='\t', quote = "\"", select=NULL, drop=NULL) {
+import_dwca <- function(file, sep='\t', quote = "\"", select=NULL, drop=NULL) {#TODO auto detect if input data has already been 'cleaned' - search for column names
   req_cols = c("scientificName", "scientificNameAuthorship", "eventDate",
                "country", "stateProvince", "decimalLatitude",
                "decimalLongitude", "habitat", "occurrenceRemarks",
