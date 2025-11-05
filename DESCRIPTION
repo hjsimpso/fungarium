@@ -1,6 +1,6 @@
 Package: fungarium
 Title: An R package for enabling the use of fungal collection/observation data in comprehensive trait analyses
-Version: 3.0.0
+Version: 4.0.0
 Authors@R: 
     person(given = "Hunter",
            family = "Simpson",
