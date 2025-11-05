@@ -1,5 +1,5 @@
 Package: fungarium
-Title: An R package for enabling the use of fungal collection/observation data in comprehensive trait analyses
+Title: Facilitating use of fungarium data in ecological analyses
 Version: 4.0.0
 Authors@R: 
     person(given = "Hunter",
@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "hjsimpso6058@gmail.com",
            comment = c(ORCID = "0000-0003-1377-5916"))
-Description: Fungarium facilitates the use of digitized fungal collections (i.e. fungarium specimens) or observations (e.g. iNaturalist, MushroomObserver) for taxonomic, geographic, and temporal analyses of ecological traits in fungi (e.g. habitat, host, substrate associations).
+Description: An R package for enhancing the utility of fungarium collections and community science observations for ecological analyses of fungi. 
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
