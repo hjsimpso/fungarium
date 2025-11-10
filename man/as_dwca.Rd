@@ -21,7 +21,7 @@ An object of class 'dwca' (and 'data.frame').
 Validates and assigns the S3 class 'dwca' to a data.frame.
 }
 \examples{
-data <- data.frame(scientificName = "Quercus alba", occurrenceID = "123")
-dw <- as_dwca(data, required_cols = c("scientificName", "occurrenceID"))
-class(dw)  # c("dwca", "data.frame")
+library(fungarium)
+data(agaricales) #import sample data set
+data_dwca <- as_dwca(agaricales)
 }

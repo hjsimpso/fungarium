@@ -48,6 +48,6 @@ Parses species names...
 \examples{
 library(fungarium)
 data(agaricales) #import sample data set
-clean_dates <- clean_date(as_dwca(agaricales)) #clean dates
+clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
 
 }

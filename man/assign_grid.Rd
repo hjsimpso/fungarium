@@ -32,8 +32,7 @@ For cylindrical equal area see: https://proj.org/en/stable/operations/projection
 }
 \examples{
 library(fungarium)
-data(agaricales_updated) #import sample data set
-agaricales_updated <- as_dwca(agaricales_updated) # convert to dwca object
-agaricales_geo_clean <- clean_geography(agaricales_updated) #clean coordinates
-agaricales_gridded <- assign_grid(agaricales_geo_clean, 80000)
+data(agaricales) #import sample data set
+clean_geo <- clean_geography(as_dwca(agaricales)) #clean geo
+grid_data <- assign_grid(clean_geo, 80000L)
 }

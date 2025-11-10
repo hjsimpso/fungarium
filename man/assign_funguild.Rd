@@ -28,9 +28,9 @@ dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 }
 \examples{
 library(fungarium)
-data(agaricales_updated) #import sample dataset with updated taxon names
-agaricales_updated <- as_dwca(agaricales_updated) # convert to dwca object
-agaricales_fg <- assign_funguild(agaricales_updated) #get funguild assignments
+data(agaricales) #import sample data set
+clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
+funguild_data <- assign_funguild(clean_tax) #get funguild assignments
 
 }
 \references{

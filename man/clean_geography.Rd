@@ -53,8 +53,7 @@ Input coordinates are assumed to use WGS84 coordinate reference system.
 }
 \examples{
 library(fungarium)
-data(agaricales_updated) #import sample data set
-agaricales_updated <- as_dwca(agaricales_updated) # convert to dwca object
-agaricales_geo_clean <- clean_geo(agaricales_updated) #clean coordinates
+data(agaricales) #import sample data set
+clean_geo <- clean_geography(as_dwca(agaricales)) #clean geo
 
 }
