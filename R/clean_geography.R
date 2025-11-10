@@ -191,7 +191,8 @@ parse_geo_names <- function(data){
   checkmate::assert_true("stateProvince"%in%colnames(data))
 
   # clean up countries reference data
-  countries_ref <- sf::st_drop_geometry(rnaturalearth::ne_countries(scale="large", type = "map_units"))
+  countries_ref <- sf::st_drop_geometry(rnaturalearth::ne_countries(scale="large", type = "countries"))
+  # countries_ref <- dplyr::distinct(rbind(countries_ref, sf::st_drop_geometry(rnaturalearth::ne_countries(scale="small", type = "countries"))))
   continents <- countries_ref$continent # this preserves the continents list for parsing continent later (not the smoothest approach here)
   col_bool <- !(sapply(countries_ref, is.numeric))
   col_bool <- col_bool&!(colnames(countries_ref)%in%c("sovereignt", "type", "economy", "income_grp", "woe_note", "continent", "region_un", "subregion", "region_wb"))
