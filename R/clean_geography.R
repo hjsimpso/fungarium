@@ -80,70 +80,89 @@ clean_geography <- function(data,
   data$lat_res <- decimal_places(data$lat_parsed)
 
   #perform null test
-  cat("Performing 'null' coordinate test...\n")
-  null_bool <- is.na(out$lon_raw)|is.na(out$lat_raw)|out$lon_raw==""|out$lat_raw==""
+  null_bool <- is.na(data$decimalLongitude)|is.na(data$decimalLatitude)|data$decimalLongitude==""|data$decimalLatitude==""
+  cat(sum(null_bool), " records found with null coordinates...\n")
   if (T %in% null_bool){
-    out[null_bool,]$coordinate_error <- "null"
-    out[null_bool,]$lat_parsed <- NA
-    out[null_bool,]$lon_parsed <- NA
+    data[null_bool,]$coordinate_error <- "null"
+    data[null_bool,]$lat_parsed <- NA
+    data[null_bool,]$lon_parsed <- NA
   }
+  rm(null_bool)
 
   #perform non-numeric test
-  cat("Performing 'non-numeric' coordinate test...\n")
-  non_numeric_bool <- is.na(out$lon_parsed)|is.na(out$lat_parsed)
-  non_numeric_bool <- non_numeric_bool&is.na(out$coordinate_error)
+  non_numeric_bool <- is.na(data$lon_parsed)|is.na(data$lat_parsed) # TODO sub commas for periods before non-numeric test to allow for alt decimal convention
+  non_numeric_bool <- non_numeric_bool&is.na(data$coordinate_error)
+  cat(sum(non_numeric_bool), " records found with non-numeric coordinates...\n")
   if (T %in% non_numeric_bool){
-    out[non_numeric_bool,]$coordinate_error <- "non_numeric"
-    out[non_numeric_bool,]$lat_parsed <- NA
-    out[non_numeric_bool,]$lon_parsed <- NA
+    data[non_numeric_bool,]$coordinate_error <- "non_numeric"
+    data[non_numeric_bool,]$lat_parsed <- NA
+    data[non_numeric_bool,]$lon_parsed <- NA
   }
+  rm(non_numeric_bool)
 
   #perform out_of_bounds coordinate test
-  cat("Performing 'out_of_bounds' coordinate test...\n")
-  out_of_bounds_bool <- out$lat_parsed>90|out$lat_parsed<(-90)|out$lon_parsed>180|out$lon_parsed<(-180)
-  out_of_bounds_bool <- out_of_bounds_bool&is.na(out$coordinate_error)
+  out_of_bounds_bool <- data$lat_parsed>90|data$lat_parsed<(-90)|data$lon_parsed>180|data$lon_parsed<(-180)
+  out_of_bounds_bool <- out_of_bounds_bool&is.na(data$coordinate_error)
+  cat(sum(out_of_bounds_bool), " records found with out-of-bounds coordinates...\n")
   if (T %in% out_of_bounds_bool){
-    out[out_of_bounds_bool,]$coordinate_error <- "out_of_bounds"
-    out[out_of_bounds_bool,]$lat_parsed <- NA
-    out[out_of_bounds_bool,]$lon_parsed <- NA
-
+    data[out_of_bounds_bool,]$coordinate_error <- "out_of_bounds"
+    data[out_of_bounds_bool,]$lat_parsed <- NA
+    data[out_of_bounds_bool,]$lon_parsed <- NA
   }
+  rm(out_of_bounds_bool)
 
   #perform zero test
   if ("zero" %in% tests){
-    cat("Performing 'zero' coordinate test...\n")
-    zero_bool <- out$lat_parsed==0&out$lon_parsed==0
-    zero_bool <- zero_bool&is.na(out$coordinate_error)
+    zero_bool <- data$lat_parsed==0&data$lon_parsed==0
+    zero_bool <- zero_bool&is.na(data$coordinate_error)
+    cat(sum(zero_bool), " records found with zero coordinates...\n")
     if (T %in% zero_bool){
-      out[zero_bool,]$coordinate_error <- "zero"
-      out[zero_bool,]$lat_parsed <- NA
-      out[zero_bool,]$lon_parsed <- NA
+      data[zero_bool,]$coordinate_error <- "zero"
+      data[zero_bool,]$lat_parsed <- NA
+      data[zero_bool,]$lon_parsed <- NA
     }
+    rm(zero_bool)
   }
 
   #perform equal test
   if ("equal" %in% tests){
-    cat("Performing 'equal' coordinate test...\n")
-    equal_bool <- out$lat_parsed==out$lon_parsed
-    equal_bool <- equal_bool&is.na(out$coordinate_error)
-    if (T %in% zero_bool){
-      out[equal_bool,]$coordinate_error <- "equal"
-      out[equal_bool,]$lat_parsed <- NA
-      out[equal_bool,]$lon_parsed <- NA
+    equal_bool <- data$lat_parsed==data$lon_parsed
+    equal_bool <- equal_bool&is.na(data$coordinate_error)
+    cat(sum(equal_bool), " records found with equal coordinates...\n")
+    if (T %in% equal_bool){
+      data[equal_bool,]$coordinate_error <- "equal"
+      data[equal_bool,]$lat_parsed <- NA
+      data[equal_bool,]$lon_parsed <- NA
     }
+    rm(equal_bool)
   }
 
   # harmonize country names
-  cat("Parsing country names...\n")
-  out <- cbind(out,parse_geo_names(out))
+  country_not_na_bool <- !is.na(data$country)
+  cat(sum(country_not_na_bool), " records found with country name...\n")
+  if (T%in%country_not_na_bool){
+    cat("Parsing country names...\n")
+    parsed_geo <- parse_geo_names(data[,c("country", "stateProvince")])
+    data$country_parsed[country_not_na_bool] <- parsed_geo$country_parsed[country_not_na_bool]
+    data$sov_parsed[country_not_na_bool] <- parsed_geo$sov_parsed[country_not_na_bool]
+    data$iso3_parsed[country_not_na_bool] <- parsed_geo$iso3_parsed[country_not_na_bool]
+    data$continent_parsed[country_not_na_bool] <- parsed_geo$continent_parsed[country_not_na_bool]
+  }
+  rm(country_not_na_bool)
 
   # predict blank countries based on on lat/lon
-  cat("Predicting country names based on coordinates...\n")
-  out <- cbind(out[, c("lat_parsed", "lon_parsed", "lon_res", "lat_res", "coordinate_error")],
-               parse_geo_names_from_coords(out))
-
-  # return results appended to input df
-  data <- cbind(data, out)
+  country_na_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&is.na(data$country_parsed)
+  cat(sum(country_na_bool), " records found with coordinates but no parsable country name...\n")
+  if (T%in%country_na_bool){
+    cat("Predicting country names based on coordinates...\n")
+    parsed_geo <- parse_geo_names_from_coords(data[,c("lat_parsed", "lon_parsed", "country_parsed")])
+    data$country_parsed[country_na_bool] <- parsed_geo$country_parsed[country_na_bool]
+    data$sov_parsed[country_na_bool] <- parsed_geo$sov_parsed[country_na_bool]
+    data$iso3_parsed[country_na_bool] <- parsed_geo$iso3_parsed[country_na_bool]
+    data$continent_parsed[country_na_bool] <- parsed_geo$continent_parsed[country_na_bool]
+    data$closest_country_distance[country_na_bool] <- parsed_geo$closest_country_distance[country_na_bool]
+  }
+  rm(country_na_bool)
 
   # add cleaning attributes
   attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
@@ -168,8 +187,8 @@ decimal_places <- function(x) {
 parse_geo_names <- function(data){
   # check args
   checkmate::assert_data_frame(data)
-  checkmate::assert_true("country_raw"%in%colnames(data))
-  checkmate::assert_true("state_province_raw"%in%colnames(data))
+  checkmate::assert_true("country"%in%colnames(data))
+  checkmate::assert_true("stateProvince"%in%colnames(data))
 
   # clean up countries reference data
   countries_ref <- sf::st_drop_geometry(rnaturalearth::ne_countries(scale="large", type = "map_units"))
