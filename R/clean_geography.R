@@ -197,10 +197,10 @@ parse_geo_names <- function(data){
   col_bool <- !(sapply(countries_ref, is.numeric))
   col_bool <- col_bool&!(colnames(countries_ref)%in%c("sovereignt", "type", "economy", "income_grp", "woe_note", "continent", "region_un", "subregion", "region_wb"))
   countries_ref <- countries_ref[,col_bool]
-  countries_ref_clean <- as.data.frame(sapply(countries_ref, str_clean))
+  countries_ref_clean <- as.data.frame(lapply(countries_ref, str_clean, periods = ""), stringsAsFactors = FALSE)
 
   # make unique list of countries from input
-  country_u <- unique(data$country_raw)
+  country_u <- unique(data$country)
   country_u_df <- data.frame(country_u = country_u,  country_u_clean=str_clean(country_u, periods = ""))
 
   # create new output cols
@@ -230,11 +230,16 @@ parse_geo_names <- function(data){
     }
   }
 
-  # create output df
-  out <- dplyr::left_join(data[,c("country_raw"), drop=FALSE], country_u_df, by = dplyr::join_by(country_raw == country_u))
+  # map back to original rows using match (fast and avoids joins that copy entire data frames)
+  idx_map <- match(data$country, country_u_df$country_u)
+  out <- data.frame(
+    country_parsed = country_u_df$country_parsed[idx_map],
+    sov_parsed = country_u_df$sov_parsed[idx_map],
+    iso3_parsed = country_u_df$iso3_parsed[idx_map],
+    continent_parsed = country_u_df$continent_parsed[idx_map]
+  )
 
-  # return output
-  return(out[,c("country_parsed", "sov_parsed", "iso3_parsed", "continent_parsed")])
+  return(out)
 }
 
 
@@ -244,8 +249,6 @@ parse_geo_names_from_coords <- function(data){
   checkmate::assert_true("lat_parsed"%in%colnames(data))
   checkmate::assert_true("lon_parsed"%in%colnames(data))
   checkmate::assert_true("country_parsed"%in%colnames(data))
-  checkmate::assert_true("sov_parsed"%in%colnames(data))
-  checkmate::assert_true("iso3_parsed"%in%colnames(data))
 
   #-----------------------------------------------------------------------------
   # countries
@@ -255,8 +258,10 @@ parse_geo_names_from_coords <- function(data){
 
   if (T%in%country_na_bool){
     # get country geometry data
-    countries_shp <- rnaturalearth::ne_countries(scale="large", type = "map_units")
+    countries_shp <- rnaturalearth::ne_countries(scale="large", type = "countries")
     countries_shp <- sf::st_make_valid(countries_shp) # Fix invalid geometries
+    keep_cols <- c("admin", "adm0_a3", "sov_a3", "continent")
+    countries_shp <- countries_shp[,keep_cols]
 
     # prep unique set of coords to test
     country_na <- dplyr::distinct(data[country_na_bool, c("lat_parsed", "lon_parsed")])
@@ -270,12 +275,11 @@ parse_geo_names_from_coords <- function(data){
     country_na$continent_parsed <- countries_shp$continent[within_country]
 
     # create output
-    out1 <- dplyr::left_join(data[,c("lat_parsed", "lon_parsed")], country_na, by = c("lat_parsed", "lon_parsed"))
-    data[country_na_bool,]$country_parsed <- out1[country_na_bool,]$country_parsed
-    data[country_na_bool,]$iso3_parsed <- out1[country_na_bool,]$iso3_parsed
-    data[country_na_bool,]$sov_parsed <- out1[country_na_bool,]$sov_parsed
-    data[country_na_bool,]$continent_parsed <- out1[country_na_bool,]$continent_parsed
-
+    match_idx <- match(paste0(data$lat_parsed, "_", data$lon_parsed), paste0(country_na$lat_parsed, "_", country_na$lon_parsed))
+    data$country_parsed[country_na_bool] <- country_na$country_parsed[match_idx[country_na_bool]]
+    data$iso3_parsed[country_na_bool] <- country_na$iso3_parsed[match_idx[country_na_bool]]
+    data$sov_parsed[country_na_bool] <- country_na$sov_parsed[match_idx[country_na_bool]]
+    data$continent_parsed[country_na_bool] <- country_na$continent_parsed[match_idx[country_na_bool]]
   }
 
   # get closest country for points not 'within' country geometry
