@@ -29,7 +29,7 @@
 #' clean_dates <- clean_date(as_dwca(agaricales)) #clean dates
 #'
 
-clean_date <- function(data){
+clean_date <- function(data){ # TODO make parsing_error something more date-specific (e.g., date_error)
   # check args
   if (!inherits(data, "dwca")) {
     stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
