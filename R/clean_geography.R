@@ -62,18 +62,22 @@ clean_geography <- function(data,
   input_attributes <- attributes(data)
 
   # make output data frame
-  out <- data.frame(lat_raw = data$decimalLatitude, lon_raw = data$decimalLongitude, country_raw = data$country, state_province_raw = data$stateProvince)
-  out$lat_parsed <- as.numeric(NA)
-  out$lon_parsed <- as.numeric(NA)
-  out$lon_res <- as.integer(NA)
-  out$lat_res <- as.integer(NA)
-  out$coordinate_error <- as.character(NA)
+  data$lat_parsed <- as.numeric(NA)
+  data$lon_parsed <- as.numeric(NA)
+  data$lon_res <- as.integer(NA)
+  data$lat_res <- as.integer(NA)
+  data$coordinate_error <- as.character(NA)
+  data$country_parsed <- as.character(NA)
+  data$sov_parsed <- as.character(NA)
+  data$iso3_parsed <- as.character(NA)
+  data$continent_parsed <- as.character(NA)
+  data$closest_country_distance <- as.numeric(NA)
 
   # make lat and lon numeric and detect resolution
-  out$lon_parsed <- suppressWarnings(as.numeric(out$lon_raw))
-  out$lat_parsed <- suppressWarnings(as.numeric(out$lat_raw))
-  out$lon_res <- decimal_places(out$lon_parsed)
-  out$lat_res <- decimal_places(out$lat_parsed)
+  data$lon_parsed <- suppressWarnings(as.numeric(data$decimalLongitude))
+  data$lat_parsed <- suppressWarnings(as.numeric(data$decimalLatitude))
+  data$lon_res <- decimal_places(data$lon_parsed)
+  data$lat_res <- decimal_places(data$lat_parsed)
 
   #perform null test
   cat("Performing 'null' coordinate test...\n")
