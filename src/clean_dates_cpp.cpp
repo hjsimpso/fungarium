@@ -86,7 +86,7 @@ int get_month_from_name(const std::string& month_raw) {
     } else {
         throw std::runtime_error("Invalid month name. Could not be mapped to integer value.");
     }
-};
+}
 
 
 std::string to_utc_date(std::string_view s) {
@@ -650,7 +650,4 @@ Rcpp::DataFrame clean_dates_cpp(const Rcpp::CharacterVector& input_dates) {
     } catch (...) {
         Rcpp::stop("Unknown C++ exception");
     }
-};
-
-
-
+}
