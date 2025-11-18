@@ -11,6 +11,8 @@
 #include <map>
 #include <unordered_map>
 #include <sstream>
+#include <algorithm>
+#include <atomic>
 
 //Rcpp
 #include <Rcpp.h>
@@ -18,6 +20,7 @@
 // Vendor
 #include <boost/regex.hpp>
 #include <rapidfuzz/fuzz.hpp>
+#include <omp.h>
 
 // fungarium
 #include "helpers.h"
@@ -622,8 +625,80 @@ class TaxonResults { // TODO add match error
                     DEBUG_PRINT(i%print_freq);
                 }
             }
+            Rcpp::Rcout << std::endl; // end progress line cleanly
             return 0;
         };
+
+        int clean_taxonomy_parallel(int n_threads = 1) {
+            unsigned long n = taxon_raw_u.size();
+            n_threads = std::min(n_threads, static_cast<int>(n));
+
+            // Compute chunk boundaries
+            std::vector<unsigned long> chunk_starts;
+            for (int t = 0; t < n_threads; ++t) {
+                chunk_starts.push_back((n * t) / n_threads);
+            }
+            chunk_starts.push_back(n); // sentinel for end
+
+            // Shared atomic counter for progress
+            std::atomic<unsigned long> progress_count(0);
+            const unsigned long print_freq = std::max(1UL, n / 20); // update every 5%
+
+            auto print_progress_bar_atomic = [&](unsigned long current, unsigned long total) {
+                double fraction = static_cast<double>(current) / total;
+                int barWidth = 50;
+                int pos = static_cast<int>(barWidth * fraction);
+                Rcpp::Rcout << "[";
+                for (int i = 0; i < barWidth; ++i) {
+                    if (i < pos) Rcpp::Rcout << "=";
+                    else if (i == pos) Rcpp::Rcout << ">";
+                    else Rcpp::Rcout << " ";
+                }
+                Rcpp::Rcout << "] " << int(fraction * 100.0) << "% (" << current << "/" << total << ")\r";
+                Rcpp::Rcout.flush();
+            };
+
+
+            // Parallel region
+            #pragma omp parallel num_threads(n_threads)
+            {
+                int tid = omp_get_thread_num();
+                unsigned long start = chunk_starts[tid];
+                unsigned long end   = chunk_starts[tid + 1];
+
+                std::vector<TaxonResult> local_results;
+                local_results.reserve(end - start);
+
+                for (unsigned long i = start; i < end; ++i) {
+                    DEBUG_PRINT("Cleaning taxon " + std::to_string(i+1-start) + " of " + std::to_string(end-start) + ": " + taxon_raw_u[i].first + " ...");
+
+                    TaxonResult taxon_result(taxon_raw_u[i].first, taxon_raw_u[i].second, col_data, col_idx);
+                    taxon_result.clean_taxonomy();
+                    local_results.push_back(std::move(taxon_result));
+
+                    // Update global progress counter
+                    unsigned long current = ++progress_count;
+                    if (current % print_freq == 0 || current == n) {
+                        #pragma omp critical(progress_output)
+                        {
+                            print_progress_bar_atomic(current, n);
+                        }
+                    }
+                }
+
+                // Merge results back into main structure
+                #pragma omp critical
+                {
+                    for (auto &res : local_results) {
+                        add_result(res);
+                        DEBUG_PRINT(" Done.");
+
+                    }
+                }
+            }
+            Rcpp::Rcout << std::endl; // end progress line cleanly
+            return 0;
+        }
 };
 
 
@@ -633,8 +708,9 @@ class TaxonResults { // TODO add match error
 // Clean taxonomy function
 //======================================================================
 // [[Rcpp::depends(BH)]]
+// [[Rcpp::plugins(openmp)]]
 // [[Rcpp::export]]
-Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data) {
+Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data, int n_threads = 1) {
     try{
         DEBUG_PRINT("Cleaning taxonomy...");
         std::vector<std::string> input_taxon_names_cpp = convert_r_vec_to_cpp_vec(input_taxon_names);
@@ -642,7 +718,11 @@ Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_name
         ColData col_data = convert_r_df_to_cpp_map(input_col_data);
         COLIndex col_idx(col_data);
         TaxonResults taxon_results(input_taxon_names_cpp, input_authority_cpp, col_data, col_idx);
-        taxon_results.clean_taxonomy();
+        if (n_threads>1){
+            taxon_results.clean_taxonomy_parallel(n_threads);
+        } else{
+            taxon_results.clean_taxonomy();
+        }
         DEBUG_PRINT("Taxonomy cleaned.");
         return taxon_results.to_data_frame();
     } catch (std::exception &ex) {
@@ -650,4 +730,4 @@ Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_name
     } catch (...) {
         Rcpp::stop("Unknown C++ exception");
     }
-};
+}

@@ -35,7 +35,7 @@
 #'
 
 clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
-                           db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip"){
+                           db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip", threads = 1L){
   # check args
   if (!inherits(data, "dwca")) {
     stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
@@ -44,7 +44,8 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
   checkmate::assert_choice(kingdom, c("Fungi", "Plantae"))
   checkmate::assert_logical(refresh_db, max.len = 1)
   checkmate::assert_character(db_url, max.len = 1)
-
+  checkmate::assert_integer(threads, max.len = 1, lower = 1)
+  
   # get attributes
   input_attributes <- attributes(data)
 
@@ -91,13 +92,13 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
     } else{
       col_data_file <- plant_file
     }
-    col_data <- data.table::fread(col_data_file, sep="\t", quote="", data.table = F)
+    col_data <- data.table::fread(col_data_file, sep="\t", quote="", data.table = F, nThread = threads, showProgress = FALSE)
   }
 
 
   # Call cpp function
-  cat("Cleaning input taxon names...\n")
-  data <- cbind(data, clean_taxonomy_cpp(data$scientificName, data$scientificNameAuthorship, col_data))
+  cat("Cleaning input taxon names...\n") # TODO print number of unique names in input data
+  data <- cbind(data, clean_taxonomy_cpp(data$scientificName, data$scientificNameAuthorship, col_data, threads))
 
   # add cleaning attributes
   attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
