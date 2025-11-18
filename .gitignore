@@ -9,3 +9,4 @@ r_old/
 col_dwca/
 inst/extdata/Taxon*.tsv
 testing/
+.RData
