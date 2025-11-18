@@ -191,7 +191,7 @@ parse_geo_names <- function(data){
   checkmate::assert_true("stateProvince"%in%colnames(data))
 
   # clean up countries reference data
-  countries_ref <- sf::st_drop_geometry(rnaturalearth::ne_countries(scale="large", type = "countries"))
+  countries_ref <- as.data.frame(sf::st_drop_geometry(rnaturalearth::ne_countries(scale="large", type = "countries")))
   # countries_ref <- dplyr::distinct(rbind(countries_ref, sf::st_drop_geometry(rnaturalearth::ne_countries(scale="small", type = "countries"))))
   continents <- countries_ref$continent # this preserves the continents list for parsing continent later (not the smoothest approach here)
   col_bool <- !(sapply(countries_ref, is.numeric))
@@ -258,7 +258,7 @@ parse_geo_names_from_coords <- function(data){
 
   if (T%in%country_na_bool){
     # get country geometry data
-    countries_shp <- rnaturalearth::ne_countries(scale="large", type = "countries")
+    countries_shp <- rnaturalearth::ne_countries(scale="large", type = "countries", returnclass = "sf")
     countries_shp <- sf::st_make_valid(countries_shp) # Fix invalid geometries
     keep_cols <- c("admin", "adm0_a3", "sov_a3", "continent")
     countries_shp <- countries_shp[,keep_cols]
@@ -298,10 +298,6 @@ parse_geo_names_from_coords <- function(data){
     countries_shp <- sf::st_transform(countries_shp, 8857)
     country_na <- sf::st_transform(country_na, 8857)
 
-    # Simplify geometry to reduce vertices (keep X% of detail)
-    countries_shp <- rmapshaper::ms_simplify(countries_shp, keep = 0.50, keep_shapes = TRUE)
-
-
     # get closest feature
     cat("Finding countries closest to coordinates...\n")
     closest_country_index <- sf::st_nearest_feature(sf::st_geometry(country_na), sf::st_geometry(countries_shp))
@@ -320,7 +316,6 @@ parse_geo_names_from_coords <- function(data){
       cat("[", paste0(rep("=", floor((max(idx_seq)/nrow(country_na))*20)), collapse=""), paste0(rep(" ", 20 - floor((max(idx_seq)/nrow(country_na))*20)), collapse=""), "] ", ceiling(max(idx_seq)/nrow(country_na)*100), "%\r", sep = "")
     }
     cat("\n")
-    # country_na$closest_country_distance <- sf::st_distance(sf::st_geometry(country_na), sf::st_geometry(countries_shp)[closest_country_index], by_element = TRUE)
     country_na <- sf::st_drop_geometry(country_na)
     rm(countries_shp)
 
@@ -336,49 +331,6 @@ parse_geo_names_from_coords <- function(data){
     data$closest_country_distance <- rep(NA, nrow(data))
     data$closest_country_distance[country_na_bool] <- country_na$closest_country_distance[match_idx[country_na_bool]]
   }
-
-
-
   # return output
   return(data[,c("country_parsed", "sov_parsed", "iso3_parsed", "continent_parsed", "closest_country_distance")])
 }
-
-
-# find_closest_country <- function(data, countries_shp){
-#   # check args
-#   checkmate::assert_data_frame(data)
-#   checkmate::assert_true("lat_parsed"%in%colnames(data))
-#   checkmate::assert_true("lon_parsed"%in%colnames(data))
-#   checkmate::assert_true("country_parsed"%in%colnames(data))
-#
-#   # get records with coords but no country
-#   country_na_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&is.na(data$country_parsed)
-#
-#   if (T%in%country_na_bool){
-#     # prep unique set of coords to test
-#     country_na <- dplyr::distinct(data[country_na_bool, c("lat_parsed", "lon_parsed")])
-#     country_na <- sf::st_as_sf(country_na, coords = c("lon_parsed", "lat_parsed"), crs = sf::st_crs(countries_shp), remove=F)
-#
-#     # get closest feature
-#     closest_country_index <- sf::st_nearest_feature(country_na, countries_shp)
-#     country_na$country_parsed <- countries_shp$admin[closest_country_index]
-#     country_na$iso3_parsed <- countries_shp$adm0_a3[closest_country_index]
-#     country_na$sov_parsed <- countries_shp$sov_a3[closest_country_index]
-#     country_na$continent_parsed <- countries_shp$continent[closest_country_index]
-#     country_na$closest_country_distance <- sf::st_distance(country_na, countries_shp[closest_country_index,], by_element = TRUE)
-#     country_na <- sf::st_drop_geometry(country_na)
-#
-#     # create output
-#     match_idx <- match(paste0(data$lat_parsed, "_", data$lon_parsed), paste0(country_na$lat_parsed, "_", country_na$lon_parsed))
-#     data$country_parsed[country_na_bool] <- country_na$country_parsed[match_idx[country_na_bool]]
-#     data$iso3_parsed[country_na_bool] <- country_na$iso3_parsed[match_idx[country_na_bool]]
-#     data$sov_parsed[country_na_bool] <- country_na$sov_parsed[match_idx[country_na_bool]]
-#     data$continent_parsed[country_na_bool] <- country_na$continent_parsed[match_idx[country_na_bool]]
-#     data$closest_country_distance <- rep(NA, nrow(data))
-#     data$closest_country_distance[country_na_bool] <- country_na$closest_country_distance[match_idx[country_na_bool]]
-#   }
-#
-#   # return output
-#   return(data[,c("country_parsed", "sov_parsed", "iso3_parsed", "continent_parsed", "closest_country_distance")])
-#
-# }
