@@ -32,5 +32,5 @@ Suggests:
     jsonlite,
     xml2
 VignetteBuilder: knitr
-LinkingTo: Rcpp
+LinkingTo: Rcpp, BH
 SystemRequirements: C++17
