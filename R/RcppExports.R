@@ -5,7 +5,7 @@ clean_dates_cpp <- function(input_dates) {
     .Call(`_fungarium_clean_dates_cpp`, input_dates)
 }
 
-clean_taxonomy_cpp <- function(input_taxon_names, input_authority, input_col_data) {
-    .Call(`_fungarium_clean_taxonomy_cpp`, input_taxon_names, input_authority, input_col_data)
+clean_taxonomy_cpp <- function(input_taxon_names, input_authority, input_col_data, n_threads = 1L) {
+    .Call(`_fungarium_clean_taxonomy_cpp`, input_taxon_names, input_authority, input_col_data, n_threads)
 }
 

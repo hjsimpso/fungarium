@@ -22,22 +22,23 @@ BEGIN_RCPP
 END_RCPP
 }
 // clean_taxonomy_cpp
-Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data);
-RcppExport SEXP _fungarium_clean_taxonomy_cpp(SEXP input_taxon_namesSEXP, SEXP input_authoritySEXP, SEXP input_col_dataSEXP) {
+Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data, int n_threads);
+RcppExport SEXP _fungarium_clean_taxonomy_cpp(SEXP input_taxon_namesSEXP, SEXP input_authoritySEXP, SEXP input_col_dataSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type input_taxon_names(input_taxon_namesSEXP);
     Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type input_authority(input_authoritySEXP);
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type input_col_data(input_col_dataSEXP);
-    rcpp_result_gen = Rcpp::wrap(clean_taxonomy_cpp(input_taxon_names, input_authority, input_col_data));
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(clean_taxonomy_cpp(input_taxon_names, input_authority, input_col_data, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_fungarium_clean_dates_cpp", (DL_FUNC) &_fungarium_clean_dates_cpp, 1},
-    {"_fungarium_clean_taxonomy_cpp", (DL_FUNC) &_fungarium_clean_taxonomy_cpp, 3},
+    {"_fungarium_clean_taxonomy_cpp", (DL_FUNC) &_fungarium_clean_taxonomy_cpp, 4},
     {NULL, NULL, 0}
 };
 
