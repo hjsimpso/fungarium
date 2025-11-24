@@ -13,6 +13,7 @@
 #include <sstream>
 #include <algorithm>
 #include <atomic>
+#include <limits>
 
 //Rcpp
 #include <Rcpp.h>
@@ -59,6 +60,32 @@ struct COLFuzzyMatch{
 // Constants
 //======================================================================
 const boost::regex species_hypothesis_regex = boost::regex("^SH[0-9]+\\.[0-9]+FU$",boost::regex_constants::optimize);
+
+//======================================================================
+// Simple hierarchy container
+//======================================================================
+struct Hier {
+    std::string specificEpithet;
+    std::string scientificNameAuthorship;
+    std::string species;
+    std::string genus;
+    std::string family;
+    std::string order;
+    std::string class_;
+    std::string phylum;
+    std::string kingdom;
+
+    Hier() :
+        specificEpithet(""),
+        scientificNameAuthorship(""),
+        species(""),
+        genus(""),
+        family(""),
+        order(""),
+        class_(""),
+        phylum(""),
+        kingdom("") {}
+};
 
 //======================================================================
 // Helpers
@@ -111,6 +138,9 @@ ColData read_col_data_file(const std::string& filename) {
 }
 
 
+//======================================================================
+// COLIndex class (now builds hierarchy memoized)
+//======================================================================
 class COLIndex {
     public:
         std::unordered_map<std::string, std::vector<size_t>> sci_full_to_idx;
@@ -120,10 +150,22 @@ class COLIndex {
         std::vector<std::string> full_names;
         std::vector<std::string> partial_names;
 
+        // New: direct maps for hierarchy building
+        std::unordered_map<std::string, std::string> parent_of; // taxonID -> parentID
+        std::unordered_map<std::string, std::string> rank_of;   // taxonID -> taxonRank (lowercase)
+        std::unordered_map<std::string, std::string> name_of;   // taxonID -> scientificName
+
+        // Precomputed hierarchy: taxonID -> Hier
+        std::unordered_map<std::string, Hier> hierarchy;
+
+        // sentinel for not found
+        static constexpr size_t npos = std::numeric_limits<size_t>::max();
+
         COLIndex(const ColData& col_data) {
             // Check required columns exist
             std::vector<std::string> required_cols = {
-                "dwc:scientificName", "dwc:genericName", "dwc:specificEpithet", "dwc:infraspecificEpithet", "dwc:taxonID"
+                "dwc:scientificName", "dwc:genericName", "dwc:specificEpithet", "dwc:infraspecificEpithet", "dwc:taxonID",
+                "dwc:parentNameUsageID", "dwc:taxonRank", "dwc:taxonomicStatus", "dwc:scientificNameAuthorship"
             };
             for (const auto& col : required_cols) {
                 if (col_data.find(col) == col_data.end()) {
@@ -136,17 +178,33 @@ class COLIndex {
             const auto& species   = col_data.at("dwc:specificEpithet");
             const auto& infra     = col_data.at("dwc:infraspecificEpithet");
             const auto& taxon_ids = col_data.at("dwc:taxonID");
-        
+            const auto& parent_ids = col_data.at("dwc:parentNameUsageID");
+            const auto& ranks = col_data.at("dwc:taxonRank");
+            const auto& auths = col_data.at("dwc:scientificNameAuthorship");
+
             size_t n = sci_names.size();
             full_names.reserve(n);
             partial_names.reserve(n);
-        
+
+            // First pass: add records & populate raw maps
             for (size_t i = 0; i < n; ++i) {
                 const std::string& full = sci_names[i];
+                // build partial: genus + species (+ infra)
                 std::string partial = !species[i].empty() ? genus[i] + " " + species[i] : genus[i];
                 if (!infra[i].empty()) partial += " " + infra[i];
                 addRecord(full, partial, taxon_ids[i], i);
+
+                // fill parent/rank/name maps for hierarchy
+                name_of[taxon_ids[i]] = sci_names[i];
+                parent_of[taxon_ids[i]] = parent_ids[i];
+                // normalize rank to lowercase for comparisons
+                std::string r = ranks[i];
+                std::transform(r.begin(), r.end(), r.begin(), ::tolower);
+                rank_of[taxon_ids[i]] = r;
             }
+
+            // Build hierarchy once (memoized). This must be done after maps exist.
+            compute_full_hierarchy();
         }
 
         void addRecord(const std::string& full_name,
@@ -155,7 +213,10 @@ class COLIndex {
         {
             sci_full_to_idx[full_name].push_back(record_index);
             sci_partial_to_idx[partial_name].push_back(record_index);
-            taxon_id_to_idx.emplace(taxon_id, record_index);
+            // If taxon_id already exists, we keep the first index (consistent with original behavior)
+            if (taxon_id_to_idx.find(taxon_id) == taxon_id_to_idx.end()) {
+                taxon_id_to_idx.emplace(taxon_id, record_index);
+            }
 
             full_names.push_back(full_name);
             partial_names.push_back(partial_name);
@@ -177,8 +238,115 @@ class COLIndex {
             return {}; // empty vector if not found
         }
 
+        size_t get_idx_by_taxon_id(const std::string& tid) const {
+            auto it = taxon_id_to_idx.find(tid);
+            if (it == taxon_id_to_idx.end()) return npos;
+            return it->second;
+        }
 
-};
+        // Lookup precomputed Hier for taxon id. If not present, returns an empty Hier object.
+        Hier get_hierarchy(const std::string& tid) const {
+            auto it = hierarchy.find(tid);
+            if (it == hierarchy.end()) return Hier();
+            return it->second;
+        }
+
+    private:
+
+        // compute hierarchy for all taxonIDs using iterative stack + memoization
+        void compute_full_hierarchy() {
+            // For memoization: if hierarchy contains id, then computed.
+            // Iterate over all taxon IDs known in name_of
+            std::vector<std::string> all_ids;
+            all_ids.reserve(name_of.size());
+            for (const auto &kv : name_of) all_ids.push_back(kv.first);
+
+            for (const auto &tid : all_ids) {
+                if (hierarchy.find(tid) != hierarchy.end()) continue; // already computed
+                compute_hierarchy_for(tid);
+            }
+        }
+
+        // compute hierarchy for a single taxon id (iterative)
+        void compute_hierarchy_for(const std::string& start_tid) {
+            // If already computed, done.
+            if (hierarchy.find(start_tid) != hierarchy.end()) return;
+
+            // Track path of taxon ids until we find a computed node or reach root/missing
+            std::vector<std::string> path;
+            std::unordered_set<std::string> seen;
+            std::string cur = start_tid;
+            while (!cur.empty()) {
+                if (hierarchy.find(cur) != hierarchy.end()) break; // ancestor already computed
+                if (seen.find(cur) != seen.end()) {
+                    // cycle detected - break to avoid infinite loop
+                    DEBUG_PRINT("Cycle detected in taxonomy at id: " + cur);
+                    break;
+                }
+                seen.insert(cur);
+                path.push_back(cur);
+
+                // advance
+                auto pit = parent_of.find(cur);
+                if (pit == parent_of.end() || pit->second.empty()) break;
+                cur = pit->second;
+            }
+
+            // We'll propagate hierarchy backward from ancestor (if available) or from scratch
+            Hier carry; // start empty
+            if (!cur.empty()) {
+                auto it = hierarchy.find(cur);
+                if (it != hierarchy.end()) {
+                    carry = it->second;
+                } else {
+                    // cur might be a node without a precomputed hierarchy (e.g., root or missing)
+                    // try to set carry using this cur node's own rank/name if present
+                    carry = Hier();
+                    fill_hier_with_node(cur, carry);
+                }
+            }
+
+            // now walk path in reverse (from ancestor -> start)
+            for (auto it = path.rbegin(); it != path.rend(); ++it) {
+                const std::string &node = *it;
+                // start from carry (ancestor), then augment with current node's rank if applicable
+                Hier h = carry; // copy
+                fill_hier_with_node(node, h);
+                hierarchy[node] = h;
+                carry = h;
+            }
+        }
+
+        // helper: if node has rank 'genus' set genus, etc. Also set species and specificEpithet where present.
+        void fill_hier_with_node(const std::string& node_tid, Hier& h) {
+            auto rit = rank_of.find(node_tid);
+            if (rit == rank_of.end()) return;
+            std::string r = rit->second; // already lowercased
+
+            // determine name for this node
+            auto nit = name_of.find(node_tid);
+            std::string name = (nit != name_of.end()) ? nit->second : "";
+
+            if (r == "species") {
+                if (h.species.empty()) h.species = name;
+            } else if (r == "genus") {
+                if (h.genus.empty()) h.genus = name;
+            } else if (r == "family") {
+                if (h.family.empty()) h.family = name;
+            } else if (r == "order") {
+                if (h.order.empty()) h.order = name;
+            } else if (r == "class") {
+                if (h.class_.empty()) h.class_ = name;
+            } else if (r == "phylum") {
+                if (h.phylum.empty()) h.phylum = name;
+            } else if (r == "kingdom") {
+                if (h.kingdom.empty()) h.kingdom = name;
+            } else {
+                // other ranks - ignore for the standard hierarchy, but species/ genus may be present in scientificName
+            }
+        }
+
+}; // end COLIndex
 
 
 
@@ -444,18 +612,47 @@ struct TaxonResult {
     void get_tax_hier(COLAcceptedTaxonID col_taxon_id){
         DEBUG_PRINT("Getting tax hieracrhy...");
 
-        COLRecord col_record = get_record_by_taxon_id(col_idx, col_taxon_id);
-        
-        specific_epithet_pres = col_record.specificEpithet;
-        species_pres = col_record.species;
-        authority_pres = col_record.scientificNameAuthorship;
-        genus_pres = col_record.genus;
-        family_pres = col_record.family;
-        order_pres = col_record.order;
-        class_pres = col_record.class_;
-        phylum_pres = col_record.phylum;
-        kingdom_pres = col_record.kingdom;
-        taxon_rank = col_record.taxonRank;
+        // Use precomputed hierarchy from COLIndex (fast O(1) lookup)
+        Hier h = col_idx.get_hierarchy(col_taxon_id);
+
+        // fill higher-level ranks from hierarchy struct
+        specific_epithet_pres = h.specificEpithet;
+        species_pres = h.species;
+        authority_pres = h.scientificNameAuthorship;
+        genus_pres = h.genus;
+        family_pres = h.family;
+        order_pres = h.order;
+        class_pres = h.class_;
+        phylum_pres = h.phylum;
+        kingdom_pres = h.kingdom;
+        taxon_rank = ""; // We can optionally fill the rank using col_idx.get_idx_by_taxon_id if desired
+
+        // If specific epithet or authority are empty in Hier, attempt to fetch directly from the COL data using the stored index
+        size_t idx = col_idx.get_idx_by_taxon_id(col_taxon_id);
+        if (idx != COLIndex::npos) {
+            // get specific epithet
+            auto it_sep = col_data.find("dwc:specificEpithet");
+            if (it_sep != col_data.end() && idx < it_sep->second.size() && specific_epithet_pres.empty()) {
+                specific_epithet_pres = it_sep->second[idx];
+            }
+            // get authority
+            auto it_auth = col_data.find("dwc:scientificNameAuthorship");
+            if (it_auth != col_data.end() && idx < it_auth->second.size() && authority_pres.empty()) {
+                authority_pres = it_auth->second[idx];
+            }
+            // get taxon rank
+            auto it_rank = col_data.find("dwc:taxonRank");
+            if (it_rank != col_data.end() && idx < it_rank->second.size()) {
+                taxon_rank = it_rank->second[idx];
+            }
+            // If species_pres empty, try to use scientificName at idx
+            if (species_pres.empty()) {
+                auto it_sci = col_data.find("dwc:scientificName");
+                if (it_sci != col_data.end() && idx < it_sci->second.size()) {
+                    species_pres = it_sci->second[idx];
+                }
+            }
+        }
     };
 
     COLRecord get_record_by_taxon_id(const COLIndex& idx,
@@ -470,10 +667,9 @@ struct TaxonResult {
 };
 
 
-
-
-
-
+//======================================================================
+// TaxonResults class
+//======================================================================
 class TaxonResults { // TODO add match error
     public:
         std::vector<std::pair<std::string, std::string>> taxon_raw_u; // unique taxon name + authority
@@ -701,13 +897,10 @@ class TaxonResults { // TODO add match error
         }
 };
 
-
-
-
 //======================================================================
 // Clean taxonomy function
 //======================================================================
-// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(BH)]]   // keep existing dependency markers
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::export]]
 Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_names, const Rcpp::CharacterVector& input_authority, const Rcpp::DataFrame& input_col_data, int n_threads = 1) {
@@ -716,7 +909,7 @@ Rcpp::DataFrame clean_taxonomy_cpp(const Rcpp::CharacterVector& input_taxon_name
         std::vector<std::string> input_taxon_names_cpp = convert_r_vec_to_cpp_vec(input_taxon_names);
         std::vector<std::string> input_authority_cpp = convert_r_vec_to_cpp_vec(input_authority);
         ColData col_data = convert_r_df_to_cpp_map(input_col_data);
-        COLIndex col_idx(col_data);
+        COLIndex col_idx(col_data); // builds hierarchy here (fast)
         TaxonResults taxon_results(input_taxon_names_cpp, input_authority_cpp, col_data, col_idx);
         if (n_threads>1){
             taxon_results.clean_taxonomy_parallel(n_threads);
