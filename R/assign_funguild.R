@@ -16,10 +16,7 @@
 #' @export
 #'
 #' @examples
-#' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
-#' funguild_data <- assign_funguild(clean_tax) #get funguild assignments
+#' TODO
 #'
 assign_funguild <- function(data,
                             url = "http://www.stbates.org/funguild_db.php",

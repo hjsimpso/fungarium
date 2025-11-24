@@ -21,10 +21,7 @@
 #' https://proj.org/en/stable/operations/projections/eqearth.html.
 #' For cylindrical equal area see: https://proj.org/en/stable/operations/projections/cea.html.
 #' @examples
-#' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean_geo <- clean_geography(as_dwca(agaricales)) #clean geo
-#' grid_data <- assign_grid(clean_geo, 80000L)
+#' TODO
 
 
 assign_grid <- function(data, 

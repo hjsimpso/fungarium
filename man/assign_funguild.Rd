@@ -27,10 +27,7 @@ Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed 
 dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 }
 \examples{
-library(fungarium)
-data(agaricales) #import sample data set
-clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
-funguild_data <- assign_funguild(clean_tax) #get funguild assignments
+TODO
 
 }
 \references{

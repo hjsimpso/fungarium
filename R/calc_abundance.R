@@ -17,10 +17,7 @@
 #' }
 #' @export
 #' @examples
-#' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
-#' abund <- calc_abundance(clean_tax)
+#' TODO
 
 calc_abundance <- function(data,
                            of="species_pres",

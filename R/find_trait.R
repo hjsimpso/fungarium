@@ -13,6 +13,9 @@
 #' @return           Filtered input data that matches search criteria.
 #' @export
 #'
+#' @examples
+#' TODO
+#' 
 
 find_trait <- function(data, metadata_cols=c("habitat", "occurrenceRemarks", "associatedTaxa"), pos_string,  neg_string=NULL, string_clean=TRUE){
   # check args

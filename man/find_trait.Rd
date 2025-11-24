@@ -31,3 +31,7 @@ find_trait(
 Find trait-relevant records (i.e., records with a particular substrate, host, or habitat association) in a data set of fungal collections/observations
 (e.g. \href{https://mycoportal.org}{MyCoPortal} or \href{https://www.gbif.org/}{GBIF} data sets).
 }
+\examples{
+TODO
+
+}
