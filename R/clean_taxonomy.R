@@ -34,7 +34,7 @@
 #' @examples
 #' library(fungarium)
 #' data(agaricales) #import sample data set
-#' clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
+#' clean_tax <- clean_taxonomy(agaricales) #clean taxonomy
 #'
 
 clean_taxonomy <- function(data, name_col = "scientificName", 
