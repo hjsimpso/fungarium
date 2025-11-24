@@ -112,71 +112,16 @@ clean_taxonomy <- function(data, name_col = "scientificName",
 
 # helpers
 select_kingdom <- function(col_data, kingdom){
-  kingdom_ids <- col_data[col_data$`dwc:scientificName`==kingdom,]$`dwc:taxonID` # kingdom
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`==kingdom_ids,]$`dwc:taxonID`) # all phyla within kingdom
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # class
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # order
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # family
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # genus
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # species
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:parentNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # subspecies
-  kingdom_ids <- c(kingdom_ids, col_data[col_data$`dwc:acceptedNameUsageID`%in%kingdom_ids,]$`dwc:taxonID`) # synonyms
-  return(col_data[col_data$`dwc:taxonID`%in%kingdom_ids,])
+  taxon_ids <- col_data[col_data$`dwc:scientificName`==kingdom,]$`dwc:taxonID` # kingdom
+  all_ids <- taxon_ids
+  while (length(taxon_ids)>0){
+    taxon_ids <- col_data[col_data$`dwc:parentNameUsageID`%in%taxon_ids,]$`dwc:taxonID`
+    all_ids <- c(all_ids, taxon_ids) 
+  }
+  all_ids <- c(all_ids, col_data[col_data$`dwc:acceptedNameUsageID`%in%all_ids,]$`dwc:taxonID`) # synonyms
+  return(col_data[col_data$`dwc:taxonID`%in%all_ids,])
 }
 
-assign_tax_hier <- function(col_data){
-  subspecies <- col_data[!col_data$`dwc:taxonRank`%in%c("species", "genus",
-                                                        "family", "order", "class",
-                                                        "phylum", "kingdom")&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(subspecies)[colnames(subspecies)=="dwc:scientificName"] <- "subspecies"
-  colnames(subspecies)[colnames(subspecies)=="dwc:parentNameUsageID"] <- "species_id"
-  species <- col_data[col_data$`dwc:taxonRank`=="species"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(species)[colnames(species)=="dwc:scientificName"] <- "species"
-  colnames(species)[colnames(species)=="dwc:parentNameUsageID"] <- "genus_id"
-  genera <- col_data[col_data$`dwc:taxonRank`=="genus"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(genera)[colnames(genera)=="dwc:scientificName"] <- "genus"
-  colnames(genera)[colnames(genera)=="dwc:parentNameUsageID"] <- "family_id"
-  families <- col_data[col_data$`dwc:taxonRank`=="family"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(families)[colnames(families)=="dwc:scientificName"] <- "family"
-  colnames(families)[colnames(families)=="dwc:parentNameUsageID"] <- "order_id"
-  orders <- col_data[col_data$`dwc:taxonRank`=="order"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(orders)[colnames(orders)=="dwc:scientificName"] <- "order"
-  colnames(orders)[colnames(orders)=="dwc:parentNameUsageID"] <- "class_id"
-  classes <- col_data[col_data$`dwc:taxonRank`=="class"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(classes)[colnames(classes)=="dwc:scientificName"] <- "class"
-  colnames(classes)[colnames(classes)=="dwc:parentNameUsageID"] <- "phylum_id"
-  phyla <- col_data[col_data$`dwc:taxonRank`=="phylum"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(phyla)[colnames(phyla)=="dwc:scientificName"] <- "phylum"
-  colnames(phyla)[colnames(phyla)=="dwc:parentNameUsageID"] <- "kingdom_id"
-  kingdom <- col_data[col_data$`dwc:taxonRank`=="kingdom"&col_data$`dwc:taxonomicStatus`=="accepted",]
-  colnames(kingdom)[colnames(kingdom)=="dwc:scientificName"] <- "kingdom"
-
-  # for accepted taxa
-  phyla_hier <- dplyr::left_join(phyla, kingdom[,c("dwc:taxonID", "kingdom")],
-                                 by=dplyr::join_by("kingdom_id" == "dwc:taxonID"))
-  class_hier <- dplyr::left_join(classes, phyla_hier[,c("dwc:taxonID", "kingdom", "phylum", "kingdom_id")],
-                                 by=dplyr::join_by("phylum_id" == "dwc:taxonID"))
-  order_hier <- dplyr::left_join(orders, class_hier[,c("dwc:taxonID", "kingdom", "phylum", "kingdom_id", "class", "phylum_id")],
-                                 by=dplyr::join_by("class_id" == "dwc:taxonID"))
-  family_hier <- dplyr::left_join(families, order_hier[,c("dwc:taxonID", "kingdom", "phylum", "kingdom_id", "class", "phylum_id", "order", "class_id")],
-                                  by=dplyr::join_by("order_id" == "dwc:taxonID"))
-  genus_hier <- dplyr::left_join(genera, family_hier[,c("dwc:taxonID", "kingdom", "phylum", "kingdom_id", "class", "phylum_id", "order", "class_id", "family", "order_id")],
-                                 by=dplyr::join_by("family_id" == "dwc:taxonID"))
-  species_hier <- dplyr::left_join(species, genus_hier[,c("dwc:taxonID", "kingdom", "phylum", "kingdom_id", "class", "phylum_id", "order", "class_id", "family", "order_id", "genus", "family_id")],
-                                   by=dplyr::join_by("genus_id" == "dwc:taxonID"))
-  subsp_hier <- dplyr::left_join(subspecies, species_hier[,c("dwc:taxonID", "kingdom", "phylum", "kingdom_id", "class", "phylum_id", "order", "class_id", "family", "order_id", "genus", "family_id", "species", "genus_id")],
-                                 by=dplyr::join_by("species_id" == "dwc:taxonID"))
-
-
-  accepted_taxa <- data.table::rbindlist(list(phyla_hier, class_hier, order_hier, family_hier,
-                                              genus_hier, species_hier, subsp_hier), fill = T)
-
-  out <- dplyr::left_join(col_data, accepted_taxa[, c("dwc:taxonID", "kingdom", "phylum",
-                                                      "class", "order", "family", "genus",
-                                                      "species")],
-                          by=dplyr::join_by("dwc:taxonID" == "dwc:taxonID"))
-  return(out)
-}
 
 cache_file <- function(file_name) {
   dir <- tools::R_user_dir("fungarium", which = "cache")
