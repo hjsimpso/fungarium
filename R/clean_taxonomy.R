@@ -67,15 +67,15 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
     # load and clean
     cat("Processing COL taxonomy db...\n")
     col_data_file <- "col_dwca/Taxon.tsv"
-    col_data <- data.table::fread(col_data_file, sep="\t", quote="", data.table = F)
+    col_data <- data.table::fread(col_data_file, sep="\t", quote="", data.table = F, nThread = threads)
     unlink("col_dwca", recursive = TRUE)
     fungi <- select_kingdom(col_data, "Fungi")
     fungi <- assign_tax_hier(fungi)
-    data.table::fwrite(fungi, fungi_file, sep = '\t', quote = FALSE)
+    data.table::fwrite(fungi, fungi_file, sep = '\t', quote = FALSE, nThread = threads)
 
     plants <- select_kingdom(col_data, "Plantae")
     plants <- assign_tax_hier(plants)
-    data.table::fwrite(plants, plant_file, sep = '\t', quote = FALSE)
+    data.table::fwrite(plants, plant_file, sep = '\t', quote = FALSE, nThread = threads)
 
     if (kingdom=="Fungi"){
       col_data <-  fungi
