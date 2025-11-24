@@ -12,14 +12,14 @@ assign_funguild(
 )
 }
 \arguments{
-\item{data}{\code{dwca} object with updated taxonomy.}
+\item{data}{\code{Data.frame}.}
 
 \item{url}{Character. URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.}
 
 \item{tax_cols}{Character. Column names containing taxonomic variables. Names must be in descending order of taxonomic rank. Default is c("phylum_pres", "class_pres", "order_pres", "family_pres", "genus_pres", "species_pres").}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{      Returns the input data.frame with FUNGuild assignments appended.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      Input `data.frame` with FUNGuild assignments appended.
 }\if{html}{\out{</div>}}
 }
 \description{

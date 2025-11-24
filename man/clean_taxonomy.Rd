@@ -2,17 +2,24 @@
 % Please edit documentation in R/clean_taxonomy.R
 \name{clean_taxonomy}
 \alias{clean_taxonomy}
-\title{Clean and harmonize species names}
+\title{Clean and harmonize taxon names}
 \usage{
 clean_taxonomy(
   data,
+  name_col = "scientificName",
+  author_col = "scientificNameAuthorship",
   kingdom = "Fungi",
   refresh_db = FALSE,
-  db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip"
+  db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip",
+  threads = 1L
 )
 }
 \arguments{
-\item{data}{\code{dwca} object.}
+\item{data}{\code{Data.frame}.}
+
+\item{name_col}{Character. Column containing taxon names.}
+
+\item{author_col}{Character. Column containing author names.}
 
 \item{kingdom}{Character. \code{Fungi} or \code{Plantae}. Used to speed up taxon matching. Default: \code{Fungi}.}
 
@@ -21,7 +28,7 @@ clean_taxonomy(
 \item{db_url}{Character. URL for COL database. Default: \verb{https://download.catalogueoflife.org/col/annual/2024_dwca.zip}.}
 }
 \value{
-Input \code{dwca} with the following output fields appended.
+Input \code{data.frame} with the following output fields appended.
 
 \describe{
 \item{\code{kingdom_pres}}{Character. ...}
@@ -40,7 +47,8 @@ Input \code{dwca} with the following output fields appended.
 }
 }
 \description{
-Parses species names...
+Parses taxon names of fungi and plants based on \href{https://www.catalogueoflife.org/}{Catalogue of Life} data.
+Synonyms are updated to currently accepted names.
 }
 \note{
 ...

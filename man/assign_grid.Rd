@@ -4,10 +4,20 @@
 \alias{assign_grid}
 \title{Overlay grid with equal area cells onto map}
 \usage{
-assign_grid(data, size, proj = "cea")
+assign_grid(
+  data,
+  lat_col = "lat_parsed",
+  lon_col = "lon_parsed",
+  size,
+  proj = "cea"
+)
 }
 \arguments{
-\item{data}{Data.frame. Contains GPS coordinates.}
+\item{data}{\code{Data.frame}.}
+
+\item{lat_col}{Character. description}
+
+\item{lon_col}{Character. description}
 
 \item{size}{Integer. Grid cell area (in square kilometers).}
 

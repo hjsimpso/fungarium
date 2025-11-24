@@ -13,18 +13,18 @@ calc_abundance(
 )
 }
 \arguments{
-\item{data}{Data.frame.}
+\item{data}{\code{Data.frame}.}
 
-\item{of}{...}
+\item{of}{Character. ...}
 
-\item{per}{description}
+\item{per}{Character. ...}
 
-\item{transformation}{...}
+\item{transformation}{Character. ...}
 
-\item{pseudocount}{description}
+\item{pseudocount}{Numeric. ...}
 }
 \value{
-Input data.frame object with the following fields appended:
+Input \code{data.frame} with the following fields appended:
 \describe{
 \item{\code{abund}}{Abundance of each value in the \code{of} field per each unique combination of the \code{per} fields.}
 \item{\code{total_occ}}{Total number of occrrences in the field specified by \code{per}.}
@@ -32,10 +32,7 @@ Input data.frame object with the following fields appended:
 }
 }
 \description{
-Aggregates occurrences based on specified fields to reduce the effects of
-spatiotemporal sampling bias. e.g., 50 records for one taxon, at one location,
-on the same day, is likely the result of biased sampling. Aggregating these
-50 occurrences to one can help reduce this bias.
+Calculate abundance. ...
 }
 \examples{
 library(fungarium)

@@ -4,7 +4,10 @@
 #' Parse varying formats/spellings for geographic data into a consistent formats
 #' and check the validity of lat/lon coordinates using various tests.
 #'
-#' @param data `dwca` object.
+#' @param data `Data.frame`.
+#' @param country_col Character. description
+#' @param lat_col Character. description
+#' @param lon_col Character. description
 #' @param tests Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.
 #'
 #' @details
@@ -24,7 +27,7 @@
 #' Countries are first parsed based on the country name in the record.
 #' If no country name is given, it is guessed using the record's GPS coordinates.
 #'
-#' @return Input data.frame with the following output fields appended:
+#' @return Input `data.frame` with the following fields appended:
 #'
 #' \describe{
 #' \item{`lat_parsed`}{Numeric. Parsed decimal latitude.}
@@ -49,12 +52,22 @@
 #'
 
 clean_geography <- function(data,
-                      tests=c("zero", "equal")){
+                            country_col = "country",
+                            lat_col="decimalLatitude",
+                            lon_col="decimalLongitude",
+                            tests=c("zero", "equal")){
 
   # check args
-  if (!inherits(data, "dwca")) {
-    stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
-  }
+  checkmate::assert_data_frame(data)
+  
+  checkmate::assertCharacter(country_col, max.len = 1)
+  checkmate::assertCharacter(lat_col, max.len = 1)
+  checkmate::assertCharacter(lon_col, max.len = 1)
+  
+  checkmate::assert_choice(country_col, colnames(data))
+  checkmate::assert_choice(lat_col, colnames(data))
+  checkmate::assert_choice(lon_col, colnames(data))
+  
   checkmate::assertCharacter(tests)
   lapply(tests, checkmate::assert_choice, choices=c("zero", "equal"), .var.name='tests')
 
@@ -74,13 +87,13 @@ clean_geography <- function(data,
   data$closest_country_distance <- as.numeric(NA)
 
   # make lat and lon numeric and detect resolution
-  data$lon_parsed <- suppressWarnings(as.numeric(data$decimalLongitude))
-  data$lat_parsed <- suppressWarnings(as.numeric(data$decimalLatitude))
+  data$lon_parsed <- suppressWarnings(as.numeric(data[[lon_col]]))
+  data$lat_parsed <- suppressWarnings(as.numeric(data[[lat_col]]))
   data$lon_res <- decimal_places(data$lon_parsed)
   data$lat_res <- decimal_places(data$lat_parsed)
 
   #perform null test
-  null_bool <- is.na(data$decimalLongitude)|is.na(data$decimalLatitude)|data$decimalLongitude==""|data$decimalLatitude==""
+  null_bool <- is.na(data[[lon_col]])|is.na(data[[lat_col]])|data[[lon_col]]==""|data[[lat_col]]==""
   cat(sum(null_bool), " records found with null coordinates...\n")
   if (T %in% null_bool){
     data[null_bool,]$coordinate_error <- "null"
@@ -138,11 +151,11 @@ clean_geography <- function(data,
   }
 
   # harmonize country names
-  country_not_na_bool <- !is.na(data$country)
+  country_not_na_bool <- !is.na(data[[country_col]])
   cat(sum(country_not_na_bool), " records found with country name...\n")
   if (T%in%country_not_na_bool){
     cat("Parsing country names...\n")
-    parsed_geo <- parse_geo_names(data[,c("country", "stateProvince")])
+    parsed_geo <- parse_geo_names(data[,c(country_col)], country_col = country_col)
     data$country_parsed[country_not_na_bool] <- parsed_geo$country_parsed[country_not_na_bool]
     data$sov_parsed[country_not_na_bool] <- parsed_geo$sov_parsed[country_not_na_bool]
     data$iso3_parsed[country_not_na_bool] <- parsed_geo$iso3_parsed[country_not_na_bool]
@@ -184,11 +197,10 @@ decimal_places <- function(x) {
 }
 
 # parse geographic location names
-parse_geo_names <- function(data){
+parse_geo_names <- function(data, country_col){
   # check args
   checkmate::assert_data_frame(data)
-  checkmate::assert_true("country"%in%colnames(data))
-  checkmate::assert_true("stateProvince"%in%colnames(data))
+  checkmate::assert_true(country_col%in%colnames(data))
 
   # clean up countries reference data
   countries_ref <- as.data.frame(sf::st_drop_geometry(rnaturalearth::ne_countries(scale="large", type = "countries")))
@@ -200,7 +212,7 @@ parse_geo_names <- function(data){
   countries_ref_clean <- as.data.frame(lapply(countries_ref, str_clean, periods = ""), stringsAsFactors = FALSE)
 
   # make unique list of countries from input
-  country_u <- unique(data$country)
+  country_u <- unique(data[[country_col]])
   country_u_df <- data.frame(country_u = country_u,  country_u_clean=str_clean(country_u, periods = ""))
 
   # create new output cols
@@ -231,7 +243,7 @@ parse_geo_names <- function(data){
   }
 
   # map back to original rows using match (fast and avoids joins that copy entire data frames)
-  idx_map <- match(data$country, country_u_df$country_u)
+  idx_map <- match(data[[country_col]], country_u_df$country_u)
   out <- data.frame(
     country_parsed = country_u_df$country_parsed[idx_map],
     sov_parsed = country_u_df$sov_parsed[idx_map],

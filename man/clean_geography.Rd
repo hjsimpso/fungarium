@@ -4,15 +4,27 @@
 \alias{clean_geography}
 \title{Clean and harmonize heterogeneous geographic data (lat/lon/country)}
 \usage{
-clean_geography(data, tests = c("zero", "equal"))
+clean_geography(
+  data,
+  country_col = "country",
+  lat_col = "decimalLatitude",
+  lon_col = "decimalLongitude",
+  tests = c("zero", "equal")
+)
 }
 \arguments{
-\item{data}{\code{dwca} object.}
+\item{data}{\code{Data.frame}.}
+
+\item{country_col}{Character. description}
+
+\item{lat_col}{Character. description}
+
+\item{lon_col}{Character. description}
 
 \item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.}
 }
 \value{
-Input data.frame with the following output fields appended:
+Input \code{data.frame} with the following fields appended:
 
 \describe{
 \item{\code{lat_parsed}}{Numeric. Parsed decimal latitude.}

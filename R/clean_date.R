@@ -4,9 +4,10 @@
 #' Parses dates with varying formats into a consistent format and extracts year,
 #' month, and day.
 #'
-#' @param data `dwca` object.
+#' @param data `Data.frame`.
+#' @param date_col Character. Name of column that contains dates.
 #'
-#' @return Input `dwca` with the following output fields appended.
+#' @return Input `data.frame` with the following fields appended.
 #'
 #' \describe{
 #' \item{\code{date_raw}}{Character. Input date.}
@@ -29,24 +30,17 @@
 #' clean_dates <- clean_date(as_dwca(agaricales)) #clean dates
 #'
 
-clean_date <- function(data){ # TODO make parsing_error something more date-specific (e.g., date_error)
+clean_date <- function(data,
+                       date_col="eventDate"){ # TODO make parsing_error something more date-specific (e.g., date_error)
   # check args
-  if (!inherits(data, "dwca")) {
-    stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
-  }
-
-  # get attributes
-  input_attributes <- attributes(data)
-
+  checkmate::assert_data_frame(data)
+  checkmate::assert_character(date_col, max.len = 1)
+  checkmate::assert_choice(date_col, colnames(data))
+  
   # Call C++ function internally
-  data <- cbind(data, clean_dates_cpp(data$eventDate))
+  data <- cbind(data, clean_dates_cpp(data[[date_col]]))
 
-  # add cleaning attributes
-  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
-  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
-  attr(data, "clean_date") <- TRUE
-
-  # return dwca class object
+  # return parsed data
   return(data)
 }
 

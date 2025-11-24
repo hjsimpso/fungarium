@@ -3,7 +3,9 @@
 #' @description
 #' Overlays hexagonal grid cells of specified area onto equal area world map.
 #'
-#' @param data Data.frame. Contains GPS coordinates.
+#' @param data `Data.frame`.
+#' @param lat_col Character. description
+#' @param lon_col Character. description
 #' @param size Integer. Grid cell area (in square kilometers).
 #' @param proj Character. Equal area map projection to use. Options: 'cea'
 #' (cylindrical equal area) or 'eqearth' (equal earth). Default is 'cea'.
@@ -25,19 +27,23 @@
 #' grid_data <- assign_grid(clean_geo, 80000L)
 
 
-assign_grid <- function(data, size, proj="cea"){
+assign_grid <- function(data, 
+                        lat_col = "lat_parsed",
+                        lon_col = "lon_parsed",
+                        size, 
+                        proj="cea"){
   # check args
-  if (!inherits(data, "dwca")) {
-    stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
-  }
-  checkmate::assert_true(attr(data, "clean_geography")) # TODO better error reporting
-
+  checkmate::assert_data_frame(data)
+  checkmate::assert_character(lat_col, max.len = 1)
+  checkmate::assert_choice(lat_col, colnames(data))
+  checkmate::assert_character(lon_col, max.len = 1)
+  checkmate::assert_choice(lon_col, colnames(data))
   checkmate::assert_integer(size, max.len = 1)
   checkmate::assert_character(proj, max.len = 1)
   checkmate::assert_choice(proj, c("cea", "eqearth"))
 
   # remove records with NA coords
-  na_index <- is.na(data$lat_parsed)|is.na(data$lon_parsed)
+  na_index <- is.na(data[[lat_col]])|is.na(data[[lon_col]])
   if (T%in%na_index){
     warning(paste0(length(na_index[na_index==TRUE]), " records contained NA coordinates and are were removed."))
   }

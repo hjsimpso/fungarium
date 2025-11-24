@@ -4,13 +4,15 @@
 \alias{clean_date}
 \title{Clean and harmonize heterogeneous dates}
 \usage{
-clean_date(data)
+clean_date(data, date_col = "eventDate")
 }
 \arguments{
-\item{data}{\code{dwca} object.}
+\item{data}{\code{Data.frame}.}
+
+\item{date_col}{Character. Name of column that contains dates.}
 }
 \value{
-Input \code{dwca} with the following output fields appended.
+Input \code{data.frame} with the following fields appended.
 
 \describe{
 \item{\code{date_raw}}{Character. Input date.}

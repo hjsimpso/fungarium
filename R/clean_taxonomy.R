@@ -1,14 +1,17 @@
-#' @title Clean and harmonize species names
+#' @title Clean and harmonize taxon names
 #'
 #' @description
-#' Parses species names...
+#' Parses taxon names of fungi and plants based on \href{https://www.catalogueoflife.org/}{Catalogue of Life} data. 
+#' Synonyms are updated to currently accepted names.
 #'
-#' @param data `dwca` object.
+#' @param data `Data.frame`.
+#' @param name_col Character. Column containing taxon names.
+#' @param author_col Character. Column containing author names.
 #' @param kingdom Character. `Fungi` or `Plantae`. Used to speed up taxon matching. Default: `Fungi`.
 #' @param refresh_db Logical. Should the COL database be refreshed. Default: `FALSE`. Note, database is always downloaded during the first execution of this function after package installation.
 #' @param db_url Character. URL for COL database. Default: `https://download.catalogueoflife.org/col/annual/2024_dwca.zip`.
 #'
-#' @return Input `dwca` with the following output fields appended.
+#' @return Input `data.frame` with the following output fields appended.
 #'
 #' \describe{
 #' \item{\code{kingdom_pres}}{Character. ...}
@@ -34,20 +37,23 @@
 #' clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
 #'
 
-clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
-                           db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip", threads = 1L){
+clean_taxonomy <- function(data, name_col = "scientificName", 
+                           author_col = "scientificNameAuthorship", 
+                           kingdom = "Fungi", 
+                           refresh_db = FALSE,
+                           db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip", 
+                           threads = 1L){
   # check args
-  if (!inherits(data, "dwca")) {
-    stop("'data' must be of class 'dwca'. Use `as_dwca()` first.")
-  }
+  checkmate::assert_data_frame(data)
+  checkmate::assertCharacter(name_col, max.len = 1)
+  checkmate::assert_choice(name_col, choices=colnames(data))
+  checkmate::assertCharacter(author_col, max.len = 1)
+  checkmate::assert_choice(author_col, choices=colnames(data))
   checkmate::assert_character(kingdom, max.len = 1)
   checkmate::assert_choice(kingdom, c("Fungi", "Plantae"))
   checkmate::assert_logical(refresh_db, max.len = 1)
   checkmate::assert_character(db_url, max.len = 1)
   checkmate::assert_integer(threads, max.len = 1, lower = 1)
-  
-  # get attributes
-  input_attributes <- attributes(data)
 
   # col files
   fungi_file <- cache_file("Taxon_fungi_w_tax_hier.tsv")
@@ -97,12 +103,7 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
 
   # Call cpp function
   cat("Cleaning input taxon names...\n") # TODO print number of unique names in input data
-  data <- cbind(data, clean_taxonomy_cpp(data$scientificName, data$scientificNameAuthorship, col_data, threads))
-
-  # add cleaning attributes
-  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
-  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
-  attr(data, "clean_taxonomy") <- TRUE
+  data <- cbind(data, clean_taxonomy_cpp(data[[name_col]], data[[author_col]], col_data, threads))
 
   # return output
   return(data)
