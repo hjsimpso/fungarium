@@ -64,22 +64,22 @@ clean_taxonomy <- function(data, name_col = "scientificName",
 
     # Download the zip file
     cat("Downloading COL taxonomy db...\n")
-    download.file(db_url, destfile = "col_dwca.zip", mode = "wb")
+    download.file(db_url, destfile = cache_file("col_dwca.zip"), mode = "wb")
     cat("Unzipping COL taxonomy db...\n")
-    unzip("col_dwca.zip", exdir = "col_dwca")
-    unlink("col_dwca.zip")
+    unzip(cache_file("col_dwca.zip"), exdir = cache_file("col_dwca"))
+    unlink(cache_file("col_dwca.zip"))
 
     # load and clean
     cat("Processing COL taxonomy db...\n")
-    col_data_file <- "col_dwca/Taxon.tsv"
+    col_data_file <- cache_file("col_dwca/Taxon.tsv")
     col_data <- data.table::fread(col_data_file, sep="\t", quote="", data.table = F, nThread = threads)
-    unlink("col_dwca", recursive = TRUE)
+    unlink(cache_file("col_dwca"), recursive = TRUE)
     fungi <- select_kingdom(col_data, "Fungi")
-    fungi <- assign_tax_hier(fungi)
+    # fungi <- assign_tax_hier(fungi)
     data.table::fwrite(fungi, fungi_file, sep = '\t', quote = FALSE, nThread = threads)
 
     plants <- select_kingdom(col_data, "Plantae")
-    plants <- assign_tax_hier(plants)
+    # plants <- assign_tax_hier(plants)
     data.table::fwrite(plants, plant_file, sep = '\t', quote = FALSE, nThread = threads)
 
     if (kingdom=="Fungi"){
