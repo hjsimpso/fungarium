@@ -50,9 +50,8 @@ clean_taxonomy <- function(data, kingdom = "Fungi", refresh_db = FALSE,
   input_attributes <- attributes(data)
 
   # col files
-  fungi_file <- "inst/extdata/Taxon_fungi_w_tax_hier.tsv"
-  plant_file <- "inst/extdata/Taxon_plantae_w_tax_hier.tsv"
-
+  fungi_file <- cache_file("Taxon_fungi_w_tax_hier.tsv")
+  plant_file <- cache_file("Taxon_plantae_w_tax_hier.tsv")
 
   # download fresh COL data
   if (!file.exists(fungi_file)||!file.exists(plant_file)||refresh_db){
@@ -176,4 +175,10 @@ assign_tax_hier <- function(col_data){
                                                       "species")],
                           by=dplyr::join_by("dwc:taxonID" == "dwc:taxonID"))
   return(out)
+}
+
+cache_file <- function(file_name) {
+  dir <- tools::R_user_dir("fungarium", which = "cache")
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+  file.path(dir, file_name)
 }
