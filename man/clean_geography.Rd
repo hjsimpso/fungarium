@@ -66,6 +66,6 @@ Input coordinates are assumed to use WGS84 coordinate reference system.
 \examples{
 library(fungarium)
 data(agaricales) #import sample data set
-clean_geo <- clean_geography(as_dwca(agaricales)) #clean geo
+clean_geo <- clean_geography(agaricales) #clean geo
 
 }

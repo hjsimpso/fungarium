@@ -56,6 +56,6 @@ Synonyms are updated to currently accepted names.
 \examples{
 library(fungarium)
 data(agaricales) #import sample data set
-clean_tax <- clean_taxonomy(as_dwca(agaricales)) #clean taxonomy
+clean_tax <- clean_taxonomy(agaricales) #clean taxonomy
 
 }

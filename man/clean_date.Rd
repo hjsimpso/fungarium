@@ -37,6 +37,6 @@ not December 3, 2020.
 \examples{
 library(fungarium)
 data(agaricales) #import sample data set
-clean_dates <- clean_date(as_dwca(agaricales)) #clean dates
+clean_dates <- clean_date(agaricales) #clean dates
 
 }
