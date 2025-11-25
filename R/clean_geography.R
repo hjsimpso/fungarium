@@ -71,9 +71,6 @@ clean_geography <- function(data,
   checkmate::assertCharacter(tests)
   lapply(tests, checkmate::assert_choice, choices=c("zero", "equal"), .var.name='tests')
 
-  # get attributes
-  input_attributes <- attributes(data)
-
   # make output data frame
   data$lat_parsed <- as.numeric(NA)
   data$lon_parsed <- as.numeric(NA)
@@ -176,11 +173,6 @@ clean_geography <- function(data,
     data$closest_country_distance[country_na_bool] <- parsed_geo$closest_country_distance[country_na_bool]
   }
   rm(country_na_bool)
-
-  # add cleaning attributes
-  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
-  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
-  attr(data, "clean_geography") <- TRUE
 
   # return output
   return(data)

@@ -45,9 +45,6 @@ assign_grid <- function(data,
     warning(paste0(length(na_index[na_index==TRUE]), " records contained NA coordinates and are were removed."))
   }
 
-  # get attributes
-  input_attributes <- attributes(data)
-
   # import world map
   map <- rnaturalearth::ne_countries('large', returnclass = "sf")#import world shp file
   crs_str <- paste0("+proj=", proj, " +ellps=WGS84 +datum=WGS84")
@@ -79,10 +76,6 @@ assign_grid <- function(data,
   data <- sf::st_transform(data, crs = crs_str) #transform to cylindrical projection
   data <- sf::st_join(grid, data, join=sf::st_contains, left=F) #add hex ID to aga
   data <- sf::st_drop_geometry(data)
-
-  # add attributes
-  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
-  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
 
   # output
   out <- list(data=data, grid_ref=grid)
