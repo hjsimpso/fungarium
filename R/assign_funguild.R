@@ -41,11 +41,6 @@ assign_funguild <- function(data,
   checkmate::assertCharacter(tax_cols)
   lapply(tax_cols, checkmate::assert_choice, choices=colnames(data), .var.name='tax_cols')
 
-  checkmate::assert_true(attr(data, "clean_taxonomy")) # TODO better error reporting
-
-  # get attributes
-  input_attributes <- attributes(data)
-
   #make unique
   data_u <- dplyr::distinct(data[,tax_cols])
 
@@ -90,10 +85,6 @@ assign_funguild <- function(data,
   }
   data <- dplyr::inner_join(data, data_u[,utils::tail(colnames(data_u),8)], by="comb")
   data <- data[,!colnames(data)%in%"comb"]
-
-  # add attributes
-  attributes_to_copy <- input_attributes[!names(input_attributes) %in% c("names", "row.names")]
-  attributes(data) <- c(attributes(data)[names(attributes(data)) %in% c("names", "row.names")], attributes_to_copy)
 
   # output
   return(data)
