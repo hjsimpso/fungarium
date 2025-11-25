@@ -155,7 +155,7 @@ clean_geography <- function(data,
   cat(sum(country_not_na_bool), " records found with country name...\n")
   if (T%in%country_not_na_bool){
     cat("Parsing country names...\n")
-    parsed_geo <- parse_geo_names(data[,c(country_col)], country_col = country_col)
+    parsed_geo <- parse_geo_names(data[,c(country_col), drop=FALSE], country_col = country_col)
     data$country_parsed[country_not_na_bool] <- parsed_geo$country_parsed[country_not_na_bool]
     data$sov_parsed[country_not_na_bool] <- parsed_geo$sov_parsed[country_not_na_bool]
     data$iso3_parsed[country_not_na_bool] <- parsed_geo$iso3_parsed[country_not_na_bool]
