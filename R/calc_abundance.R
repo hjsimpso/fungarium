@@ -45,7 +45,6 @@ calc_abundance <- function(data,
 
   # return data
   data.table::setDF(data)
-  class(data) <- c("fg_abund_table", class(data))
   return(data)
 }
 
