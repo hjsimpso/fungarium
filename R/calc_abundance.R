@@ -68,4 +68,5 @@ make_wide <- function(data, of, per, value.var, pseudocount, transformation){
   return(data)
 }
 
+# needed for proper subsetting of data.tables without importing whole package
 .datatable.aware <- TRUE
