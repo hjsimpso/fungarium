@@ -37,8 +37,7 @@ calc_abundance <- function(data,
 
   # get abund
   data.table::setDT(data)
-  .datatable.aware = TRUE
-  data <- data[!is.na(data[[of]])] # remove NA values
+  data <- data[!is.na(data[[of]]),] # remove NA values
   data <- data[, .(abund = .N), by = c(of, per)]
 
   # convert to wide format
@@ -52,7 +51,6 @@ calc_abundance <- function(data,
 
 # reshape to wide
 make_wide <- function(data, of, per, value.var, pseudocount, transformation){
-  .datatable.aware = TRUE
   of_values <- unique(data[[of]])
   formula_wide <- as.formula(paste0(paste0(per, collapse = " + "), " ~ ", of))
   data <- data.table::dcast(data, formula_wide, value.var = value.var, fill = pseudocount)
@@ -71,3 +69,4 @@ make_wide <- function(data, of, per, value.var, pseudocount, transformation){
   return(data)
 }
 
+.datatable.aware <- TRUE
