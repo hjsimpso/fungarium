@@ -20,6 +20,9 @@
 find_trait <- function(data, metadata_cols=c("habitat", "occurrenceRemarks", "associatedTaxa"), pos_string,  neg_string=NULL, string_clean=TRUE){
   # check args
   checkmate::assert_data_frame(data)
+  if (!data.table::is.data.table(data)){ # convert to data.table
+    data.table::setDT(data)
+  }
   checkmate::assertCharacter(metadata_cols)
   lapply(metadata_cols, checkmate::assert_choice, choices=colnames(data), .var.name='metadata_cols')
   checkmate::assertCharacter(pos_string, max.len = 1)
@@ -28,7 +31,7 @@ find_trait <- function(data, metadata_cols=c("habitat", "occurrenceRemarks", "as
   
   #clean strings
   if (string_clean){
-    raw <- data[,metadata_cols]
+    raw <- data[,..metadata_cols]
     raw$key <- 1:nrow(data)
     data$key <- raw$key
     for (i in 1:length(metadata_cols)){
@@ -65,5 +68,7 @@ find_trait <- function(data, metadata_cols=c("habitat", "occurrenceRemarks", "as
     }
   }
   
+  # return data
+  data.table::setDF(data)
   return(data)
 }
