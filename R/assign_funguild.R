@@ -37,6 +37,9 @@ assign_funguild <- function(data,
 
   # check args
   checkmate::assert_data_frame(data)
+   if (data.table::is.data.table(data)) {
+     data.table::setDF(data)
+   }
   checkmate::assertCharacter(url, max.len = 1)
   checkmate::assertCharacter(tax_cols)
   lapply(tax_cols, checkmate::assert_choice, choices=colnames(data), .var.name='tax_cols')
