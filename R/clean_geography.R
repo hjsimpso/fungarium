@@ -59,7 +59,9 @@ clean_geography <- function(data,
 
   # check args
   checkmate::assert_data_frame(data)
-  
+  if (!data.table::is.data.table(data)){ # convert to data.table
+    data.table::setDT(data)
+  }
   checkmate::assertCharacter(country_col, max.len = 1)
   checkmate::assertCharacter(lat_col, max.len = 1)
   checkmate::assertCharacter(lon_col, max.len = 1)
@@ -152,7 +154,7 @@ clean_geography <- function(data,
   cat(sum(country_not_na_bool), " records found with country name...\n")
   if (T%in%country_not_na_bool){
     cat("Parsing country names...\n")
-    parsed_geo <- parse_geo_names(data[,c(country_col), drop=FALSE], country_col = country_col)
+    parsed_geo <- parse_geo_names(data[,..country_col], country_col = country_col)
     data$country_parsed[country_not_na_bool] <- parsed_geo$country_parsed[country_not_na_bool]
     data$sov_parsed[country_not_na_bool] <- parsed_geo$sov_parsed[country_not_na_bool]
     data$iso3_parsed[country_not_na_bool] <- parsed_geo$iso3_parsed[country_not_na_bool]
@@ -165,7 +167,7 @@ clean_geography <- function(data,
   cat(sum(country_na_bool), " records found with coordinates but no parsable country name...\n")
   if (T%in%country_na_bool){
     cat("Predicting country names based on coordinates...\n")
-    parsed_geo <- parse_geo_names_from_coords(data[,c("lat_parsed", "lon_parsed", "country_parsed")])
+    parsed_geo <- parse_geo_names_from_coords(data[,c("lat_parsed", "lon_parsed", "country_parsed")], filter_bool = country_na_bool)
     data$country_parsed[country_na_bool] <- parsed_geo$country_parsed[country_na_bool]
     data$sov_parsed[country_na_bool] <- parsed_geo$sov_parsed[country_na_bool]
     data$iso3_parsed[country_na_bool] <- parsed_geo$iso3_parsed[country_na_bool]
@@ -174,7 +176,25 @@ clean_geography <- function(data,
   }
   rm(country_na_bool)
 
+  
+  # check if countries parsed from names match those from coords
+  country_coord_mismatch_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&!is.na(data$country_parsed)
+  cat(sum(country_coord_mismatch_bool), " records found with both coordinates and parsable country name...\n")
+  if (T%in%country_coord_mismatch_bool){
+    cat("Checking for mismatches between country names and coordinates...\n")
+    parsed_geo <- parse_geo_names_from_coords(data[,c("lat_parsed", "lon_parsed", "country_parsed")], filter_bool = country_coord_mismatch_bool)
+    mismatch_bool <- country_coord_mismatch_bool & (data$country_parsed != parsed_geo$country_parsed)
+    cat(sum(mismatch_bool), " records found with mismatching country names and coordinates...\n")
+    if (T%in%mismatch_bool){
+      data[mismatch_bool,]$coordinate_error <- "country_coord_mismatch"
+    }
+    rm(mismatch_bool)
+    rm(parsed_geo)
+  }
+  rm(country_coord_mismatch_bool)
+
   # return output
+  data.table::setDF((data))
   return(data)
 }
 
@@ -247,7 +267,7 @@ parse_geo_names <- function(data, country_col){
 }
 
 
-parse_geo_names_from_coords <- function(data){
+parse_geo_names_from_coords <- function(data, filter_bool){
   # check args
   checkmate::assert_data_frame(data)
   checkmate::assert_true("lat_parsed"%in%colnames(data))
@@ -258,8 +278,9 @@ parse_geo_names_from_coords <- function(data){
   # countries
   #-----------------------------------------------------------------------------
   # get records with coords but no country
-  country_na_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&is.na(data$country_parsed)
-
+  # country_na_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&is.na(data$country_parsed)
+  country_na_bool <- filter_bool
+  
   if (T%in%country_na_bool){
     # get country geometry data
     countries_shp <- rnaturalearth::ne_countries(scale="large", type = "countries", returnclass = "sf")
@@ -288,7 +309,7 @@ parse_geo_names_from_coords <- function(data){
 
   # get closest country for points not 'within' country geometry
   country_na_bool <- !is.na(data$lat_parsed)&!is.na(data$lon_parsed)&is.na(data$country_parsed)
-  cat(sum(country_na_bool), " records found with coordinates and no parsable country name and are not within any country boundaries...\n")
+  cat(sum(country_na_bool), " records found with coordinates and no parsable country name and are not within any country boundaries...\n") # TODO change this to account for when this function is used to check for country-coord mismatches
 
   if (T%in%country_na_bool){
     # prep unique set of coords to test
