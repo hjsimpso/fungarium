@@ -60,8 +60,14 @@ make_wide <- function(data, of, per, value.var, pseudocount, transformation){
     if (transformation=="rel_abund"){
       data[, (of_values) := lapply(.SD, function(x) x / total_occ), .SDcols = of_values]
     } else{ # clr
-      data_clr <- compositions::clr(data)
-      data <- cbind(data_clr, data[,..per])
+      drop_cols <- c(per, "total_occ")
+      keep_cols <- setdiff(names(data), drop_cols)
+      
+      # Apply CLR transformation
+      clr_vals <- compositions::clr(data[, ..keep_cols])
+      
+      # Assign back into the data.table
+      data[, (keep_cols) := data.table::as.data.table(clr_vals)]
     }
 
   }
