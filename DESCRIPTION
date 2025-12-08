@@ -1,6 +1,6 @@
 Package: fungarium
 Title: Facilitating use of fungarium data in ecological analyses
-Version: 4.0.0
+Version: 3.0.0
 Authors@R: 
     person(given = "Hunter",
            family = "Simpson",
