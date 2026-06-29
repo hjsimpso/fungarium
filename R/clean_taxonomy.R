@@ -11,7 +11,7 @@
 #' @param refresh_db Logical. Should the COL database be refreshed. Default: `FALSE`. Note, database is always downloaded during the first execution of this function after package installation.
 #' @param db_url Character. URL for COL database. Default: `https://download.catalogueoflife.org/col/annual/2024_dwca.zip`.
 #'
-#' @return Input `data.frame` with the following output fields appended.
+#' @return Input `data.frame` with the following output fields appended:
 #'
 #' \describe{
 #' \item{\code{kingdom_pres}}{Character. Accepted kingdom at present.}

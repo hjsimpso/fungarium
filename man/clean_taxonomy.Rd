@@ -28,7 +28,7 @@ clean_taxonomy(
 \item{db_url}{Character. URL for COL database. Default: \verb{https://download.catalogueoflife.org/col/annual/2024_dwca.zip}.}
 }
 \value{
-Input \code{data.frame} with the following output fields appended.
+Input \code{data.frame} with the following output fields appended:
 
 \describe{
 \item{\code{kingdom_pres}}{Character. Accepted kingdom at present.}
