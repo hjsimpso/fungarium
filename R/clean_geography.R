@@ -5,9 +5,9 @@
 #' and check the validity of lat/lon coordinates using various tests.
 #'
 #' @param data `Data.frame`.
-#' @param country_col Character. description
-#' @param lat_col Character. description
-#' @param lon_col Character. description
+#' @param country_col Character. Name of column that contains country names.
+#' @param lat_col Character. Name of column that contains latitude values.
+#' @param lon_col Character. Name of column that contains longitude values.
 #' @param tests Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.
 #'
 #' @details

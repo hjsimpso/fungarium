@@ -15,11 +15,11 @@ clean_geography(
 \arguments{
 \item{data}{\code{Data.frame}.}
 
-\item{country_col}{Character. description}
+\item{country_col}{Character. Name of column that contains country names.}
 
-\item{lat_col}{Character. description}
+\item{lat_col}{Character. Name of column that contains latitude values.}
 
-\item{lon_col}{Character. description}
+\item{lon_col}{Character. Name of column that contains longitude values.}
 
 \item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.}
 }

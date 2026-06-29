@@ -4,8 +4,8 @@
 #' Overlays hexagonal grid cells of specified area onto equal area world map.
 #'
 #' @param data `Data.frame`.
-#' @param lat_col Character. description
-#' @param lon_col Character. description
+#' @param lat_col Character. Name of column that contains latitude values.
+#' @param lon_col Character. Name of column that contains longitude values.
 #' @param size Integer. Grid cell area (in square kilometers).
 #' @param proj Character. Equal area map projection to use. Options: 'cea'
 #' (cylindrical equal area) or 'eqearth' (equal earth). Default is 'cea'.

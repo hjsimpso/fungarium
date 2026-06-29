@@ -15,9 +15,9 @@ assign_grid(
 \arguments{
 \item{data}{\code{Data.frame}.}
 
-\item{lat_col}{Character. description}
+\item{lat_col}{Character. Name of column that contains latitude values.}
 
-\item{lon_col}{Character. description}
+\item{lon_col}{Character. Name of column that contains longitude values.}
 
 \item{size}{Integer. Grid cell area (in square kilometers).}
 

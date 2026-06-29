@@ -17,9 +17,9 @@ clean_taxonomy(
 \arguments{
 \item{data}{\code{Data.frame}.}
 
-\item{name_col}{Character. Column containing taxon names.}
+\item{name_col}{Character. Name of column containing taxon names.}
 
-\item{author_col}{Character. Column containing author names.}
+\item{author_col}{Character. Name of column containing author names.}
 
 \item{kingdom}{Character. \code{Fungi} or \code{Plantae}. Used to speed up taxon matching. Default: \code{Fungi}.}
 
@@ -31,27 +31,34 @@ clean_taxonomy(
 Input \code{data.frame} with the following output fields appended.
 
 \describe{
-\item{\code{kingdom_pres}}{Character. ...}
-\item{\code{phylum_pres}}{Character. ...}
-\item{\code{class_pres}}{Character. ...}
-\item{\code{order_pres}}{Character. ...}
-\item{\code{family_pres}}{Character. ...}
-\item{\code{genus_pres}}{Character. ...}
-\item{\code{specific_epithet_pres}}{Character. ...}
-\item{\code{species_pres}}{Character. ...}
-\item{\code{species_authority_pres}}{Character. ...}
-\item{\code{match_type}}{Character. ...}
-\item{\code{match_score}}{Integer. ...}
-\item{\code{taxon_raw}}{Character. ...}
-\item{\code{taxon_authority_raw}}{Character. ...}
+\item{\code{kingdom_pres}}{Character. Accepted kingdom at present.}
+\item{\code{phylum_pres}}{Character. Accepted phylum at present.}
+\item{\code{class_pres}}{Character. Accepted class at present.}
+\item{\code{order_pres}}{Character. Accepted order at present.}
+\item{\code{family_pres}}{Character. Accepted family at present.}
+\item{\code{genus_pres}}{Character. Accepted genus at present.}
+\item{\code{specific_epithet_pres}}{Character. Accepted specific epithet at present.}
+\item{\code{species_pres}}{Character. Accepted species at present.}
+\item{\code{species_authority_pres}}{Character. Accepted authority at present.}
+\item{\code{match_type}}{Character. 'EXACT' vs 'FUZZY'. See full description below.}
+\item{\code{match_score}}{Integer. Confidence score (0-100) for match quality.}
 }
 }
 \description{
-Parses taxon names of fungi and plants based on \href{https://www.catalogueoflife.org/}{Catalogue of Life} data.
-Synonyms are updated to currently accepted names.
+Cleans and updates taxon names of fungi and plants based on \href{https://www.catalogueoflife.org/}{Catalogue of Life} data.
+Synonyms are updated to currently accepted names and current taxonomic hierarchies are assigned.
 }
 \note{
-...
+Match type may include: 'EXACT-FULL' when full taxon name (species AND
+authority) is matched perfectly with record in COL data, 'EXACT-PARTIAL'
+when species name without authority is matched perfectly with record in COL
+data, 'FUZZY-FULL' when full taxon name (species AND authority) is fuzzy
+matched (based on string alignment algorithms) with
+record in COL data, FUZZY-PARTIAL' when species name without authority is
+fuzzy matched with record in COL data. 'FUZZY' matching is done when 'EXACT'
+matches are not found and come with a match score indicating match quality.
+Fuzzy matching is done for both full and partial names and whichever
+prodcues the highest match score is reported.
 }
 \examples{
 library(fungarium)
