@@ -24,8 +24,10 @@ find_trait(
 \item{string_clean}{Logical. If TRUE (the default), strings in metadata_cols are "cleaned" prior to trait searching. This includes converting strings to lowercase and removing any punctuation (e.g., periods, commas, question marks, etc.) or extra white space.}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{      Filtered input data that matches search criteria.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      Filtered rows from input data that match search criteria. 
 }\if{html}{\out{</div>}}
+
+Row indexes from input data set returned in \code{key} column.
 }
 \description{
 Find trait-relevant records (i.e., records with a particular substrate, host, or habitat association) in a data set of fungal collections/observations
