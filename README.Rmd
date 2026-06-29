@@ -30,6 +30,13 @@ remotes::install_github("hjsimpso/fungarium@*release") #install the latest funga
 #to install the latest development version use:
 remotes::install_github("hjsimpso/fungarium@main")
 ```
+## Highlights
+* Update taxonomy of fungi and plants to currently accepted names.
+* Clean and harmonize heterogeneous date formats.
+* Clean and harmonize heterogeneous location names.
+* Annotate fungal occurrence datasets with FUNGuild data.
+* Mine substrate and habitat-relevant metadata for fungal traits.
+* Assign occurrences to geographic grid cells and calculate abundances of different taxa.
 
 ## Meta
 * Please cite: Simpson, H., Schilling, J. 2021. Using aggregated field collection data and the novel R package FUNGARIUM to investigate fungal fire-association. Mycologia 113(4):842-855. DOI: 10.1080/00275514.2021.1884816
