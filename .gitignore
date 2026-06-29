@@ -10,3 +10,4 @@ col_dwca/
 inst/extdata/Taxon*.tsv
 testing/
 .RData
+.positai

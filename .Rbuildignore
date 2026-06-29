@@ -7,3 +7,5 @@ vignettes
 ^.*\.Rhistory$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.positai$
+^\.claude$
