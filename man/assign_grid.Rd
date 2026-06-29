@@ -25,11 +25,10 @@ assign_grid(
 (cylindrical equal area) or 'eqearth' (equal earth). Default is 'cea'.}
 }
 \value{
-TODO
+List containing the following elements:
 \describe{
-\item{\code{geometry}}{Grid cell geometry.}
-\item{\code{grid_cell_id}}{Grid cell ID. Each grid cell has a unique number.}
-\item{\code{grid_cell_size}}{The area (in sqauare kilometers) of each grid cell.}
+\item{\code{data}}{Input \code{data.frame} with appended \code{grid_cell_id}.}
+\item{\code{grid_ref}}{'data.frame' linking 'grid_cell_id' to corresponding grid cell geometries. \code{grid_cell_size} is in sqauare kilometers}
 }
 }
 \description{
