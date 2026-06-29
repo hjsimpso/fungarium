@@ -12,7 +12,7 @@ clean_date(data, date_col = "eventDate")
 \item{date_col}{Character. Name of column that contains dates.}
 }
 \value{
-Input \code{data.frame} with the following fields appended.
+Input \code{data.frame} with the following fields appended:
 
 \describe{
 \item{\code{date_raw}}{Character. Input date.}

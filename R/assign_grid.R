@@ -10,12 +10,12 @@
 #' @param proj Character. Equal area map projection to use. Options: 'cea'
 #' (cylindrical equal area) or 'eqearth' (equal earth). Default is 'cea'.
 #'
-#' @return TODO
+#' @return List containing the following elements:
 #' \describe{
-#' \item{\code{geometry}}{Grid cell geometry.}
-#' \item{\code{grid_cell_id}}{Grid cell ID. Each grid cell has a unique number.}
-#' \item{\code{grid_cell_size}}{The area (in sqauare kilometers) of each grid cell.}
+#' \item{\code{data}}{Input `data.frame` with appended `grid_cell_id`.}
+#' \item{\code{grid_ref}}{'data.frame' linking 'grid_cell_id' to corresponding grid cell geometries. `grid_cell_size` is in sqauare kilometers}
 #' }
+#' 
 #' @export
 #' @note For more info on the Equal Earth projection see:
 #' https://proj.org/en/stable/operations/projections/eqearth.html.
