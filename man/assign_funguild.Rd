@@ -27,7 +27,9 @@ Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed 
 dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 }
 \examples{
-TODO
+library(fungarium)
+data(fomitopsidaceae_clean_taxonomy) #import sample data set
+fomitopsidaceae_w_funguild <- assign_funguild(fomitopsidaceae_clean_taxonomy)
 
 }
 \references{

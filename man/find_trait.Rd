@@ -32,6 +32,8 @@ Find trait-relevant records (i.e., records with a particular substrate, host, or
 (e.g. \href{https://mycoportal.org}{MyCoPortal} or \href{https://www.gbif.org/}{GBIF} data sets).
 }
 \examples{
-TODO
+library(fungarium)
+data(fomitopsidaceae) #import sample data set
+trait_records <- find_trait(fomitopsidaceae, pos_string="on (?:spruce|picea)")
 
 }
