@@ -7,7 +7,7 @@
 #' @param data `Data.frame`.
 #' @param date_col Character. Name of column that contains dates.
 #'
-#' @return Input `data.frame` with the following fields appended.
+#' @return Input `data.frame` with the following fields appended:
 #'
 #' \describe{
 #' \item{\code{date_raw}}{Character. Input date.}
