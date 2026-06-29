@@ -24,6 +24,16 @@ remotes::install_github("hjsimpso/fungarium@*release") #install the latest funga
 remotes::install_github("hjsimpso/fungarium@main")
 ```
 
+## Highlights
+
+- Update taxonomy of fungi and plants to currently accepted names.
+- Clean and harmonize heterogeneous date formats.
+- Clean and harmonize heterogeneous location names.
+- Annotate fungal occurrence datasets with FUNGuild data.
+- Mine substrate and habitat-relevant metadata for fungal traits.
+- Assign occurrences to geographic grid cells and calculate abundances
+  of different taxa.
+
 ## Meta
 
 - Please cite: Simpson, H., Schilling, J. 2021. Using aggregated field
