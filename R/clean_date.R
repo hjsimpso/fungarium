@@ -26,8 +26,8 @@
 #'
 #' @examples
 #' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean_dates <- clean_date(agaricales) #clean dates
+#' data(fomitopsidaceae) #import sample data set
+#' clean_dates <- clean_date(fomitopsidaceae) #clean dates
 #'
 
 clean_date <- function(data,

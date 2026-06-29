@@ -35,14 +35,14 @@
 #' fuzzy matched with record in COL data. 'FUZZY' matching is done when 'EXACT' 
 #' matches are not found and come with a match score indicating match quality. 
 #' Fuzzy matching is done for both full and partial names and whichever 
-#' prodcues the highest match score is reported.
+#' produces the highest match score is reported.
 #'  
 #' @export
 #'
 #' @examples
 #' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean_tax <- clean_taxonomy(agaricales) #clean taxonomy
+#' data(fomitopsidaceae) #import sample data set
+#' clean_tax <- clean_taxonomy(fomitopsidaceae) #clean taxonomy
 #'
 
 clean_taxonomy <- function(data, name_col = "scientificName", 

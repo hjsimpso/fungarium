@@ -47,8 +47,8 @@
 #'
 #' @examples
 #' library(fungarium)
-#' data(agaricales) #import sample data set
-#' clean_geo <- clean_geography(agaricales) #clean geo
+#' data(fomitopsidaceae) #import sample data set
+#' clean_geo <- clean_geography(fomitopsidaceae) #clean geo
 #'
 
 clean_geography <- function(data,

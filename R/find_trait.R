@@ -14,7 +14,9 @@
 #' @export
 #'
 #' @examples
-#' TODO
+#' library(fungarium)
+#' data(fomitopsidaceae) #import sample data set
+#' trait_records <- find_trait(fomitopsidaceae, pos_string="on (?:spruce|picea)")
 #' 
 
 find_trait <- function(data, metadata_cols=c("habitat", "occurrenceRemarks", "associatedTaxa"), pos_string,  neg_string=NULL, string_clean=TRUE){
