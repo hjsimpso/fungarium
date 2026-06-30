@@ -8,18 +8,18 @@ assign_grid(
   data,
   lat_col = "lat_parsed",
   lon_col = "lon_parsed",
-  size,
+  size = 10000L,
   proj = "cea"
 )
 }
 \arguments{
-\item{data}{\code{Data.frame}.}
+\item{data}{Data.frame.}
 
-\item{lat_col}{Character. Name of column that contains latitude values.}
+\item{lat_col}{character. Name of column that contains latitude values.}
 
 \item{lon_col}{Character. Name of column that contains longitude values.}
 
-\item{size}{Integer. Grid cell area (in square kilometers).}
+\item{size}{Integer. Grid cell area (in square kilometers). Default is 10000.}
 
 \item{proj}{Character. Equal area map projection to use. Options: 'cea'
 (cylindrical equal area) or 'eqearth' (equal earth). Default is 'cea'.}
@@ -27,8 +27,8 @@ assign_grid(
 \value{
 List containing the following elements:
 \describe{
-\item{\code{data}}{Input \code{data.frame} with appended \code{grid_cell_id}.}
-\item{\code{grid_ref}}{'data.frame' linking 'grid_cell_id' to corresponding grid cell geometries. \code{grid_cell_size} is in sqauare kilometers}
+\item{\code{data}}{Input data.frame with appended "\code{grid_cell_id}".}
+\item{\code{grid_ref}}{Data.frame linking "\code{grid_cell_id}" to corresponding grid cell geometries. "\code{grid_cell_size}" is in sqauare kilometers}
 }
 }
 \description{
@@ -40,5 +40,7 @@ https://proj.org/en/stable/operations/projections/eqearth.html.
 For cylindrical equal area see: https://proj.org/en/stable/operations/projections/cea.html.
 }
 \examples{
-TODO
+library(fungarium)
+data(fomitopsidaceae_clean_geo) #import sample data set
+fomitopsidaceae_w_funguild <- assign_grid(fomitopsidaceae_clean_geo)
 }

@@ -3,17 +3,17 @@
 #' @description
 #' Overlays hexagonal grid cells of specified area onto equal area world map.
 #'
-#' @param data `Data.frame`.
-#' @param lat_col Character. Name of column that contains latitude values.
+#' @param data Data.frame.
+#' @param lat_col character. Name of column that contains latitude values.
 #' @param lon_col Character. Name of column that contains longitude values.
-#' @param size Integer. Grid cell area (in square kilometers).
+#' @param size Integer. Grid cell area (in square kilometers). Default is 10000.
 #' @param proj Character. Equal area map projection to use. Options: 'cea'
 #' (cylindrical equal area) or 'eqearth' (equal earth). Default is 'cea'.
 #'
 #' @return List containing the following elements:
 #' \describe{
-#' \item{\code{data}}{Input `data.frame` with appended `grid_cell_id`.}
-#' \item{\code{grid_ref}}{'data.frame' linking 'grid_cell_id' to corresponding grid cell geometries. `grid_cell_size` is in sqauare kilometers}
+#' \item{\code{data}}{Input data.frame with appended "`grid_cell_id`".}
+#' \item{\code{grid_ref}}{Data.frame linking "`grid_cell_id`" to corresponding grid cell geometries. "`grid_cell_size`" is in sqauare kilometers}
 #' }
 #' 
 #' @export
@@ -21,13 +21,15 @@
 #' https://proj.org/en/stable/operations/projections/eqearth.html.
 #' For cylindrical equal area see: https://proj.org/en/stable/operations/projections/cea.html.
 #' @examples
-#' TODO
+#' library(fungarium)
+#' data(fomitopsidaceae_clean_geo) #import sample data set
+#' fomitopsidaceae_w_funguild <- assign_grid(fomitopsidaceae_clean_geo)
 
 
 assign_grid <- function(data, 
                         lat_col = "lat_parsed",
                         lon_col = "lon_parsed",
-                        size, 
+                        size = 10000L, 
                         proj="cea"){
   # check args
   checkmate::assert_data_frame(data)
@@ -42,7 +44,7 @@ assign_grid <- function(data,
   # remove records with NA coords
   na_index <- is.na(data[[lat_col]])|is.na(data[[lon_col]])
   if (T%in%na_index){
-    warning(paste0(length(na_index[na_index==TRUE]), " records contained NA coordinates and are were removed."))
+    warning(paste0(length(na_index[na_index==TRUE]), " records contained NA coordinates."))
   }
 
   # import world map
@@ -72,10 +74,14 @@ assign_grid <- function(data,
   sf::st_geometry(grid) <- "geometry"
 
   # overlay grid onto input data
-  data <- sf::st_as_sf(data, coords = c("lon_parsed", "lat_parsed"), crs = "+proj=latlong +ellps=WGS84 +datum=WGS84", remove=F)
-  data <- sf::st_transform(data, crs = crs_str) #transform to cylindrical projection
-  data <- sf::st_join(grid, data, join=sf::st_contains, left=F) #add hex ID to aga
-  data <- sf::st_drop_geometry(data)
+  data_no_na <- data[!na_index,]
+  data_no_na <- sf::st_as_sf(data_no_na, coords = c("lon_parsed", "lat_parsed"), crs = "+proj=latlong +ellps=WGS84 +datum=WGS84", remove=F)
+  data_no_na <- sf::st_transform(data_no_na, crs = crs_str) #transform to cylindrical projection
+  data_no_na <- sf::st_join(grid, data_no_na, join=sf::st_contains, left=F) #add hex ID to aga
+  data_no_na <- sf::st_drop_geometry(data_no_na)
+  
+  # append NA rows back to data
+  data <- dplyr::bind_rows(data_no_na, data[na_index,])
 
   # output
   out <- list(data=data, grid_ref=grid)
