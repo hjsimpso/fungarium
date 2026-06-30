@@ -4,14 +4,14 @@
 #' Cleans and updates taxon names of fungi and plants based on \href{https://www.catalogueoflife.org/}{Catalogue of Life} data. 
 #' Synonyms are updated to currently accepted names and current taxonomic hierarchies are assigned.
 #'
-#' @param data `Data.frame`.
+#' @param data Data.frame.
 #' @param name_col Character. Name of column containing taxon names.
 #' @param author_col Character. Name of column containing author names.
-#' @param kingdom Character. `Fungi` or `Plantae`. Used to speed up taxon matching. Default: `Fungi`.
-#' @param refresh_db Logical. Should the COL database be refreshed. Default: `FALSE`. Note, database is always downloaded during the first execution of this function after package installation.
-#' @param db_url Character. URL for COL database. Default: `https://download.catalogueoflife.org/col/annual/2024_dwca.zip`.
+#' @param kingdom Character. "Fungi" or "Plantae". Used to speed up taxon matching. Default: "Fungi".
+#' @param refresh_db Logical. Should the COL database be refreshed. Default: FALSE. Note, database is always downloaded during the first execution of this function after package installation.
+#' @param db_url Character. URL for COL database. Default: `https://download.catalogueoflife.org/col/annual/2025_dwca.zip`.
 #'
-#' @return Input `data.frame` with the following output fields appended:
+#' @return Input data.frame with the following output fields appended:
 #'
 #' \describe{
 #' \item{\code{kingdom_pres}}{Character. Accepted kingdom at present.}
@@ -49,7 +49,7 @@ clean_taxonomy <- function(data, name_col = "scientificName",
                            author_col = "scientificNameAuthorship", 
                            kingdom = "Fungi", 
                            refresh_db = FALSE,
-                           db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip", 
+                           db_url = "https://download.catalogueoflife.org/col/annual/2025_dwca.zip", 
                            threads = 1L){
   # check args
   checkmate::assert_data_frame(data)

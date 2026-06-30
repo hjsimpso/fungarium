@@ -10,25 +10,25 @@ clean_taxonomy(
   author_col = "scientificNameAuthorship",
   kingdom = "Fungi",
   refresh_db = FALSE,
-  db_url = "https://download.catalogueoflife.org/col/annual/2024_dwca.zip",
+  db_url = "https://download.catalogueoflife.org/col/annual/2025_dwca.zip",
   threads = 1L
 )
 }
 \arguments{
-\item{data}{\code{Data.frame}.}
+\item{data}{Data.frame.}
 
 \item{name_col}{Character. Name of column containing taxon names.}
 
 \item{author_col}{Character. Name of column containing author names.}
 
-\item{kingdom}{Character. \code{Fungi} or \code{Plantae}. Used to speed up taxon matching. Default: \code{Fungi}.}
+\item{kingdom}{Character. "Fungi" or "Plantae". Used to speed up taxon matching. Default: "Fungi".}
 
-\item{refresh_db}{Logical. Should the COL database be refreshed. Default: \code{FALSE}. Note, database is always downloaded during the first execution of this function after package installation.}
+\item{refresh_db}{Logical. Should the COL database be refreshed. Default: FALSE. Note, database is always downloaded during the first execution of this function after package installation.}
 
-\item{db_url}{Character. URL for COL database. Default: \verb{https://download.catalogueoflife.org/col/annual/2024_dwca.zip}.}
+\item{db_url}{Character. URL for COL database. Default: \verb{https://download.catalogueoflife.org/col/annual/2025_dwca.zip}.}
 }
 \value{
-Input \code{data.frame} with the following output fields appended:
+Input data.frame with the following output fields appended:
 
 \describe{
 \item{\code{kingdom_pres}}{Character. Accepted kingdom at present.}
