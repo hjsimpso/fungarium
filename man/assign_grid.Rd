@@ -15,7 +15,7 @@ assign_grid(
 \arguments{
 \item{data}{Data.frame.}
 
-\item{lat_col}{character. Name of column that contains latitude values.}
+\item{lat_col}{Character. Name of column that contains latitude values.}
 
 \item{lon_col}{Character. Name of column that contains longitude values.}
 
