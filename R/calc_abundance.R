@@ -1,39 +1,38 @@
 #' @title Calculate abundance
 #'
 #' @description
-#' Calculate abundance. ...
+#' Calculate abundances for a particular variable (e.g., species) based on 
+#' specified grouping variables (e.g., year, country).
 #'
-#' @param data  `Data.frame`.
-#' @param of    Character. ...
-#' @param per Character. ...
-#' @param transformation Character. ...
-#' @param pseudocount Numeric. ...
+#' @param data  Data.frame.
+#' @param of    Character. Name of column containing the variables for which you are calculating abundance. Default is "species_pres".
+#' @param per Character. Vector of column names. Abundance for each "`of`" variable will be calculated for each combination of "`per`" variables. Default is c("year_parsed", "grid_cell_id").
+#' @param relative Logical. Convert abundance to relative abundance.
 #'
-#' @return Input `data.frame` with the following fields appended:
-#' \describe{
-#' \item{\code{abund}}{Abundance of each value in the `of` field per each unique combination of the `per` fields.}
-#' \item{\code{total_occ}}{Total number of occrrences in the field specified by `per`.}
-#' \item{\code{rel_abund}}{Relative abundance of each value in the `of` field per each unique combination of the `per` fields.}
-#' }
+#' @return Data.frame containing abundance values for each "`of`" variable (as 
+#' columns) and each combination of "`per`" variables as rows. Total occurrences 
+#' for each row are recorded in "`total_occ`" column.
+#' 
 #' @export
 #' @examples
-#' TODO
+#' library(fungarium)
+#' data(fomitopsidaceae_fully_cleaned) #import sample data set
+#' grid <- assign_grid(fomitopsidaceae_fully_cleaned)
+#' grid$data <- grid$data[!is.na(grid$data$grid_cell_id)&!is.na(grid$data$year_parsed),]
+#' abundance <- calc_abundance(grid$data)
 
 calc_abundance <- function(data,
                            of="species_pres",
                            per=c("year_parsed", "grid_cell_id"),
-                           transformation=NULL,
-                           pseudocount=0){
+                           relative=FALSE){
   # check args
   checkmate::assert_data_frame(data)
   checkmate::assert_character(of, max.len = 1)
   checkmate::assert_character(per)
-  checkmate::assert_character(transformation, max.len = 1, null.ok = TRUE)
-  checkmate::assert_numeric(pseudocount)
+  checkmate::assert_logical(relative, max.len = 1)
 
   checkmate::assert_choice(of, colnames(data))
   lapply(per, checkmate::assert_choice, choices=colnames(data), .var.name='per')
-  checkmate::assert_choice(transformation, c("rel_abund", "clr"), null.ok = TRUE)
 
   # get abund
   data.table::setDT(data)
@@ -41,7 +40,7 @@ calc_abundance <- function(data,
   data <- data[, .(abund = .N), by = c(of, per)]
 
   # convert to wide format
-  data <- make_wide(data, of, per, "abund", pseudocount = pseudocount, transformation=transformation)
+  data <- make_wide(data, of, per, "abund", relative=relative)
 
   # return data
   data.table::setDF(data)
@@ -49,28 +48,18 @@ calc_abundance <- function(data,
 }
 
 # reshape to wide
-make_wide <- function(data, of, per, value.var, pseudocount, transformation){
+make_wide <- function(data, of, per, value.var, relative){
   of_values <- unique(data[[of]])
   formula_wide <- as.formula(paste0(paste0(per, collapse = " + "), " ~ ", of))
-  data <- data.table::dcast(data, formula_wide, value.var = value.var, fill = pseudocount)
+  data <- data.table::dcast(data, formula_wide, value.var = value.var, fill = 0)
   data <- data[, "total_occ" := rowSums(.SD), .SDcols = setdiff(names(data), per)]
   data.table::setcolorder(data, c(per, "total_occ", of_values))
 
-  if (!is.null(transformation)){ # transform abundance
-    if (transformation=="rel_abund"){
-      data[, (of_values) := lapply(.SD, function(x) x / total_occ), .SDcols = of_values]
-    } else{ # clr
-      drop_cols <- c(per, "total_occ")
-      keep_cols <- setdiff(names(data), drop_cols)
-      
-      # Apply CLR transformation
-      clr_vals <- compositions::clr(data[, ..keep_cols])
-      
-      # Assign back into the data.table
-      data[, (keep_cols) := data.table::as.data.table(clr_vals)]
-    }
-
+  # transform to relative abundance
+  if (relative){
+    data[, (of_values) := lapply(.SD, function(x) x / total_occ), .SDcols = of_values]
   }
+
   return(data)
 }
 

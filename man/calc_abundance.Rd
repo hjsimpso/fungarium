@@ -8,32 +8,31 @@ calc_abundance(
   data,
   of = "species_pres",
   per = c("year_parsed", "grid_cell_id"),
-  transformation = NULL,
-  pseudocount = 0
+  relative = FALSE
 )
 }
 \arguments{
-\item{data}{\code{Data.frame}.}
+\item{data}{Data.frame.}
 
-\item{of}{Character. ...}
+\item{of}{Character. Name of column containing the variables for which you are calculating abundance. Default is "species_pres".}
 
-\item{per}{Character. ...}
+\item{per}{Character. Vector of column names. Abundance for each "\code{of}" variable will be calculated for each combination of "\code{per}" variables. Default is c("year_parsed", "grid_cell_id").}
 
-\item{transformation}{Character. ...}
-
-\item{pseudocount}{Numeric. ...}
+\item{relative}{Logical. Convert abundance to relative abundance.}
 }
 \value{
-Input \code{data.frame} with the following fields appended:
-\describe{
-\item{\code{abund}}{Abundance of each value in the \code{of} field per each unique combination of the \code{per} fields.}
-\item{\code{total_occ}}{Total number of occrrences in the field specified by \code{per}.}
-\item{\code{rel_abund}}{Relative abundance of each value in the \code{of} field per each unique combination of the \code{per} fields.}
-}
+Data.frame containing abundance values for each "\code{of}" variable (as
+columns) and each combination of "\code{per}" variables as rows. Total occurrences
+for each row are recorded in "\code{total_occ}" column.
 }
 \description{
-Calculate abundance. ...
+Calculate abundances for a particular variable (e.g., species) based on
+specified grouping variables (e.g., year, country).
 }
 \examples{
-TODO
+library(fungarium)
+data(fomitopsidaceae_fully_cleaned) #import sample data set
+grid <- assign_grid(fomitopsidaceae_fully_cleaned)
+grid$data <- grid$data[!is.na(grid$data$grid_cell_id)&!is.na(grid$data$year_parsed),]
+abundance <- calc_abundance(grid$data)
 }
