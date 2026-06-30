@@ -12,19 +12,19 @@ assign_funguild(
 )
 }
 \arguments{
-\item{data}{\code{Data.frame}.}
+\item{data}{Data.frame.}
 
 \item{url}{Character. URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.}
 
 \item{tax_cols}{Character. Column names containing taxonomic variables. Names must be in descending order of taxonomic rank. Default is c("phylum_pres", "class_pres", "order_pres", "family_pres", "genus_pres", "species_pres").}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{      Input `data.frame` with FUNGuild assignments appended.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      Input data.frame with FUNGuild assignments appended.
 }\if{html}{\out{</div>}}
 }
 \description{
 Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed in a
-dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
+data.frame using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 }
 \examples{
 library(fungarium)

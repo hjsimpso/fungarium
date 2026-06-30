@@ -5,12 +5,12 @@
 #' (e.g. \href{https://mycoportal.org}{MyCoPortal} or \href{https://www.gbif.org/}{GBIF} data sets).
 #'
 #'
-#' @param data           `Data.frame`.
+#' @param data           Data.frame.
 #' @param metadata_cols  Character. Names of columns with trait-relevant metadata. Default (c("habitat", "occurrenceRemarks", "associatedTaxa")) is based on fields in \href{https://dwc.tdwg.org/terms/}{Darwin Core archive files} that typically contain trait-relevant metadata.
 #' @param pos_string     Character. String ("positive") containing a regular expression that is used to find strings within the specified metadata columns of the input data frame that contain trait-relevant keywords or phrases.
 #' @param neg_string     Character. String ("negative") containing a regular expression that is used to remove records that were falsely identified, via the "positive" search string, as being trait-relevant. Optional.
 #' @param string_clean   Logical. If TRUE (the default), strings in metadata_cols are "cleaned" prior to trait searching. This includes converting strings to lowercase and removing any punctuation (e.g., periods, commas, question marks, etc.) or extra white space.
-#' @return `Data.frame` of filtered rows from input data that match search criteria. Row indexes from input data set returned in `key` column.
+#' @return `Data.frame` of filtered rows from input data that match search criteria. Row indexes from input data set returned in "`key`" column.
 #' 
 #' @export
 #'

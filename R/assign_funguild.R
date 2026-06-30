@@ -2,13 +2,13 @@
 #'
 #' @description
 #' Assigns FUNGuild data (e.g. trophic mode, functional guild, etc) to taxa listed in a
-#' dataframe using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
+#' data.frame using the FUNGuild database (PLEASE CITE:Nguyen et al. 2016).
 #'
-#' @param data        `Data.frame`.
+#' @param data        Data.frame.
 #' @param url         Character. URL where FUNGuild database lives. Current default: http://www.stbates.org/funguild_db.php.
 #' @param tax_cols    Character. Column names containing taxonomic variables. Names must be in descending order of taxonomic rank. Default is c("phylum_pres", "class_pres", "order_pres", "family_pres", "genus_pres", "species_pres").
 #'
-#' @return           Input `data.frame` with FUNGuild assignments appended.
+#' @return           Input data.frame with FUNGuild assignments appended.
 #' @references
 #' \enumerate{
 #'   \item Nguyen NH, Song Z, Bates ST, Branco S, Tedersoo L, Menke J, Schilling JS, Kennedy PG. 2016. FUNGuild: An open annotation tool for parsing fungal community datasets by ecological guild. \emph{Fungal Ecology}, 20: 241-248. doi:10.1016/j.funeco.2015.06.006

@@ -4,10 +4,10 @@
 #' Parses dates with varying formats into a consistent format and extracts year,
 #' month, and day.
 #'
-#' @param data `Data.frame`.
+#' @param data Data.frame.
 #' @param date_col Character. Name of column that contains dates.
 #'
-#' @return Input `data.frame` with the following fields appended:
+#' @return Input data.frame with the following fields appended:
 #'
 #' \describe{
 #' \item{\code{date_raw}}{Character. Input date.}

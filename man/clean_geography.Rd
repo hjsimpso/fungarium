@@ -13,7 +13,7 @@ clean_geography(
 )
 }
 \arguments{
-\item{data}{\code{Data.frame}.}
+\item{data}{Data.frame.}
 
 \item{country_col}{Character. Name of column that contains country names.}
 
@@ -24,18 +24,18 @@ clean_geography(
 \item{tests}{Character. Coordinate cleaning tests to perform. Options include: "zero", "equal". Default is all tests.}
 }
 \value{
-Input \code{data.frame} with the following fields appended:
+Input data.frame with the following fields appended:
 
 \describe{
 \item{\code{lat_parsed}}{Numeric. Parsed decimal latitude.}
 \item{\code{lon_parsed}}{Numeric. Parsed decimal longitude.}
 \item{\code{lat_res}}{Integer. Latitude resolution based on number of decimal places.}
 \item{\code{lon_res}}{Integer. Longitude resolution based on number of decimal places.}
-\item{\code{coordinate_error}}{Character. First error deteced when cleaning coordinates.}
+\item{\code{coordinate_error}}{Character. First error detected when cleaning coordinates.}
 \item{\code{country_parsed}}{Character. Parsed country. Synonyms are harmonized.}
-\item{\code{sov_parsed}}{Character. Parsed sovereignty. Based on \code{country_parsed}.}
-\item{\code{iso3_parsed}}{Character. Parsed iso-3 codes (ISO 3166-1 alpha-3 codes are three-letter country codes). Based on \code{country_parsed}.}
-\item{\code{continent_parsed}}{Character. Parsed continent. Based on \code{country_parsed}.}
+\item{\code{sov_parsed}}{Character. Parsed sovereignty. Based on "\code{country_parsed}".}
+\item{\code{iso3_parsed}}{Character. Parsed iso-3 codes (ISO 3166-1 alpha-3 codes are three-letter country codes). Based on "\code{country_parsed}".}
+\item{\code{continent_parsed}}{Character. Parsed continent. Based on "\code{country_parsed}".}
 \item{\code{closest_country_distance}}{Numeric. Distance (in meters) between GPS coordinates and closest country. Only assigned if country cannot be parsed from supplied country name, and if record is not within the bounds of any country.}
 }
 }

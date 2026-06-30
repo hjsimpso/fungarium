@@ -13,7 +13,7 @@ find_trait(
 )
 }
 \arguments{
-\item{data}{\code{Data.frame}.}
+\item{data}{Data.frame.}
 
 \item{metadata_cols}{Character. Names of columns with trait-relevant metadata. Default (c("habitat", "occurrenceRemarks", "associatedTaxa")) is based on fields in \href{https://dwc.tdwg.org/terms/}{Darwin Core archive files} that typically contain trait-relevant metadata.}
 
@@ -24,7 +24,7 @@ find_trait(
 \item{string_clean}{Logical. If TRUE (the default), strings in metadata_cols are "cleaned" prior to trait searching. This includes converting strings to lowercase and removing any punctuation (e.g., periods, commas, question marks, etc.) or extra white space.}
 }
 \value{
-\code{Data.frame} of filtered rows from input data that match search criteria. Row indexes from input data set returned in \code{key} column.
+\code{Data.frame} of filtered rows from input data that match search criteria. Row indexes from input data set returned in "\code{key}" column.
 }
 \description{
 Find trait-relevant records (i.e., records with a particular substrate, host, or habitat association) in a data set of fungal collections/observations
